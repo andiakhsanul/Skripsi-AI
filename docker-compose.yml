@@ -1,0 +1,103 @@
+services:
+  db:
+    image: postgres:15
+    container_name: spk_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./infra/db/init:/docker-entrypoint-initdb.d
+    networks:
+      - spk_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  flask-api:
+    build:
+      context: ./flask-ml-api
+      dockerfile: Dockerfile
+    container_name: spk_flask_api
+    restart: unless-stopped
+    env_file:
+      - ./flask-ml-api/.env
+    environment:
+      FLASK_HOST: ${FLASK_HOST}
+      FLASK_PORT: ${FLASK_PORT}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      FLASK_INTERNAL_TOKEN: ${FLASK_INTERNAL_TOKEN}
+    ports:
+      - "${FLASK_PORT}:5000"
+    networks:
+      - spk_network
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  laravel-web:
+    build:
+      context: ./laravel-web
+      dockerfile: Dockerfile
+    container_name: spk_laravel_web
+    restart: unless-stopped
+    env_file:
+      - ./laravel-web/.env
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_DEBUG: ${APP_DEBUG}
+      DB_CONNECTION: pgsql
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_NAME}
+      DB_USERNAME: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      FLASK_API_URL: http://flask-api:5000/api/predict
+      FLASK_RETRAIN_URL: http://flask-api:5000/api/retrain
+      FLASK_INTERNAL_TOKEN: ${FLASK_INTERNAL_TOKEN}
+    ports:
+      - "${LARAVEL_PORT}:80"
+    networks:
+      - spk_network
+    depends_on:
+      db:
+        condition: service_healthy
+      flask-api:
+        condition: service_healthy
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  spk_network:
+    driver: bridge
+
+volumes:
+  db_data:
