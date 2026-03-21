@@ -22,6 +22,15 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN if [ -f composer.json ]; then composer install --no-interaction --prefer-dist --optimize-autoloader; fi
 
-RUN chown -R www-data:www-data /var/www/html
+RUN chown -R www-data:www-data /var/www/html \
+    && mkdir -p /var/www/html/storage/app/public/ditmawa-documents \
+    && mkdir -p /var/www/html/storage/app/public/application-documents \
+    && chown -R www-data:www-data /var/www/html/storage
+
+# PHP upload settings untuk PDF Ditmawa (maks 15MB)
+RUN echo "upload_max_filesize=15M" > /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "post_max_size=16M"        >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "max_execution_time=120"   >> /usr/local/etc/php/conf.d/uploads.ini \
+    && echo "memory_limit=256M"        >> /usr/local/etc/php/conf.d/uploads.ini
 
 EXPOSE 80

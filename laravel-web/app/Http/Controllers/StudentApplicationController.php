@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ApplicationStatusLog;
 use App\Models\ParameterSchemaVersion;
 use App\Models\StudentApplication;
+use App\Services\EncodingService;
 use App\Services\MlGatewayService;
 use App\Services\ParameterSchemaService;
 use App\Services\RuleScoringService;
@@ -18,55 +19,64 @@ class StudentApplicationController extends Controller
         private readonly ParameterSchemaService $schemaService,
         private readonly MlGatewayService $mlGateway,
         private readonly RuleScoringService $ruleScoringService,
+        private readonly EncodingService $encodingService,
     ) {}
 
+    /**
+     * Submit pengajuan baru.
+     * Mahasiswa mengirim nilai RAW (Rupiah, jumlah orang, string status).
+     * Server melakukan encoding lalu meneruskan ke Flask ML API.
+     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'schema_version' => ['nullable', 'integer', 'min:1'],
-            'kip' => ['required', 'integer', 'in:0,1'],
-            'pkh' => ['required', 'integer', 'in:0,1'],
-            'kks' => ['required', 'integer', 'in:0,1'],
-            'dtks' => ['required', 'integer', 'in:0,1'],
-            'sktm' => ['required', 'integer', 'in:0,1'],
-            'penghasilan_gabungan' => ['required', 'integer', 'in:1,2,3'],
-            'penghasilan_ayah' => ['required', 'integer', 'in:1,2,3'],
-            'penghasilan_ibu' => ['required', 'integer', 'in:1,2,3'],
-            'jumlah_tanggungan' => ['required', 'integer', 'in:1,2,3'],
-            'anak_ke' => ['required', 'integer', 'in:1,2,3'],
-            'status_orangtua' => ['required', 'integer', 'in:1,2,3'],
-            'status_rumah' => ['required', 'integer', 'in:1,2,3'],
-            'daya_listrik' => ['required', 'integer', 'in:1,2,3'],
+            // Biner (Ya/Tidak)
+            'kip'  => ['required', 'boolean'],
+            'pkh'  => ['required', 'boolean'],
+            'kks'  => ['required', 'boolean'],
+            'dtks' => ['required', 'boolean'],
+            'sktm' => ['required', 'boolean'],
+
+            // Penghasilan RAW (Rupiah)
+            'penghasilan_gabungan_raw' => ['required', 'integer', 'min:0'],
+            'penghasilan_ayah_raw'     => ['required', 'integer', 'min:0'],
+            'penghasilan_ibu_raw'      => ['required', 'integer', 'min:0'],
+
+            // Tanggungan & urutan anak
+            'jumlah_tanggungan_raw' => ['required', 'integer', 'min:0', 'max:20'],
+            'anak_ke_raw'           => ['required', 'integer', 'min:1', 'max:20'],
+
+            // Status string
+            'status_orangtua_raw' => ['required', 'string', 'in:Lengkap,Yatim,Piatu,Yatim Piatu'],
+            'status_rumah_raw'    => ['required', 'string', 'in:Milik Sendiri,Sewa,Menumpang,Tidak Punya'],
+            'daya_listrik_raw'    => ['required', 'string', 'in:PLN >900VA,PLN 450-900VA,Non-PLN'],
+
+            // PDF Ditmawa wajib
+            'ditmawa_pdf' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+
+            // Opsional
+            'schema_version'   => ['nullable', 'integer', 'min:1'],
             'parameters_extra' => ['nullable', 'array'],
-            'supporting_document_url' => ['nullable', 'url', 'max:2048'],
-            'supporting_document_pdf' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
+        // 1. Encode raw → angka (1/2/3 dan 0/1)
+        $encoded = $this->encodingService->encode($validated);
+
+        // 2. Resolve schema version
         $schemaVersion = $this->schemaService->resolveSchemaVersion($validated['schema_version'] ?? null);
         $schema = ParameterSchemaVersion::query()->where('version', $schemaVersion)->first();
 
-        $coreParameters = [
-            'kip' => (int) $validated['kip'],
-            'pkh' => (int) $validated['pkh'],
-            'kks' => (int) $validated['kks'],
-            'dtks' => (int) $validated['dtks'],
-            'sktm' => (int) $validated['sktm'],
-            'penghasilan_gabungan' => (int) $validated['penghasilan_gabungan'],
-            'penghasilan_ayah' => (int) $validated['penghasilan_ayah'],
-            'penghasilan_ibu' => (int) $validated['penghasilan_ibu'],
-            'jumlah_tanggungan' => (int) $validated['jumlah_tanggungan'],
-            'anak_ke' => (int) $validated['anak_ke'],
-            'status_orangtua' => (int) $validated['status_orangtua'],
-            'status_rumah' => (int) $validated['status_rumah'],
-            'daya_listrik' => (int) $validated['daya_listrik'],
-        ];
+        // 3. Upload PDF Ditmawa (wajib)
+        $pdfPath = $request->file('ditmawa_pdf')->store('ditmawa-documents', 'public');
 
+        // 4. Prediksi ML menggunakan nilai encoded
+        $inference = $this->mlGateway->predictOrFallback($encoded);
+
+        // 5. Rule scoring menggunakan nilai encoded
         $extraParameters = $validated['parameters_extra'] ?? [];
+        $ruleScore = $this->ruleScoringService->score($encoded, $extraParameters, $schema);
 
-        $this->schemaService->validateApplicationPayload($coreParameters, $extraParameters, $schema);
-        $inference = $this->mlGateway->predictOrFallback($coreParameters);
-        $ruleScore = $this->ruleScoringService->score($coreParameters, $extraParameters, $schema);
-
+        // 6. Hitung review priority gabungan (ML + rule)
         $reviewPriority = $inference['review_priority'] ?? 'normal';
         if (
             isset($ruleScore['rule_recommendation'], $inference['catboost_label'])
@@ -76,70 +86,103 @@ class StudentApplicationController extends Controller
             $reviewPriority = 'high';
         }
 
-        $documentPath = null;
-        $documentUrl = $validated['supporting_document_url'] ?? null;
-        if ($request->hasFile('supporting_document_pdf')) {
-            $documentPath = $request->file('supporting_document_pdf')->store('application-documents', 'public');
-            $documentUrl = Storage::disk('public')->url($documentPath);
-        }
-
+        // 7. Simpan ke student_applications (raw + encoded + AI result)
         $application = StudentApplication::query()->create([
             'student_user_id' => $request->user()->id,
-            'schema_version' => $schemaVersion,
-            ...$coreParameters,
+            'schema_version'  => $schemaVersion,
+
+            // Raw input
+            'penghasilan_gabungan_raw' => (int) $validated['penghasilan_gabungan_raw'],
+            'penghasilan_ayah_raw'     => (int) $validated['penghasilan_ayah_raw'],
+            'penghasilan_ibu_raw'      => (int) $validated['penghasilan_ibu_raw'],
+            'jumlah_tanggungan_raw'    => (int) $validated['jumlah_tanggungan_raw'],
+            'anak_ke_raw'              => (int) $validated['anak_ke_raw'],
+            'status_orangtua_raw'      => $validated['status_orangtua_raw'],
+            'status_rumah_raw'         => $validated['status_rumah_raw'],
+            'daya_listrik_raw'         => $validated['daya_listrik_raw'],
+
+            // Encoded
+            ...$encoded,
+
+            // PDF Ditmawa
+            'ditmawa_pdf_path'        => $pdfPath,
+            'ditmawa_pdf_uploaded_at' => now(),
+
+            // Metadata
             'parameters_extra' => $extraParameters,
-            'status' => 'Submitted',
-            'model_ready' => (bool) ($inference['model_ready'] ?? false),
-            'catboost_label' => $inference['catboost_label'] ?? null,
-            'catboost_confidence' => $inference['catboost_confidence'] ?? null,
-            'naive_bayes_label' => $inference['naive_bayes_label'] ?? null,
+            'status'           => 'Submitted',
+
+            // AI result
+            'model_ready'          => (bool) ($inference['model_ready'] ?? false),
+            'catboost_label'       => $inference['catboost_label'] ?? null,
+            'catboost_confidence'  => $inference['catboost_confidence'] ?? null,
+            'naive_bayes_label'    => $inference['naive_bayes_label'] ?? null,
             'naive_bayes_confidence' => $inference['naive_bayes_confidence'] ?? null,
-            'disagreement_flag' => (bool) ($inference['disagreement_flag'] ?? false),
-            'rule_score' => $ruleScore['rule_score'] ?? null,
-            'rule_recommendation' => $ruleScore['rule_recommendation'] ?? null,
-            'final_recommendation' => $inference['final_recommendation'] ?? ($ruleScore['rule_recommendation'] ?? null),
-            'review_priority' => $reviewPriority,
-            'supporting_document_url' => $documentUrl,
-            'supporting_document_path' => $documentPath,
+            'disagreement_flag'    => (bool) ($inference['disagreement_flag'] ?? false),
+            'final_recommendation' => $inference['final_recommendation'] ?? null,
+            'review_priority'      => $reviewPriority,
+
+            // Rule scoring
+            'rule_score'           => $ruleScore['rule_score'] ?? null,
+            'rule_recommendation'  => $ruleScore['rule_recommendation'] ?? null,
         ]);
 
+        // 8. Set link dokumen
         $application->forceFill([
             'document_submission_link' => url("/api/student/applications/{$application->id}/document"),
         ])->save();
 
+        // 9. Log status
         ApplicationStatusLog::query()->create([
             'application_id' => $application->id,
-            'actor_user_id' => $request->user()->id,
-            'from_status' => null,
-            'to_status' => 'Submitted',
-            'action' => 'submitted',
-            'metadata' => [
+            'actor_user_id'  => $request->user()->id,
+            'from_status'    => null,
+            'to_status'      => 'Submitted',
+            'action'         => 'submitted',
+            'metadata'       => [
                 'final_recommendation' => $application->final_recommendation,
-                'model_ready' => $application->model_ready,
-                'rule_score' => $application->rule_score,
+                'model_ready'          => $application->model_ready,
+                'rule_score'           => $application->rule_score,
             ],
         ]);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Pengajuan berhasil dikirim',
-            'data' => $application,
+            'status'  => 'success',
+            'message' => 'Pengajuan berhasil dikirim. Silakan tunggu hasil verifikasi dari admin.',
+            'data'    => [
+                'id'                      => $application->id,
+                'status'                  => $application->status,
+                'ditmawa_pdf_uploaded_at' => $application->ditmawa_pdf_uploaded_at,
+                'created_at'              => $application->created_at,
+            ],
         ], 201);
     }
 
+    /**
+     * Daftar pengajuan milik mahasiswa yang sedang login.
+     * Hanya menampilkan status — bukan hasil AI.
+     */
     public function index(Request $request): JsonResponse
     {
         $applications = StudentApplication::query()
             ->where('student_user_id', $request->user()->id)
             ->orderByDesc('created_at')
-            ->get();
+            ->get([
+                'id', 'status', 'review_priority',
+                'ditmawa_pdf_uploaded_at',
+                'admin_decision_note', 'admin_decided_at',
+                'created_at', 'updated_at',
+            ]);
 
         return response()->json([
             'status' => 'success',
-            'data' => $applications,
+            'data'   => $applications,
         ]);
     }
 
+    /**
+     * Detail satu pengajuan — mahasiswa hanya melihat status & log perubahan.
+     */
     public function show(Request $request, int $id): JsonResponse
     {
         $application = StudentApplication::query()
@@ -149,50 +192,21 @@ class StudentApplicationController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'data' => $application,
-        ]);
-    }
-
-    public function uploadDocument(Request $request, int $id): JsonResponse
-    {
-        $validated = $request->validate([
-            'supporting_document_pdf' => ['required', 'file', 'mimes:pdf', 'max:10240'],
-        ]);
-
-        $application = StudentApplication::query()
-            ->where('student_user_id', $request->user()->id)
-            ->findOrFail($id);
-
-        if ($application->supporting_document_path) {
-            Storage::disk('public')->delete($application->supporting_document_path);
-        }
-
-        $path = $validated['supporting_document_pdf']->store('application-documents', 'public');
-        $url = Storage::disk('public')->url($path);
-
-        $application->forceFill([
-            'supporting_document_path' => $path,
-            'supporting_document_url' => $url,
-        ])->save();
-
-        ApplicationStatusLog::query()->create([
-            'application_id' => $application->id,
-            'actor_user_id' => $request->user()->id,
-            'from_status' => $application->status,
-            'to_status' => $application->status,
-            'action' => 'upload_document',
-            'metadata' => [
-                'supporting_document_url' => $url,
-            ],
-        ]);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Dokumen PDF berhasil diunggah',
-            'data' => [
-                'id' => $application->id,
-                'supporting_document_url' => $application->supporting_document_url,
-                'document_submission_link' => $application->document_submission_link,
+            'data'   => [
+                'id'                     => $application->id,
+                'status'                 => $application->status,
+                'review_priority'        => $application->review_priority,
+                'admin_decision_note'    => $application->admin_decision_note,
+                'admin_decided_at'       => $application->admin_decided_at,
+                'ditmawa_pdf_uploaded'   => $application->hasDitmawaPdf(),
+                'ditmawa_pdf_uploaded_at' => $application->ditmawa_pdf_uploaded_at,
+                'created_at'             => $application->created_at,
+                'logs'                   => $application->logs->map(fn ($log) => [
+                    'from_status' => $log->from_status,
+                    'to_status'   => $log->to_status,
+                    'action'      => $log->action,
+                    'created_at'  => $log->created_at,
+                ]),
             ],
         ]);
     }
