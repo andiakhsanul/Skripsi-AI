@@ -16,10 +16,20 @@ return new class extends Migration
             $table->foreignId('student_user_id')->constrained('users')->cascadeOnDelete();
             $table->unsignedInteger('schema_version');
 
-            // Kolom inti untuk model saat ini.
-            $table->unsignedTinyInteger('kip_sma');
-            $table->decimal('penghasilan_gabungan', 14, 2);
-            $table->unsignedInteger('daya_listrik');
+            // 13 fitur prediktor SPK KIP-K (seluruhnya encoded kategorikal).
+            $table->unsignedTinyInteger('kip');
+            $table->unsignedTinyInteger('pkh');
+            $table->unsignedTinyInteger('kks');
+            $table->unsignedTinyInteger('dtks');
+            $table->unsignedTinyInteger('sktm');
+            $table->unsignedTinyInteger('penghasilan_gabungan');
+            $table->unsignedTinyInteger('penghasilan_ayah');
+            $table->unsignedTinyInteger('penghasilan_ibu');
+            $table->unsignedTinyInteger('jumlah_tanggungan');
+            $table->unsignedTinyInteger('anak_ke');
+            $table->unsignedTinyInteger('status_orangtua');
+            $table->unsignedTinyInteger('status_rumah');
+            $table->unsignedTinyInteger('daya_listrik');
 
             // Parameter tambahan fleksibel per batch versi schema.
             $table->json('parameters_extra')->nullable();

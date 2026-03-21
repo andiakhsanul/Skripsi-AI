@@ -24,9 +24,19 @@ class StudentApplicationController extends Controller
     {
         $validated = $request->validate([
             'schema_version' => ['nullable', 'integer', 'min:1'],
-            'kip_sma' => ['required', 'integer', 'in:0,1'],
-            'penghasilan_gabungan' => ['required', 'numeric', 'min:0'],
-            'daya_listrik' => ['required', 'integer', 'min:0'],
+            'kip' => ['required', 'integer', 'in:0,1'],
+            'pkh' => ['required', 'integer', 'in:0,1'],
+            'kks' => ['required', 'integer', 'in:0,1'],
+            'dtks' => ['required', 'integer', 'in:0,1'],
+            'sktm' => ['required', 'integer', 'in:0,1'],
+            'penghasilan_gabungan' => ['required', 'integer', 'in:1,2,3'],
+            'penghasilan_ayah' => ['required', 'integer', 'in:1,2,3'],
+            'penghasilan_ibu' => ['required', 'integer', 'in:1,2,3'],
+            'jumlah_tanggungan' => ['required', 'integer', 'in:1,2,3'],
+            'anak_ke' => ['required', 'integer', 'in:1,2,3'],
+            'status_orangtua' => ['required', 'integer', 'in:1,2,3'],
+            'status_rumah' => ['required', 'integer', 'in:1,2,3'],
+            'daya_listrik' => ['required', 'integer', 'in:1,2,3'],
             'parameters_extra' => ['nullable', 'array'],
             'supporting_document_url' => ['nullable', 'url', 'max:2048'],
             'supporting_document_pdf' => ['nullable', 'file', 'mimes:pdf', 'max:10240'],
@@ -36,8 +46,18 @@ class StudentApplicationController extends Controller
         $schema = ParameterSchemaVersion::query()->where('version', $schemaVersion)->first();
 
         $coreParameters = [
-            'kip_sma' => (int) $validated['kip_sma'],
-            'penghasilan_gabungan' => (float) $validated['penghasilan_gabungan'],
+            'kip' => (int) $validated['kip'],
+            'pkh' => (int) $validated['pkh'],
+            'kks' => (int) $validated['kks'],
+            'dtks' => (int) $validated['dtks'],
+            'sktm' => (int) $validated['sktm'],
+            'penghasilan_gabungan' => (int) $validated['penghasilan_gabungan'],
+            'penghasilan_ayah' => (int) $validated['penghasilan_ayah'],
+            'penghasilan_ibu' => (int) $validated['penghasilan_ibu'],
+            'jumlah_tanggungan' => (int) $validated['jumlah_tanggungan'],
+            'anak_ke' => (int) $validated['anak_ke'],
+            'status_orangtua' => (int) $validated['status_orangtua'],
+            'status_rumah' => (int) $validated['status_rumah'],
             'daya_listrik' => (int) $validated['daya_listrik'],
         ];
 
@@ -77,7 +97,7 @@ class StudentApplicationController extends Controller
             'disagreement_flag' => (bool) ($inference['disagreement_flag'] ?? false),
             'rule_score' => $ruleScore['rule_score'] ?? null,
             'rule_recommendation' => $ruleScore['rule_recommendation'] ?? null,
-            'final_recommendation' => $ruleScore['rule_recommendation'] ?? ($inference['final_recommendation'] ?? null),
+            'final_recommendation' => $inference['final_recommendation'] ?? ($ruleScore['rule_recommendation'] ?? null),
             'review_priority' => $reviewPriority,
             'supporting_document_url' => $documentUrl,
             'supporting_document_path' => $documentPath,

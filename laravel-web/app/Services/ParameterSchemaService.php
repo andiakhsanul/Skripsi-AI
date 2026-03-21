@@ -46,9 +46,20 @@ class ParameterSchemaService
         ?ParameterSchemaVersion $schema
     ): void {
         $baseValidator = Validator::make($coreParameters, [
-            'kip_sma' => ['required', 'integer', 'in:0,1'],
-            'penghasilan_gabungan' => ['required', 'numeric', 'min:0'],
-            'daya_listrik' => ['required', 'integer', 'min:0'],
+            'kip' => ['required', 'integer', 'in:0,1'],
+            'pkh' => ['required', 'integer', 'in:0,1'],
+            'kks' => ['required', 'integer', 'in:0,1'],
+            'dtks' => ['required', 'integer', 'in:0,1'],
+            'sktm' => ['required', 'integer', 'in:0,1'],
+
+            'penghasilan_gabungan' => ['required', 'integer', 'in:1,2,3'],
+            'penghasilan_ayah' => ['required', 'integer', 'in:1,2,3'],
+            'penghasilan_ibu' => ['required', 'integer', 'in:1,2,3'],
+            'jumlah_tanggungan' => ['required', 'integer', 'in:1,2,3'],
+            'anak_ke' => ['required', 'integer', 'in:1,2,3'],
+            'status_orangtua' => ['required', 'integer', 'in:1,2,3'],
+            'status_rumah' => ['required', 'integer', 'in:1,2,3'],
+            'daya_listrik' => ['required', 'integer', 'in:1,2,3'],
         ]);
 
         if ($baseValidator->fails()) {

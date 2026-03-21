@@ -91,11 +91,11 @@ class MlGatewayService
      */
     private function fallbackPrediction(array $features, string $reason): array
     {
-        $isLikelyEligible = (int) ($features['kip_sma'] ?? 0) === 1
-            && (float) ($features['penghasilan_gabungan'] ?? 0) <= 2_000_000
-            && (int) ($features['daya_listrik'] ?? 0) <= 1300;
+        $isLikelyEligible = (int) ($features['kip'] ?? 0) === 1
+            && (int) ($features['penghasilan_gabungan'] ?? 3) === 1
+            && (int) ($features['daya_listrik'] ?? 3) <= 2;
 
-        $label = $isLikelyEligible ? 'Layak' : 'Tidak Layak';
+        $label = $isLikelyEligible ? 'Layak' : 'Indikasi';
 
         return [
             'model_ready' => false,

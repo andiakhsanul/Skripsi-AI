@@ -27,10 +27,19 @@ class SaasV1FlowTest extends TestCase
 
         $csvContent = implode("\n", [
             'name,type,min,max,weight,is_core',
-            'kip_sma,integer,0,1,1,true',
-            'penghasilan_gabungan,float,0,999999999,1,true',
-            'daya_listrik,integer,0,10000,1,true',
-            'tanggungan_keluarga,integer,0,20,0.4,false',
+            'kip,integer,0,1,1,true',
+            'pkh,integer,0,1,1,true',
+            'kks,integer,0,1,1,true',
+            'dtks,integer,0,1,1,true',
+            'sktm,integer,0,1,1,true',
+            'penghasilan_gabungan,integer,1,3,1,true',
+            'penghasilan_ayah,integer,1,3,1,true',
+            'penghasilan_ibu,integer,1,3,1,true',
+            'jumlah_tanggungan,integer,1,3,1,true',
+            'anak_ke,integer,1,3,1,true',
+            'status_orangtua,integer,1,3,1,true',
+            'status_rumah,integer,1,3,1,true',
+            'daya_listrik,integer,1,3,1,true',
         ]);
 
         $file = UploadedFile::fake()->createWithContent('schema-params.csv', $csvContent);
@@ -46,8 +55,8 @@ class SaasV1FlowTest extends TestCase
             ->assertStatus(201)
             ->assertJsonPath('status', 'success')
             ->assertJsonPath('data.schema_version', 1)
-            ->assertJsonPath('data.parameter_count', 4)
-            ->assertJsonPath('data.core_parameter_count', 3);
+            ->assertJsonPath('data.parameter_count', 13)
+            ->assertJsonPath('data.core_parameter_count', 13);
 
         $this->withHeader('Authorization', "Bearer {$token}")
             ->getJson('/api/admin/parameters/schema-versions')
@@ -74,7 +83,7 @@ class SaasV1FlowTest extends TestCase
                 'status' => 'success',
                 'model_results' => [
                     'catboost' => ['label' => 'Layak', 'confidence' => 0.83],
-                    'naive_bayes' => ['label' => 'Tidak Layak', 'confidence' => 0.72],
+                    'naive_bayes' => ['label' => 'Indikasi', 'confidence' => 0.72],
                     'disagreement_flag' => true,
                     'final_recommendation' => 'Layak',
                     'review_priority' => 'high',
@@ -86,9 +95,19 @@ class SaasV1FlowTest extends TestCase
         $submitResponse = $this
             ->withHeader('Authorization', "Bearer {$studentToken}")
             ->postJson('/api/student/applications', [
-                'kip_sma' => 1,
-                'penghasilan_gabungan' => 1200000,
-                'daya_listrik' => 900,
+                'kip' => 1,
+                'pkh' => 1,
+                'kks' => 1,
+                'dtks' => 1,
+                'sktm' => 0,
+                'penghasilan_gabungan' => 1,
+                'penghasilan_ayah' => 1,
+                'penghasilan_ibu' => 1,
+                'jumlah_tanggungan' => 2,
+                'anak_ke' => 2,
+                'status_orangtua' => 3,
+                'status_rumah' => 2,
+                'daya_listrik' => 2,
             ]);
 
         $submitResponse
@@ -158,9 +177,19 @@ class SaasV1FlowTest extends TestCase
         $submitResponse = $this
             ->withHeader('Authorization', "Bearer {$studentToken}")
             ->postJson('/api/student/applications', [
-                'kip_sma' => 1,
-                'penghasilan_gabungan' => 1000000,
-                'daya_listrik' => 900,
+                'kip' => 1,
+                'pkh' => 1,
+                'kks' => 1,
+                'dtks' => 0,
+                'sktm' => 1,
+                'penghasilan_gabungan' => 1,
+                'penghasilan_ayah' => 1,
+                'penghasilan_ibu' => 1,
+                'jumlah_tanggungan' => 1,
+                'anak_ke' => 2,
+                'status_orangtua' => 2,
+                'status_rumah' => 2,
+                'daya_listrik' => 2,
             ]);
 
         $submitResponse->assertStatus(201);
@@ -211,8 +240,18 @@ class SaasV1FlowTest extends TestCase
             'version' => 2,
             'source_file_name' => 'schema-v2.csv',
             'parameter_definitions' => [
-                ['name' => 'kip_sma', 'type' => 'integer', 'is_core' => true],
-                ['name' => 'penghasilan_gabungan', 'type' => 'float', 'is_core' => true],
+                ['name' => 'kip', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'pkh', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'kks', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'dtks', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'sktm', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'penghasilan_gabungan', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'penghasilan_ayah', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'penghasilan_ibu', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'jumlah_tanggungan', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'anak_ke', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'status_orangtua', 'type' => 'integer', 'is_core' => true],
+                ['name' => 'status_rumah', 'type' => 'integer', 'is_core' => true],
                 ['name' => 'daya_listrik', 'type' => 'integer', 'is_core' => true],
             ],
             'is_active' => true,

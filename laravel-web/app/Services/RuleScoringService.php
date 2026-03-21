@@ -67,7 +67,7 @@ class RuleScoringService
 
         return [
             'rule_score' => $ruleScore,
-            'rule_recommendation' => $ruleScore >= $threshold ? 'Layak' : 'Tidak Layak',
+            'rule_recommendation' => $ruleScore >= $threshold ? 'Layak' : 'Indikasi',
             'total_weight' => $totalWeight,
         ];
     }
@@ -78,13 +78,41 @@ class RuleScoringService
      */
     private function fallbackScore(array $coreParameters): array
     {
-        $isLikelyEligible = (int) ($coreParameters['kip_sma'] ?? 0) === 1
-            && (float) ($coreParameters['penghasilan_gabungan'] ?? 0) <= 2_000_000
-            && (int) ($coreParameters['daya_listrik'] ?? 0) <= 1300;
+        $binaryIndicators = [
+            (int) ($coreParameters['kip'] ?? 0),
+            (int) ($coreParameters['pkh'] ?? 0),
+            (int) ($coreParameters['kks'] ?? 0),
+            (int) ($coreParameters['dtks'] ?? 0),
+            (int) ($coreParameters['sktm'] ?? 0),
+        ];
+
+        $ordinalIndicators = [
+            (int) ($coreParameters['penghasilan_gabungan'] ?? 3),
+            (int) ($coreParameters['penghasilan_ayah'] ?? 3),
+            (int) ($coreParameters['penghasilan_ibu'] ?? 3),
+            (int) ($coreParameters['jumlah_tanggungan'] ?? 3),
+            (int) ($coreParameters['anak_ke'] ?? 3),
+            (int) ($coreParameters['status_orangtua'] ?? 3),
+            (int) ($coreParameters['status_rumah'] ?? 3),
+            (int) ($coreParameters['daya_listrik'] ?? 3),
+        ];
+
+        $binaryScore = array_sum($binaryIndicators) / 5;
+
+        $ordinalVulnerabilityScores = array_map(
+            static fn (int $value): float => max(0.0, min((4 - $value) / 3, 1.0)),
+            $ordinalIndicators
+        );
+
+        $ordinalScore = array_sum($ordinalVulnerabilityScores) / 8;
+        $combinedScore = round((0.5 * $binaryScore) + (0.5 * $ordinalScore), 4);
+
+        $threshold = (float) env('RULE_RECOMMENDATION_THRESHOLD', 0.6);
+        $recommendation = $combinedScore >= $threshold ? 'Layak' : 'Indikasi';
 
         return [
-            'rule_score' => $isLikelyEligible ? 0.75 : 0.35,
-            'rule_recommendation' => $isLikelyEligible ? 'Layak' : 'Tidak Layak',
+            'rule_score' => $combinedScore,
+            'rule_recommendation' => $recommendation,
             'total_weight' => 1.0,
         ];
     }

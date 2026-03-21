@@ -12,8 +12,19 @@ from sklearn.naive_bayes import GaussianNB
 
 app = Flask(__name__)
 
-FEATURE_COLUMNS = ["kip_sma", "penghasilan_gabungan", "daya_listrik"]
-TARGET_COLUMN = "label"
+BINARY_FEATURES = ["kip", "pkh", "kks", "dtks", "sktm"]
+ORDINAL_FEATURES = [
+    "penghasilan_gabungan",
+    "penghasilan_ayah",
+    "penghasilan_ibu",
+    "jumlah_tanggungan",
+    "anak_ke",
+    "status_orangtua",
+    "status_rumah",
+    "daya_listrik",
+]
+FEATURE_COLUMNS = BINARY_FEATURES + ORDINAL_FEATURES
+TARGET_COLUMN = "label_class"
 REVIEW_PRIORITY_THRESHOLD = float(os.getenv("REVIEW_PRIORITY_THRESHOLD", "0.65"))
 
 CATBOOST_MODEL_PATH = Path(os.getenv("CATBOOST_MODEL_PATH", "models/catboost_model.joblib"))
@@ -42,12 +53,12 @@ def ensure_model_directory() -> None:
 
 def normalize_label(raw_value: str) -> int:
     normalized = str(raw_value).strip().lower()
-    positive_values = {"layak", "1", "true", "ya"}
+    positive_values = {"indikasi", "1", "true", "ya"}
     return 1 if normalized in positive_values else 0
 
 
 def decode_label(prediction: int) -> str:
-    return "Layak" if int(prediction) == 1 else "Tidak Layak"
+    return "Indikasi" if int(prediction) == 1 else "Layak"
 
 
 def check_internal_token() -> bool:
@@ -64,7 +75,10 @@ def load_saved_models() -> None:
 
 def fetch_training_dataframe(schema_version: Optional[int] = None) -> pd.DataFrame:
     query = sql.SQL(
-        "SELECT kip_sma, penghasilan_gabungan, daya_listrik, label "
+        "SELECT kip, pkh, kks, dtks, sktm, "
+        "penghasilan_gabungan, penghasilan_ayah, penghasilan_ibu, "
+        "jumlah_tanggungan, anak_ke, status_orangtua, status_rumah, "
+        "daya_listrik, label, label_class "
         "FROM {table_name} WHERE is_active = TRUE"
     ).format(table_name=sql.Identifier(TRAINING_TABLE))
 
@@ -77,12 +91,27 @@ def fetch_training_dataframe(schema_version: Optional[int] = None) -> pd.DataFra
         return pd.read_sql(query.as_string(conn), conn, params=params)
 
 
-def derive_label_and_confidence(probability_layak: float) -> tuple[str, float]:
-    bounded_probability = max(0.0, min(float(probability_layak), 1.0))
-    predicted_label = "Layak" if bounded_probability >= 0.5 else "Tidak Layak"
-    confidence = bounded_probability if predicted_label == "Layak" else 1.0 - bounded_probability
+def derive_label_and_confidence(probability_indikasi: float) -> tuple[str, float]:
+    bounded_probability = max(0.0, min(float(probability_indikasi), 1.0))
+    predicted_label = "Indikasi" if bounded_probability >= 0.5 else "Layak"
+    confidence = bounded_probability if predicted_label == "Indikasi" else 1.0 - bounded_probability
 
     return predicted_label, round(confidence, 4)
+
+
+def probability_for_class(model, features: pd.DataFrame, target_class: int = 1) -> float:
+    probabilities = model.predict_proba(features)[0]
+    classes = list(getattr(model, "classes_", []))
+
+    if target_class in classes:
+        index = classes.index(target_class)
+        return float(probabilities[index])
+
+    if len(probabilities) == 1:
+        return float(probabilities[0])
+
+    # Fallback jika metadata kelas tidak tersedia.
+    return float(probabilities[1])
 
 
 def infer_with_dual_model(features: pd.DataFrame) -> dict:
@@ -92,15 +121,15 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
     model_ready = catboost_model is not None and nb_model is not None
 
     if model_ready:
-        cb_probability = float(catboost_model.predict_proba(features)[0][1])
-        nb_probability = float(nb_model.predict_proba(features)[0][1])
+        cb_probability = probability_for_class(catboost_model, features, target_class=1)
+        nb_probability = probability_for_class(nb_model, features, target_class=1)
 
         pred_cb, confidence_cb = derive_label_and_confidence(cb_probability)
         pred_nb, confidence_nb = derive_label_and_confidence(nb_probability)
     else:
         # Fallback awal agar endpoint tetap bisa dipakai sebelum retrain pertama.
-        pred_cb, confidence_cb = "Layak", 0.5
-        pred_nb, confidence_nb = "Layak", 0.5
+        pred_cb, confidence_cb = "Indikasi", 0.5
+        pred_nb, confidence_nb = "Indikasi", 0.5
 
     disagreement_flag = pred_cb != pred_nb
     final_recommendation = pred_cb
@@ -137,16 +166,28 @@ def train_and_save_models(dataframe: pd.DataFrame) -> dict:
     if dataframe.empty:
         raise ValueError("Data training kosong. Tambahkan data valid terlebih dahulu.")
 
-    required = FEATURE_COLUMNS + [TARGET_COLUMN]
-    missing = [column for column in required if column not in dataframe.columns]
+    missing = [column for column in FEATURE_COLUMNS if column not in dataframe.columns]
     if missing:
         raise ValueError(f"Kolom training tidak lengkap: {', '.join(missing)}")
 
-    cleaned = dataframe.dropna(subset=required).copy()
+    cleaned = dataframe.dropna(subset=FEATURE_COLUMNS).copy()
     if cleaned.empty:
         raise ValueError("Data training tidak valid setelah pembersihan nilai kosong.")
 
-    cleaned[TARGET_COLUMN] = cleaned[TARGET_COLUMN].apply(normalize_label)
+    if TARGET_COLUMN in cleaned.columns:
+        if cleaned[TARGET_COLUMN].isnull().any():
+            if "label" not in cleaned.columns:
+                raise ValueError("Kolom label_class mengandung nilai kosong dan kolom label tidak tersedia.")
+
+            cleaned[TARGET_COLUMN] = cleaned[TARGET_COLUMN].fillna(
+                cleaned["label"].apply(normalize_label)
+            )
+    elif "label" in cleaned.columns:
+        cleaned[TARGET_COLUMN] = cleaned["label"].apply(normalize_label)
+    else:
+        raise ValueError("Kolom target tidak tersedia. Minimal butuh label atau label_class.")
+
+    cleaned[TARGET_COLUMN] = cleaned[TARGET_COLUMN].astype(int)
     if cleaned[TARGET_COLUMN].nunique() < 2:
         raise ValueError("Data training harus memiliki minimal 2 kelas label.")
 
@@ -186,11 +227,19 @@ def get_prediction_input(payload: dict) -> pd.DataFrame:
         raise ValueError(f"Field wajib tidak lengkap: {', '.join(missing_fields)}")
 
     try:
-        values = {
-            "kip_sma": float(payload["kip_sma"]),
-            "penghasilan_gabungan": float(payload["penghasilan_gabungan"]),
-            "daya_listrik": float(payload["daya_listrik"]),
-        }
+        values = {}
+
+        for feature in BINARY_FEATURES:
+            parsed_value = int(payload[feature])
+            if parsed_value not in (0, 1):
+                raise ValueError(f"Field {feature} wajib bernilai 0 atau 1")
+            values[feature] = float(parsed_value)
+
+        for feature in ORDINAL_FEATURES:
+            parsed_value = int(payload[feature])
+            if parsed_value not in (1, 2, 3):
+                raise ValueError(f"Field {feature} wajib bernilai 1, 2, atau 3")
+            values[feature] = float(parsed_value)
     except (TypeError, ValueError) as exc:
         raise ValueError("Nilai fitur harus berupa angka yang valid") from exc
 

@@ -21,6 +21,14 @@ Dokumen ini merangkum pola implementasi yang Anda minta:
 8. Admin menekan tombol retrain (`POST /api/admin/models/retrain`), Laravel meneruskan ke Flask `POST /api/retrain` dengan `schema_version`.
 9. Flask melatih ulang model dari dataset aktif sesuai schema versi yang diminta.
 
+## Skema Fitur Model (13 Prediktor)
+
+- Biner (`0/1`): `kip`, `pkh`, `kks`, `dtks`, `sktm`
+- Ordinal (`1/2/3`): `penghasilan_gabungan`, `penghasilan_ayah`, `penghasilan_ibu`, `jumlah_tanggungan`, `anak_ke`, `status_orangtua`, `status_rumah`, `daya_listrik`
+- Target kelas:
+- `Layak` => class `0`
+- `Indikasi` => class `1`
+
 ## Endpoint Penting
 
 ### Laravel

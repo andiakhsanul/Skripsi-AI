@@ -16,9 +16,19 @@ class SpkController extends Controller
 
             // Payload dummy untuk simulasi request dari Laravel ke Flask API.
             $payload = [
-                'kip_sma' => 1,
-                'penghasilan_gabungan' => 1500000,
-                'daya_listrik' => 900,
+                'kip' => 1,
+                'pkh' => 1,
+                'kks' => 1,
+                'dtks' => 1,
+                'sktm' => 0,
+                'penghasilan_gabungan' => 1,
+                'penghasilan_ayah' => 1,
+                'penghasilan_ibu' => 1,
+                'jumlah_tanggungan' => 2,
+                'anak_ke' => 2,
+                'status_orangtua' => 3,
+                'status_rumah' => 2,
+                'daya_listrik' => 2,
             ];
 
             $response = Http::timeout(5)
