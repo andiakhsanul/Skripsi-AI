@@ -1,0 +1,630 @@
+/* ==========================================================
+   AUTH › LOGIN  — KIP-K UNAIR
+   Organised in sections; BEM-ish naming scoped to components.
+   ========================================================== */
+
+/* ── 0. Tokens (Custom Properties) ─────────────────────── */
+:root {
+    /* Brand palette */
+    --clr-primary:            #135bec;
+    --clr-primary-container:  #dbe1ff;
+    --clr-on-primary:         #ffffff;
+    --clr-primary-dim:        #b4c5ff;
+
+    --clr-secondary:          #eab308;
+    --clr-on-secondary-fixed: #422006;
+
+    --clr-error:              #ef4444;
+    --clr-error-container:    #fee2e2;
+
+    /* Surfaces */
+    --clr-surface:            #ffffff;
+    --clr-surface-container:  #f1f5f9;
+    --clr-background:         #f6f6f8;
+
+    /* Text */
+    --clr-on-background:      #0f172a;
+    --clr-on-surface-variant: #475569;
+    --clr-outline:            #94a3b8;
+    --clr-outline-variant:    #e2e8f0;
+
+    /* Typography */
+    --ff-headline: 'Lexend', sans-serif;
+    --ff-body:     'Lexend', sans-serif;
+
+    /* Spacing */
+    --radius-sm:  0.25rem;
+    --radius-md:  0.5rem;
+    --radius-lg:  0.75rem;
+    --radius-xl:  1rem;
+    --radius-2xl: 1.5rem;
+    --radius-full: 9999px;
+
+    /* Shadows */
+    --shadow-primary: 0 8px 24px rgba(19, 91, 236, 0.25);
+    --shadow-card:    0 4px 24px rgba(15, 23, 42, 0.08);
+}
+
+/* ── 1. Base ────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+.auth-body {
+    font-family: var(--ff-body);
+    background-color: var(--clr-background);
+    color: var(--clr-on-background);
+    min-height: 100dvh;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+}
+
+/* ── 2. Layout ──────────────────────────────────────────── */
+.auth-layout {
+    display: flex;
+    min-height: 100dvh;
+}
+
+/* ── 3. Hero Panel (Left) ───────────────────────────────── */
+.hero-panel {
+    display: none;               /* hidden on mobile */
+    position: relative;
+    overflow: hidden;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 4rem;
+}
+
+@media (min-width: 1024px) {
+    .hero-panel {
+        display: flex;
+        width: 50%;
+    }
+}
+
+/* Background photo */
+.hero-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(20%) brightness(60%);
+}
+
+.hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to top,
+        rgba(19, 91, 236, 0.80) 0%,
+        transparent 60%
+    );
+}
+
+/* Floating badge (glassmorphism) */
+.hero-badge {
+    position: absolute;
+    top: 3rem;
+    left: 3rem;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(255, 255, 255, 0.30);
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.hero-badge__icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    flex-shrink: 0;
+}
+
+.hero-badge__icon .material-symbols-outlined {
+    color: var(--clr-primary);
+    font-size: 1.5rem;
+}
+
+.hero-badge__title {
+    font-family: var(--ff-headline);
+    font-weight: 900;
+    font-size: 1.125rem;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    line-height: 1.2;
+}
+
+.hero-badge__subtitle {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+/* Bottom narrative */
+.hero-content {
+    position: relative;
+    z-index: 10;
+    max-width: 36rem;
+    width: 100%;
+}
+
+.hero-content__body { margin-bottom: 2rem; }
+
+.hero-tag {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    margin-bottom: 1rem;
+    background: var(--clr-secondary);
+    color: var(--clr-on-secondary-fixed);
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.hero-headline {
+    font-family: var(--ff-headline);
+    font-size: 2.75rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.04em;
+    line-height: 1.1;
+    text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.hero-desc {
+    margin-top: 1.25rem;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 1.05rem;
+    font-weight: 500;
+    line-height: 1.65;
+    max-width: 28rem;
+}
+
+.hero-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.hero-divider__line {
+    height: 2px;
+    width: 3rem;
+    background: var(--clr-secondary);
+    border-radius: var(--radius-full);
+}
+
+.hero-divider__text {
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 700;
+}
+
+/* ── 4. Form Panel (Right) ──────────────────────────────── */
+.form-panel {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1.5rem;
+    background: var(--clr-surface);
+}
+
+@media (min-width: 640px)  { .form-panel { padding: 3rem; } }
+@media (min-width: 768px)  { .form-panel { padding: 6rem; } }
+@media (min-width: 1024px) {
+    .form-panel {
+        width: 50%;
+        background: var(--clr-background);
+    }
+}
+
+.form-wrapper {
+    width: 100%;
+    max-width: 28rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+/* ── 5. Mobile Branding ─────────────────────────────────── */
+.mobile-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+@media (min-width: 1024px) { .mobile-brand { display: none; } }
+
+.mobile-brand__icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 1rem;
+    background: var(--clr-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 10px 30px rgba(19, 91, 236, 0.30);
+    margin-bottom: 1rem;
+}
+
+.mobile-brand__icon .material-symbols-outlined {
+    color: #ffffff;
+    font-size: 1.75rem;
+}
+
+.mobile-brand__title {
+    font-family: var(--ff-headline);
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--clr-on-background);
+    letter-spacing: -0.03em;
+}
+
+.mobile-brand__subtitle {
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--clr-on-surface-variant);
+}
+
+/* ── 6. Desktop Form Header ─────────────────────────────── */
+.desktop-only { display: none; }
+@media (min-width: 1024px) { .desktop-only { display: block; } }
+
+.form-header__title {
+    font-family: var(--ff-headline);
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--clr-on-background);
+    letter-spacing: -0.03em;
+    line-height: 1.15;
+}
+
+.form-header__subtitle {
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--clr-on-surface-variant);
+}
+
+/* ── 7. Role Switcher ───────────────────────────────────── */
+.role-switcher {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: var(--clr-surface-container);
+    padding: 0.25rem;
+    border-radius: var(--radius-xl);
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.role-btn {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border-radius: var(--radius-lg);
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: var(--ff-body);
+    border: none;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    color: var(--clr-on-surface-variant);
+    background: transparent;
+}
+
+.role-btn:hover:not(.role-btn--active) {
+    color: var(--clr-on-background);
+}
+
+.role-btn--active {
+    background: var(--clr-surface);
+    color: var(--clr-primary);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+/* ── 8. Error Alert ─────────────────────────────────────── */
+.error-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem;
+    background: var(--clr-error-container);
+    border-top: 2px solid var(--clr-error);
+    border-radius: var(--radius-xl);
+    animation: slideDown 0.3s ease forwards;
+}
+
+.error-alert.hidden { display: none; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.error-alert__icon {
+    color: var(--clr-error);
+    font-size: 1.25rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.error-alert__body { flex: 1; }
+
+.error-alert__title {
+    font-size: 0.875rem;
+    font-weight: 700;
+    color: var(--clr-on-background);
+}
+
+.error-alert__desc {
+    font-size: 0.8rem;
+    color: var(--clr-on-surface-variant);
+    margin-top: 0.2rem;
+    line-height: 1.5;
+}
+
+.error-alert__close {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--clr-on-surface-variant);
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+.error-alert__close:hover { opacity: 1; }
+.error-alert__close .material-symbols-outlined { font-size: 1rem; }
+
+/* ── 9. Form Fields ─────────────────────────────────────── */
+#login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.field-group { display: flex; flex-direction: column; gap: 0.5rem; }
+
+.field-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--clr-on-surface-variant);
+    padding: 0 0.25rem;
+}
+
+.field-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0.25rem;
+}
+
+.field-forgot {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--clr-primary);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+.field-forgot:hover { opacity: 0.75; }
+
+.field-input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.field-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    color: var(--clr-outline);
+    pointer-events: none;
+    transition: color 0.2s;
+}
+
+.field-input-wrap:focus-within .field-icon {
+    color: var(--clr-primary);
+}
+
+.field-input {
+    width: 100%;
+    padding: 1rem 1rem 1rem 3rem;
+    font-family: var(--ff-body);
+    font-size: 0.9375rem;
+    color: var(--clr-on-background);
+    background: var(--clr-surface);
+    border: none;
+    border-radius: var(--radius-xl);
+    outline: none;
+    box-shadow: 0 0 0 1.5px rgba(148, 163, 184, 0.50), var(--shadow-card);
+    transition: box-shadow 0.2s, background 0.2s;
+}
+
+.field-input::placeholder { color: rgba(148, 163, 184, 0.75); }
+
+.field-input:focus {
+    box-shadow: 0 0 0 2px var(--clr-primary), 0 4px 16px rgba(19,91,236,0.12);
+}
+
+.field-input--padded-right { padding-right: 3rem; }
+
+/* Password toggle button */
+.field-toggle-pw {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--clr-outline);
+    padding: 0;
+    display: flex;
+    transition: color 0.2s;
+}
+.field-toggle-pw:hover { color: var(--clr-on-background); }
+.field-toggle-pw .material-symbols-outlined { font-size: 1.25rem; }
+
+/* Error state */
+.field-input.is-error {
+    box-shadow: 0 0 0 2px var(--clr-error), 0 4px 16px rgba(239,68,68,0.12);
+}
+
+.field-input-wrap.is-error .field-icon { color: var(--clr-error); }
+
+.field-error {
+    font-size: 0.75rem;
+    color: var(--clr-error);
+    padding: 0 0.25rem;
+}
+
+/* ── 10. Remember Me ────────────────────────────────────── */
+.remember-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0 0.25rem;
+}
+
+.remember-checkbox {
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: var(--radius-sm);
+    border: 1.5px solid var(--clr-outline);
+    cursor: pointer;
+    accent-color: var(--clr-primary);
+    flex-shrink: 0;
+}
+
+.remember-label {
+    font-size: 0.875rem;
+    color: var(--clr-on-surface-variant);
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ── 11. Submit Button ──────────────────────────────────── */
+.btn-submit {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    font-family: var(--ff-body);
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--clr-on-primary);
+    background: var(--clr-primary);
+    border: none;
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    box-shadow: var(--shadow-primary);
+    transition: box-shadow 0.25s ease, transform 0.15s ease, opacity 0.2s;
+    margin-top: 0.25rem;
+}
+
+.btn-submit:hover:not(:disabled) {
+    box-shadow: 0 12px 32px rgba(19, 91, 236, 0.40);
+}
+
+.btn-submit:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.btn-submit:disabled {
+    opacity: 0.75;
+    cursor: not-allowed;
+}
+
+.btn-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-spinner.hidden { display: none; }
+
+.btn-spinner svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* ── 12. Form Footer ────────────────────────────────────── */
+.form-footer {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--clr-outline-variant);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.form-footer__register {
+    font-size: 0.875rem;
+    color: var(--clr-on-surface-variant);
+}
+
+.form-footer__link {
+    color: var(--clr-primary);
+    font-weight: 700;
+    text-decoration: none;
+}
+.form-footer__link:hover { text-decoration: underline; text-underline-offset: 4px; }
+
+.form-footer__nav {
+    display: flex;
+    gap: 1.5rem;
+}
+
+.form-footer__nav-link {
+    font-size: 0.625rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 700;
+    color: var(--clr-outline);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.form-footer__nav-link:hover { color: var(--clr-primary); }
+
+/* ── 13. Material Symbols Fix ───────────────────────────── */
+.material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    line-height: 1;
+    display: inline-flex;
+}
