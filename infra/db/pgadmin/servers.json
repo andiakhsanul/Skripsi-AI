@@ -1,0 +1,13 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "SPK KIP-K UNAIR",
+      "Group": "Development",
+      "Host": "db",
+      "Port": 5432,
+      "MaintenanceDB": "spk_kipk_db",
+      "Username": "postgres",
+      "SSLMode": "prefer"
+    }
+  }
+}

@@ -72,6 +72,9 @@ class MlGatewayService
         $disagreementFlag = (bool) ($results['disagreement_flag'] ?? ($catboostLabel !== $naiveBayesLabel));
         $finalRecommendation = (string) ($results['final_recommendation'] ?? $catboostLabel);
         $reviewPriority = (string) ($results['review_priority'] ?? ($disagreementFlag ? 'high' : 'normal'));
+        $modelVersionId = $results['model_version_id'] ?? $payload['model_version_id'] ?? null;
+        $modelVersionName = $results['model_version_name'] ?? $payload['model_version_name'] ?? null;
+        $modelTrainedAt = $results['model_trained_at'] ?? $payload['model_trained_at'] ?? null;
 
         return [
             'model_ready' => (bool) ($results['model_ready'] ?? true),
@@ -82,6 +85,9 @@ class MlGatewayService
             'disagreement_flag' => $disagreementFlag,
             'final_recommendation' => $finalRecommendation,
             'review_priority' => $reviewPriority,
+            'model_version_id' => $modelVersionId !== null ? (int) $modelVersionId : null,
+            'model_version_name' => $modelVersionName,
+            'model_trained_at' => $modelTrainedAt,
         ];
     }
 
@@ -106,6 +112,9 @@ class MlGatewayService
             'disagreement_flag' => false,
             'final_recommendation' => $label,
             'review_priority' => 'high',
+            'model_version_id' => null,
+            'model_version_name' => null,
+            'model_trained_at' => null,
             'fallback_reason' => $reason,
         ];
     }

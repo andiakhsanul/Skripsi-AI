@@ -106,6 +106,7 @@
             {{-- Login Form --}}
             <form class="space-y-6" id="login-form" method="POST" action="{{ route('login') }}">
                 @csrf
+                <input type="hidden" name="role" id="selected-role" value="{{ old('role', 'mahasiswa') }}">
 
                 {{-- Email --}}
                 <div class="space-y-2">
@@ -196,6 +197,7 @@
         const btnAdm      = document.getElementById('role-admin');
         const emailInput  = document.getElementById('email');
         const pwInput     = document.getElementById('password');
+        const roleInput   = document.getElementById('selected-role');
         const togglePwBtn = document.getElementById('toggle-pw');
         const pwIcon      = document.getElementById('pw-icon');
         const loginForm   = document.getElementById('login-form');
@@ -209,18 +211,30 @@
         const ACTIVE   = 'flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 bg-surface text-primary shadow-sm';
         const INACTIVE = 'flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-300';
 
-        // ─── Role Switcher ─────────────────────────────────
-        if (btnMhs && btnAdm && emailInput) {
-            btnMhs.addEventListener('click', () => {
-                btnMhs.className = ACTIVE;
-                btnAdm.className = INACTIVE;
-                emailInput.placeholder = 'nama@student.unair.ac.id';
-            });
-            btnAdm.addEventListener('click', () => {
+        const applyRoleState = (role) => {
+            if (!btnMhs || !btnAdm || !emailInput || !roleInput) return;
+
+            roleInput.value = role;
+
+            if (role === 'admin') {
                 btnAdm.className = ACTIVE;
                 btnMhs.className = INACTIVE;
                 emailInput.placeholder = 'admin@unair.ac.id';
-            });
+
+                return;
+            }
+
+            btnMhs.className = ACTIVE;
+            btnAdm.className = INACTIVE;
+            emailInput.placeholder = 'nama@student.unair.ac.id';
+        };
+
+        // ─── Role Switcher ─────────────────────────────────
+        if (btnMhs && btnAdm && emailInput && roleInput) {
+            applyRoleState(roleInput.value);
+
+            btnMhs.addEventListener('click', () => applyRoleState('mahasiswa'));
+            btnAdm.addEventListener('click', () => applyRoleState('admin'));
         }
 
         // ─── Password Toggle ───────────────────────────────

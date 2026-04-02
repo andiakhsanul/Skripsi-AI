@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Models\ParameterSchemaVersion;
 use App\Services\SpreadsheetParameterImporter;
 use Illuminate\Http\JsonResponse;
@@ -9,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
-class AdminParameterSchemaController extends Controller
+class ParameterSchemaController extends Controller
 {
     public function __construct(
         private readonly SpreadsheetParameterImporter $importer,

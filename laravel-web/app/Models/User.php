@@ -47,11 +47,6 @@ class User extends Authenticatable
         ];
     }
 
-    public function apiTokens(): HasMany
-    {
-        return $this->hasMany(ApiToken::class);
-    }
-
     public function studentApplications(): HasMany
     {
         return $this->hasMany(StudentApplication::class, 'student_user_id');

@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\ApiToken;
+use App\Models\ApplicationModelSnapshot;
 use App\Models\ParameterSchemaVersion;
+use App\Models\StudentApplication;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class SaasV1FlowTest extends TestCase
@@ -22,8 +22,6 @@ class SaasV1FlowTest extends TestCase
         $admin = User::factory()->create([
             'role' => 'admin',
         ]);
-
-        $token = $this->issueToken($admin);
 
         $csvContent = implode("\n", [
             'name,type,min,max,weight,is_core',
@@ -45,7 +43,7 @@ class SaasV1FlowTest extends TestCase
         $file = UploadedFile::fake()->createWithContent('schema-params.csv', $csvContent);
 
         $importResponse = $this
-            ->withHeader('Authorization', "Bearer {$token}")
+            ->actingAs($admin)
             ->withHeader('Accept', 'application/json')
             ->post('/api/admin/parameters/import', [
                 'file' => $file,
@@ -58,7 +56,7 @@ class SaasV1FlowTest extends TestCase
             ->assertJsonPath('data.parameter_count', 13)
             ->assertJsonPath('data.core_parameter_count', 13);
 
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $this->actingAs($admin)
             ->getJson('/api/admin/parameters/schema-versions')
             ->assertStatus(200)
             ->assertJsonPath('data.0.version', 1)
@@ -67,6 +65,8 @@ class SaasV1FlowTest extends TestCase
 
     public function test_student_submit_and_admin_verify_persists_training_data(): void
     {
+        Storage::fake('public');
+
         $student = User::factory()->create([
             'role' => 'mahasiswa',
         ]);
@@ -75,12 +75,11 @@ class SaasV1FlowTest extends TestCase
             'role' => 'admin',
         ]);
 
-        $studentToken = $this->issueToken($student);
-        $adminToken = $this->issueToken($admin);
-
         Http::fake([
             'http://flask-api:5000/api/predict' => Http::response([
                 'status' => 'success',
+                'model_version_id' => 7,
+                'model_version_name' => 'ready-schema-v1-20260402T100000000000Z',
                 'model_results' => [
                     'catboost' => ['label' => 'Layak', 'confidence' => 0.83],
                     'naive_bayes' => ['label' => 'Indikasi', 'confidence' => 0.72],
@@ -93,8 +92,9 @@ class SaasV1FlowTest extends TestCase
         ]);
 
         $submitResponse = $this
-            ->withHeader('Authorization', "Bearer {$studentToken}")
-            ->postJson('/api/student/applications', [
+            ->actingAs($student)
+            ->withHeader('Accept', 'application/json')
+            ->post('/api/student/applications', [
                 'kip' => 1,
                 'pkh' => 1,
                 'kks' => 1,
@@ -108,20 +108,18 @@ class SaasV1FlowTest extends TestCase
                 'status_orangtua' => 3,
                 'status_rumah' => 2,
                 'daya_listrik' => 2,
+                'submitted_pdf' => UploadedFile::fake()->create('formulir-kipk.pdf', 500, 'application/pdf'),
             ]);
 
         $submitResponse
             ->assertStatus(201)
             ->assertJsonPath('status', 'success')
-            ->assertJsonPath('data.final_recommendation', 'Layak')
-            ->assertJsonPath('data.rule_recommendation', 'Layak')
-            ->assertJsonPath('data.disagreement_flag', true)
-            ->assertJsonPath('data.review_priority', 'high');
+            ->assertJsonPath('data.status', 'Submitted');
 
         $applicationId = $submitResponse->json('data.id');
 
         $verifyResponse = $this
-            ->withHeader('Authorization', "Bearer {$adminToken}")
+            ->actingAs($admin)
             ->postJson("/api/admin/applications/{$applicationId}/verify", [
                 'note' => 'Data valid dan memenuhi kriteria',
             ]);
@@ -135,7 +133,13 @@ class SaasV1FlowTest extends TestCase
             'id' => $applicationId,
             'status' => 'Verified',
             'admin_decision' => 'Verified',
-            'rule_recommendation' => 'Layak',
+        ]);
+
+        $this->assertDatabaseHas('application_model_snapshots', [
+            'application_id' => $applicationId,
+            'model_version_id' => 7,
+            'final_recommendation' => 'Layak',
+            'review_priority' => 'high',
         ]);
 
         $this->assertDatabaseHas('spk_training_data', [
@@ -150,15 +154,13 @@ class SaasV1FlowTest extends TestCase
         );
     }
 
-    public function test_student_can_upload_single_pdf_document_per_application(): void
+    public function test_student_submission_stores_the_required_pdf(): void
     {
         Storage::fake('public');
 
         $student = User::factory()->create([
             'role' => 'mahasiswa',
         ]);
-
-        $studentToken = $this->issueToken($student);
 
         Http::fake([
             'http://flask-api:5000/api/predict' => Http::response([
@@ -175,8 +177,9 @@ class SaasV1FlowTest extends TestCase
         ]);
 
         $submitResponse = $this
-            ->withHeader('Authorization', "Bearer {$studentToken}")
-            ->postJson('/api/student/applications', [
+            ->actingAs($student)
+            ->withHeader('Accept', 'application/json')
+            ->post('/api/student/applications', [
                 'kip' => 1,
                 'pkh' => 1,
                 'kks' => 1,
@@ -190,28 +193,19 @@ class SaasV1FlowTest extends TestCase
                 'status_orangtua' => 2,
                 'status_rumah' => 2,
                 'daya_listrik' => 2,
+                'submitted_pdf' => UploadedFile::fake()->create('dokumen-pengajuan.pdf', 500, 'application/pdf'),
             ]);
 
-        $submitResponse->assertStatus(201);
-        $applicationId = $submitResponse->json('data.id');
-
-        $pdf = UploadedFile::fake()->create('dokumen-pendukung.pdf', 500, 'application/pdf');
-
-        $uploadResponse = $this
-            ->withHeader('Authorization', "Bearer {$studentToken}")
-            ->withHeader('Accept', 'application/json')
-            ->post("/api/student/applications/{$applicationId}/document", [
-                'supporting_document_pdf' => $pdf,
-            ]);
-
-        $uploadResponse
-            ->assertStatus(200)
+        $submitResponse
+            ->assertStatus(201)
             ->assertJsonPath('status', 'success');
 
+        $applicationId = $submitResponse->json('data.id');
         $updated = DB::table('student_applications')->where('id', $applicationId)->first();
-        $this->assertNotNull($updated->supporting_document_path);
-        $this->assertNotNull($updated->supporting_document_url);
-        $this->assertNotNull($updated->document_submission_link);
+
+        $this->assertNotNull($updated->submitted_pdf_path);
+        $this->assertSame('dokumen-pengajuan.pdf', $updated->submitted_pdf_original_name);
+        $this->assertNotNull($updated->submitted_pdf_uploaded_at);
     }
 
     public function test_mahasiswa_cannot_access_admin_routes(): void
@@ -220,10 +214,34 @@ class SaasV1FlowTest extends TestCase
             'role' => 'mahasiswa',
         ]);
 
-        $token = $this->issueToken($student);
-
-        $this->withHeader('Authorization', "Bearer {$token}")
+        $this->actingAs($student)
             ->postJson('/api/admin/models/retrain')
+            ->assertStatus(403)
+            ->assertJsonPath('status', 'error');
+    }
+
+    public function test_web_logout_ends_the_current_session(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'mahasiswa',
+        ]);
+
+        $response = $this
+            ->actingAs($student)
+            ->post('/logout');
+
+        $response->assertRedirect(route('login'));
+        $this->assertGuest();
+    }
+
+    public function test_mahasiswa_cannot_access_legacy_ml_routes(): void
+    {
+        $student = User::factory()->create([
+            'role' => 'mahasiswa',
+        ]);
+
+        $this->actingAs($student)
+            ->postJson('/api/spk/retrain-model')
             ->assertStatus(403)
             ->assertJsonPath('status', 'error');
     }
@@ -233,8 +251,6 @@ class SaasV1FlowTest extends TestCase
         $admin = User::factory()->create([
             'role' => 'admin',
         ]);
-
-        $token = $this->issueToken($admin);
 
         ParameterSchemaVersion::query()->create([
             'version' => 2,
@@ -269,7 +285,7 @@ class SaasV1FlowTest extends TestCase
         ]);
 
         $response = $this
-            ->withHeader('Authorization', "Bearer {$token}")
+            ->actingAs($admin)
             ->postJson('/api/admin/models/retrain');
 
         $response
@@ -277,22 +293,87 @@ class SaasV1FlowTest extends TestCase
             ->assertJsonPath('status', 'success')
             ->assertJsonPath('schema_version', 2);
 
-        Http::assertSent(function ($request): bool {
+        Http::assertSent(function ($request) use ($admin): bool {
             return $request->url() === 'http://flask-api:5000/api/retrain'
-                && ($request['schema_version'] ?? null) === 2;
+                && ($request['schema_version'] ?? null) === 2
+                && ($request['triggered_by_user_id'] ?? null) === $admin->id
+                && ($request['triggered_by_email'] ?? null) === $admin->email;
         });
     }
 
-    private function issueToken(User $user): string
+    public function test_admin_dashboard_page_renders_summary_and_application_rows(): void
     {
-        $rawToken = Str::random(80);
-
-        ApiToken::query()->create([
-            'user_id' => $user->id,
-            'token_hash' => hash('sha256', $rawToken),
-            'expires_at' => now()->addDays(7),
+        $admin = User::factory()->create([
+            'name' => 'Admin UNAIR',
+            'role' => 'admin',
         ]);
 
-        return $rawToken;
+        $student = User::factory()->create([
+            'name' => 'Bunga Maharani',
+            'email' => 'bunga@example.com',
+            'role' => 'mahasiswa',
+        ]);
+
+        $application = StudentApplication::query()->create([
+            'student_user_id' => $student->id,
+            'schema_version' => 1,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 2,
+            'penghasilan_ibu' => 2,
+            'jumlah_tanggungan' => 1,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'submitted_pdf_path' => 'applications/bunga-maharani.pdf',
+            'submitted_pdf_original_name' => 'bunga-maharani.pdf',
+            'submitted_pdf_uploaded_at' => now(),
+            'status' => 'Submitted',
+        ]);
+
+        ApplicationModelSnapshot::query()->create([
+            'application_id' => $application->id,
+            'schema_version' => 1,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 2,
+            'penghasilan_ibu' => 2,
+            'jumlah_tanggungan' => 1,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'model_ready' => true,
+            'catboost_label' => 'Layak',
+            'catboost_confidence' => 0.8700,
+            'naive_bayes_label' => 'Indikasi',
+            'naive_bayes_confidence' => 0.7100,
+            'disagreement_flag' => true,
+            'final_recommendation' => 'Layak',
+            'review_priority' => 'high',
+            'rule_score' => 0.6500,
+            'rule_recommendation' => 'Layak',
+            'snapshotted_at' => now(),
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->get(route('admin.dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Scholarship Dashboard')
+            ->assertSee('Bunga Maharani')
+            ->assertSee('Retrain Model')
+            ->assertSee('CatBoost dan Naive Bayes memberi hasil berbeda.');
     }
 }

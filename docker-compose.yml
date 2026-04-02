@@ -11,6 +11,8 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./infra/db/init:/docker-entrypoint-initdb.d
+    ports:
+      - "${DB_EXPOSE_PORT:-5432}:5432"
     networks:
       - spk_network
     # Port TIDAK di-expose ke publik — hanya internal
@@ -19,6 +21,32 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ─── PostgreSQL Viewer (pgAdmin) ────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: spk_pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin123}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./infra/db/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks:
+      - spk_network
+    depends_on:
+      db:
+        condition: service_healthy
     logging:
       driver: "json-file"
       options:
@@ -117,3 +145,4 @@ volumes:
   db_data:
   ml_models:
   pdf_uploads:
+  pgadmin_data:

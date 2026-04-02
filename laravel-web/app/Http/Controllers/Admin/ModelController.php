@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use App\Services\MlGatewayService;
 use App\Services\ParameterSchemaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class AdminModelController extends Controller
+class ModelController extends Controller
 {
     public function __construct(
         private readonly MlGatewayService $mlGatewayService,
@@ -16,19 +17,19 @@ class AdminModelController extends Controller
 
     public function retrain(Request $request): JsonResponse
     {
-        $schema = $this->parameterSchemaService->getActiveSchema();
-        $schemaVersion = $schema?->version ?? 1;
+        $schemaVersion = $this->parameterSchemaService->getActiveSchema()?->version ?? 1;
 
         try {
             $mlResponse = $this->mlGatewayService->retrain([
-                'triggered_by' => $request->user()->email,
+                'triggered_by_user_id' => $request->user()->id,
+                'triggered_by_email' => $request->user()->email,
                 'schema_version' => $schemaVersion,
             ]);
-        } catch (\Throwable $th) {
+        } catch (\Throwable $throwable) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Gagal menjalankan retrain ke service ML',
-                'detail' => $th->getMessage(),
+                'detail' => $throwable->getMessage(),
             ], 502);
         }
 
