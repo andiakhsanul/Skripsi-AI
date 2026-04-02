@@ -1,0 +1,16 @@
+# FrankenPHP Caddyfile untuk Laravel
+# Menggantikan Nginx reverse proxy — FrankenPHP adalah all-in-one HTTP server + PHP runtime
+{
+	frankenphp
+	admin off
+}
+
+{$SERVER_NAME:localhost} {
+	root * /app/public
+	encode zstd br gzip
+	php_server
+	log {
+		output stdout
+		format console
+	}
+}

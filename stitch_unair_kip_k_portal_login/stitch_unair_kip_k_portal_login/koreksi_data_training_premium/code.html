@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Koreksi Data Training | KIP-K UNAIR</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-tint": "#135bec",
+              "on-primary-container": "#00174c",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-high": "#e2e8f0",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed-variant": "#713f12",
+              "secondary": "#eab308",
+              "error-container": "#fee2e2",
+              "surface-container": "#f1f5f9",
+              "on-tertiary-fixed-variant": "#334155",
+              "secondary-fixed-dim": "#facc15",
+              "primary": "#135bec",
+              "inverse-surface": "#1e293b",
+              "on-tertiary": "#ffffff",
+              "on-secondary-fixed": "#422006",
+              "on-error": "#ffffff",
+              "on-primary-fixed-variant": "#003daa",
+              "outline-variant": "#e2e8f0",
+              "on-surface": "#0f172a",
+              "secondary-container": "#fef08a",
+              "on-error-container": "#991b1b",
+              "tertiary-fixed-dim": "#94a3b8",
+              "primary-fixed-dim": "#b4c5ff",
+              "surface-variant": "#f1f5f9",
+              "surface-container-highest": "#cbd5e1",
+              "outline": "#94a3b8",
+              "on-background": "#0f172a",
+              "secondary-fixed": "#fef9c3",
+              "on-secondary-container": "#713f12",
+              "surface-dim": "#f6f6f8",
+              "tertiary": "#0f1722",
+              "surface-container-low": "#f8fafc",
+              "surface": "#ffffff",
+              "primary-container": "#dbe1ff",
+              "inverse-primary": "#b4c5ff",
+              "primary-fixed": "#dbe1ff",
+              "on-primary-fixed": "#00174c",
+              "on-surface-variant": "#475569",
+              "on-secondary": "#ffffff",
+              "inverse-on-surface": "#f8fafc",
+              "tertiary-container": "#334155",
+              "error": "#ef4444",
+              "surface-bright": "#ffffff",
+              "on-tertiary-container": "#f1f5f9",
+              "on-tertiary-fixed": "#0f172a",
+              "background": "#f6f6f8",
+              "tertiary-fixed": "#cbd5e1"
+            },
+            fontFamily: {
+              "headline": ["Lexend"],
+              "body": ["Lexend"],
+              "label": ["Lexend"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Lexend', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface antialiased">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col p-4 gap-2 shadow-lg z-40 font-['Lexend'] text-sm">
+<div class="mb-8 px-2 py-4">
+<h1 class="text-lg font-bold text-blue-700 dark:text-blue-400">Admin Portal</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500">KIP-K UNAIR</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:translate-x-1 transition-transform group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:translate-x-1 transition-transform group" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Data Mahasiswa</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:translate-x-1 transition-transform group" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+<span>Verifikasi</span>
+</a>
+<!-- Active State: Seleksi/Koreksi Data -->
+<a class="flex items-center gap-3 px-3 py-2.5 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm border-t-2 border-yellow-500 rounded-md transition-transform" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-bold">Seleksi</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200/50 dark:hover:bg-slate-800/50 hover:translate-x-1 transition-transform group" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Laporan</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-900">
+<button class="w-full flex items-center gap-3 px-3 py-2.5 text-red-600 hover:bg-red-50 rounded-md transition-colors active:opacity-80">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-medium">Keluar</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- Header Section -->
+<header class="sticky top-0 z-30 bg-white/80 backdrop-blur-md px-8 py-6 border-b border-slate-100 flex justify-between items-center">
+<div>
+<h2 class="text-2xl font-extrabold tracking-tight text-on-surface">Koreksi Data Training - <span class="text-primary">Aditya Pratama Putra</span></h2>
+<p class="text-sm text-on-surface-variant font-medium">NIM: 1642210001 • Fakultas Sains dan Teknologi</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold">
+<span class="material-symbols-outlined text-sm">priority_high</span>
+                    STATUS: PENDING REVIEW
+                </div>
+</div>
+</header>
+<div class="p-8 space-y-8 max-w-7xl mx-auto w-full">
+<!-- Legend / Info Block (Asymmetric Bento Style) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="md:col-span-2 glass-card p-6 rounded-xl border-t-4 border-secondary shadow-lg">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary">info</span>
+<h3 class="font-bold text-lg">Legenda Encoding &amp; Threshold</h3>
+</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 gap-4 text-xs font-medium text-on-surface-variant leading-relaxed">
+<div class="p-3 bg-surface-container rounded-lg">
+<span class="block text-primary font-bold mb-1">Biner (KIP/PKH/KKS)</span>
+                            0: Tidak Ada / Tidak Memiliki<br/>
+                            1: Ada / Memiliki Dokumen
+                        </div>
+<div class="p-3 bg-surface-container rounded-lg">
+<span class="block text-primary font-bold mb-1">Penghasilan Ortu</span>
+                            1: &lt; 1jt | 2: 1-2.5jt<br/>
+                            3: 2.5-5jt | 4: &gt; 5jt
+                        </div>
+<div class="p-3 bg-surface-container rounded-lg">
+<span class="block text-primary font-bold mb-1">Tanggungan</span>
+                            1: 1 Orang | 2: 2 Orang<br/>
+                            3: 3 Orang | 4: &gt; 3 Orang
+                        </div>
+<div class="p-3 bg-surface-container rounded-lg">
+<span class="block text-primary font-bold mb-1">Status Ortu</span>
+                            1: Yatim Piatu | 2: Yatim/Piatu<br/>
+                            3: Lengkap | 4: Cerai
+                        </div>
+<div class="p-3 bg-surface-container rounded-lg">
+<span class="block text-primary font-bold mb-1">Kondisi Rumah</span>
+                            1: Milik Sendiri | 2: Sewa<br/>
+                            3: Menumpang | 4: Tidak Layak
+                        </div>
+<div class="p-3 bg-surface-container rounded-lg">
+<span class="block text-primary font-bold mb-1">Daya Listrik</span>
+                            1: 450W | 2: 900W<br/>
+                            3: 1300W | 4: &gt; 1300W
+                        </div>
+</div>
+</div>
+<div class="bg-primary text-white p-6 rounded-xl shadow-lg relative overflow-hidden flex flex-col justify-center">
+<div class="relative z-10">
+<h4 class="text-sm uppercase tracking-widest opacity-80 mb-1">Skor AI Saat Ini</h4>
+<div class="text-5xl font-extrabold mb-4">84.2<span class="text-xl opacity-60">/100</span></div>
+<div class="flex items-center gap-2 bg-white/20 px-3 py-1 rounded-full w-fit text-xs backdrop-blur-sm">
+<span class="material-symbols-outlined text-xs" style="font-variation-settings: 'FILL' 1;">stars</span>
+                            KLASIFIKASI: LAYAK (A)
+                        </div>
+</div>
+<!-- Decorative Circle -->
+<div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white/10 rounded-full blur-3xl"></div>
+</div>
+</section>
+<!-- Grid Form for Correction -->
+<section class="bg-white rounded-xl shadow-2xl overflow-hidden">
+<div class="px-6 py-4 bg-surface-container-low border-b border-slate-100 flex items-center justify-between">
+<h3 class="font-bold text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">edit_square</span>
+                        Panel Koreksi Parameter Data
+                    </h3>
+<span class="text-[10px] uppercase font-bold tracking-widest text-slate-400">Pastikan data sesuai dengan berkas fisik</span>
+</div>
+<form class="p-8">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+<!-- Row 1: Binary Flags -->
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kepemilikan KIP</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="0">0 - Tidak Memiliki</option>
+<option selected="" value="1">1 - Memiliki</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kepemilikan PKH</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option selected="" value="0">0 - Tidak Memiliki</option>
+<option value="1">1 - Memiliki</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Kepemilikan KKS</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option selected="" value="0">0 - Tidak Memiliki</option>
+<option value="1">1 - Memiliki</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Terdata DTKS</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="0">0 - Tidak Terdata</option>
+<option selected="" value="1">1 - Terdata</option>
+</select>
+</div>
+<!-- Row 2: Socio-Economic -->
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">SKTM Berlaku</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option selected="" value="0">0 - Tidak Ada</option>
+<option value="1">1 - Ada</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Penghasilan Ayah</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="1">1 - &lt; 1.000.000</option>
+<option selected="" value="2">2 - 1.000.000 - 2.500.000</option>
+<option value="3">3 - 2.500.000 - 5.000.000</option>
+<option value="4">4 - &gt; 5.000.000</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Penghasilan Ibu</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option selected="" value="1">1 - &lt; 1.000.000</option>
+<option value="2">2 - 1.000.000 - 2.500.000</option>
+<option value="3">3 - 2.500.000 - 5.000.000</option>
+<option value="4">4 - &gt; 5.000.000</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Total Gabungan</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="1">1 - Sangat Rendah</option>
+<option selected="" value="2">2 - Rendah</option>
+<option value="3">3 - Sedang</option>
+<option value="4">4 - Tinggi</option>
+</select>
+</div>
+<!-- Row 3: Personal & Assets -->
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Jumlah Tanggungan</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="1">1 Orang</option>
+<option value="2">2 Orang</option>
+<option selected="" value="3">3 Orang</option>
+<option value="4">&gt; 3 Orang</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Anak Ke-</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option selected="" value="1">1 (Pertama)</option>
+<option value="2">2</option>
+<option value="3">3</option>
+<option value="4">&gt; 3</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Status Orang Tua</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="1">Yatim Piatu</option>
+<option value="2">Yatim / Piatu</option>
+<option selected="" value="3">Lengkap</option>
+<option value="4">Bercerai</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Status Kepemilikan Rumah</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option selected="" value="1">Milik Sendiri</option>
+<option value="2">Sewa / Kontrak</option>
+<option value="3">Menumpang</option>
+<option value="4">Tidak Layak Huni</option>
+</select>
+</div>
+<!-- Final row: Power and Label -->
+<div class="space-y-1.5">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Daya Listrik (VA)</label>
+<select class="w-full bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-semibold">
+<option value="1">450 VA</option>
+<option selected="" value="2">900 VA</option>
+<option value="3">1300 VA</option>
+<option value="4">&gt; 1300 VA</option>
+</select>
+</div>
+<div class="space-y-1.5 md:col-span-3">
+<label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Final Label Classification</label>
+<select class="w-full bg-primary-container text-on-primary-container border-none rounded-lg focus:ring-2 focus:ring-primary py-3 text-sm font-extrabold uppercase tracking-tight">
+<option selected="" value="1">Layak (Aproved for KIP-K)</option>
+<option value="0">Indikasi (Re-verification Needed)</option>
+</select>
+</div>
+</div>
+<!-- Footer Form: Textarea & CTA -->
+<div class="mt-10 pt-10 border-t border-slate-100 space-y-6">
+<div class="space-y-2">
+<label class="text-sm font-bold text-on-surface">Catatan Verifikator / Alasan Koreksi</label>
+<textarea class="w-full bg-surface-container-low border-slate-200 rounded-xl focus:ring-2 focus:ring-primary text-sm p-4 placeholder:text-slate-400" placeholder="Tuliskan temuan atau alasan jika terdapat perubahan data encoding yang signifikan..." rows="4"></textarea>
+</div>
+<div class="flex items-center justify-between gap-4">
+<div class="flex items-center gap-3 text-slate-400">
+<span class="material-symbols-outlined text-lg">history</span>
+<span class="text-xs font-medium italic">Terakhir diperbarui oleh Admin-02 pada 24 Okt 2023, 14:20</span>
+</div>
+<div class="flex gap-3">
+<button class="px-6 py-3.5 bg-surface-container text-on-surface font-bold rounded-lg hover:bg-surface-container-high transition-colors active:scale-95 duration-200" type="button">
+                                    Batalkan
+                                </button>
+<button class="px-10 py-3.5 bg-primary text-on-primary font-bold rounded-lg shadow-lg shadow-primary/20 hover:bg-blue-700 transition-colors active:scale-95 duration-200 flex items-center gap-2" type="submit">
+<span class="material-symbols-outlined">save</span>
+                                    Simpan Koreksi
+                                </button>
+</div>
+</div>
+</div>
+</form>
+</section>
+<!-- Visual Context Card (Comparison) -->
+<section class="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
+<div class="glass-card rounded-xl p-6 border border-slate-100 flex gap-4 items-start">
+<div class="w-24 h-24 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
+<img alt="Home Condition Document" class="w-full h-full object-cover" data-alt="Close up photograph of a humble living room with simple tile floor and bright daylight coming from a window" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAE_QXPBEbvcW4v4AjMbRSnvZhCjhouJanry88mAFmq-49-LBQfcAOld7Gc5iUEPLWmx5ZtdC4PX8Ku4bmeRYZZhLiIMCSKZeIbr1FoT3yrime59yIHnEeOa9SxnqC5y3Le_o6gFE8TaMrIleKnDiUww5fGUZKSjp3OApmdQgQ7JBPrGOSpeXpsMI6XGJnlUkSv0BSJdXfoL1SxkKQW5SxtKXzjyOjkyj4G1S7WJ54YzSFP4yWSaf_qWbZ8pJPhF1D5C-W-rjJZNqk"/>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Bukti Foto Rumah</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Lampiran visual untuk validasi parameter 'Status Rumah' dan 'Daya Listrik'. Sesuai dengan data 900VA.</p>
+<button class="mt-3 text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                            Lihat Dokumen Lengkap
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+<div class="glass-card rounded-xl p-6 border border-slate-100 flex gap-4 items-start">
+<div class="w-24 h-24 rounded-lg overflow-hidden bg-slate-200 flex-shrink-0">
+<img alt="Income Statement Document" class="w-full h-full object-cover" data-alt="High quality professional photograph of a financial statement document with rows of numbers and blue pen markings on a white desk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC-2-TxShizF4DFJeVLtemUKb3nEug33dbijBxgoZ0a_uUgOY9aq2fgXeGOG0JRBe3eYOx9yrbrZ3lwW1ITFCcV-NGqpl9TGVaRk7QaO-xfrBqsqHhbCPbv38g0ix8fNw_LZYlFOws79M5o6VY94G-PztURD4AO0CutK-vW3lG-XY3BjvijgH_ZxwyFO3XKDapAu6vT_gLVK4GRcr-T2B56q3L1U_T1rZEBFJsd_A_Msu0IOnVi0RmsjGMbZZ9_jDe3X_DQW3Dkd4k"/>
+</div>
+<div>
+<h4 class="font-bold text-on-surface mb-1">Slip Gaji / Surat Penghasilan</h4>
+<p class="text-xs text-on-surface-variant leading-relaxed">Dokumen pendukung untuk parameter 'Penghasilan Ayah' dan 'Penghasilan Ibu'. Validitas: Tervalidasi Kelurahan.</p>
+<button class="mt-3 text-xs font-bold text-primary flex items-center gap-1 hover:underline">
+                            Lihat Dokumen Lengkap
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer -->
+<footer class="w-full py-6 mt-auto bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center gap-4 px-8">
+<p class="font-['Lexend'] text-[10px] uppercase tracking-widest font-light text-slate-400 dark:text-slate-500">
+                © 2024 Universitas Airlangga. KIP-Kuliah Academic Vanguard.
+            </p>
+<div class="flex gap-6">
+<a class="font-['Lexend'] text-[10px] uppercase tracking-widest font-light text-slate-400 hover:text-yellow-600 transition-colors" href="#">Kebijakan Privasi</a>
+<a class="font-['Lexend'] text-[10px] uppercase tracking-widest font-light text-slate-400 hover:text-yellow-600 transition-colors" href="#">Syarat &amp; Ketentuan</a>
+<a class="font-['Lexend'] text-[10px] uppercase tracking-widest font-light text-slate-400 hover:text-yellow-600 transition-colors" href="#">Kontak IT</a>
+</div>
+</footer>
+</main>
+</body></html>

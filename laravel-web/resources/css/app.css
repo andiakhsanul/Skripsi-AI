@@ -5,7 +5,75 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
+/* ── Material Design 3 Color System ─────────────────────── */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+    --font-sans: 'Lexend', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-headline: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+    --font-label: 'Lexend', ui-sans-serif, system-ui, sans-serif;
+
+    /* Primary */
+    --color-primary: #135bec;
+    --color-primary-container: #dbe1ff;
+    --color-primary-fixed: #dbe1ff;
+    --color-primary-fixed-dim: #b4c5ff;
+    --color-on-primary: #ffffff;
+    --color-on-primary-container: #00174c;
+    --color-on-primary-fixed: #00174c;
+    --color-on-primary-fixed-variant: #003daa;
+    --color-inverse-primary: #b4c5ff;
+    --color-surface-tint: #135bec;
+
+    /* Secondary */
+    --color-secondary: #eab308;
+    --color-secondary-container: #fef08a;
+    --color-secondary-fixed: #fef9c3;
+    --color-secondary-fixed-dim: #facc15;
+    --color-on-secondary: #ffffff;
+    --color-on-secondary-container: #713f12;
+    --color-on-secondary-fixed: #422006;
+    --color-on-secondary-fixed-variant: #713f12;
+
+    /* Tertiary */
+    --color-tertiary: #0f1722;
+    --color-tertiary-container: #334155;
+    --color-tertiary-fixed: #cbd5e1;
+    --color-on-tertiary: #ffffff;
+    --color-on-tertiary-fixed: #0f172a;
+    --color-on-tertiary-fixed-variant: #334155;
+
+    /* Error */
+    --color-error: #ef4444;
+    --color-error-container: #fee2e2;
+    --color-on-error: #ffffff;
+    --color-on-error-container: #7f1d1d;
+
+    /* Surface & Background */
+    --color-surface: #ffffff;
+    --color-surface-dim: #f6f6f8;
+    --color-surface-bright: #ffffff;
+    --color-surface-variant: #f1f5f9;
+    --color-surface-container: #f1f5f9;
+    --color-surface-container-low: #f8fafc;
+    --color-surface-container-high: #e2e8f0;
+    --color-surface-container-highest: #cbd5e1;
+    --color-surface-container-lowest: #ffffff;
+    --color-on-surface-variant: #475569;
+    --color-background: #f6f6f8;
+    --color-on-background: #0f172a;
+
+    /* Outline */
+    --color-outline: #94a3b8;
+    --color-outline-variant: #e2e8f0;
+
+    /* Inverse */
+    --color-inverse-surface: #1e293b;
+    --color-inverse-on-surface: #f8fafc;
+
+    /* Border radius */
+    --radius-DEFAULT: 0.25rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-full: 9999px;
 }

@@ -1,7 +1,7 @@
 /**
  * auth/login.js
  * Handles all interactivity for the login page:
- *  - Role switcher (Mahasiswa / Administrator)
+ *  - Role switcher (Mahasiswa / Administrator) with Tailwind classes
  *  - Password visibility toggle
  *  - Form submit loading state
  *  - Error alert dismiss
@@ -10,7 +10,8 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     /* ─── Elements ─────────────────────────────────────────── */
-    const roleBtns   = document.querySelectorAll('.role-btn');
+    const btnMhs     = document.getElementById('role-mahasiswa');
+    const btnAdm     = document.getElementById('role-admin');
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const togglePwBtn  = document.getElementById('toggle-pw');
@@ -22,24 +23,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorAlert   = document.getElementById('error-alert');
     const errorClose   = document.getElementById('error-close');
 
-    /* ─── Role Switcher ─────────────────────────────────────── */
-    roleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            // Update active state
-            roleBtns.forEach(b => {
-                b.classList.remove('role-btn--active');
-                b.setAttribute('aria-selected', 'false');
-            });
-            btn.classList.add('role-btn--active');
-            btn.setAttribute('aria-selected', 'true');
+    /* ─── Tailwind class sets for role switcher ─────────────── */
+    const ACTIVE_CLASSES   = 'flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 bg-surface text-primary shadow-sm';
+    const INACTIVE_CLASSES = 'flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-300';
 
-            // Update placeholder
-            const placeholder = btn.dataset.placeholder;
-            if (placeholder && emailInput) {
-                emailInput.placeholder = placeholder;
-            }
+    /* ─── Role Switcher ─────────────────────────────────────── */
+    if (btnMhs && btnAdm && emailInput) {
+        btnMhs.addEventListener('click', () => {
+            btnMhs.className = ACTIVE_CLASSES;
+            btnAdm.className = INACTIVE_CLASSES;
+            btnMhs.setAttribute('aria-selected', 'true');
+            btnAdm.setAttribute('aria-selected', 'false');
+            emailInput.placeholder = btnMhs.dataset.placeholder || 'nama@student.unair.ac.id';
         });
-    });
+
+        btnAdm.addEventListener('click', () => {
+            btnAdm.className = ACTIVE_CLASSES;
+            btnMhs.className = INACTIVE_CLASSES;
+            btnAdm.setAttribute('aria-selected', 'true');
+            btnMhs.setAttribute('aria-selected', 'false');
+            emailInput.placeholder = btnAdm.dataset.placeholder || 'admin@unair.ac.id';
+        });
+    }
 
     /* ─── Password Toggle ───────────────────────────────────── */
     if (togglePwBtn && passwordInput && pwIcon) {
@@ -55,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (errorClose && errorAlert) {
         errorClose.addEventListener('click', () => {
             errorAlert.classList.add('hidden');
+            errorAlert.classList.remove('flex');
         });
     }
 
@@ -62,9 +68,9 @@ document.addEventListener('DOMContentLoaded', () => {
     [emailInput, passwordInput].forEach(input => {
         if (!input) return;
         input.addEventListener('input', () => {
-            input.classList.remove('is-error');
-            const wrap = input.closest('.field-input-wrap');
-            if (wrap) wrap.classList.remove('is-error');
+            input.classList.remove('ring-error');
+            const icon = input.parentElement?.querySelector('.material-symbols-outlined');
+            if (icon) icon.classList.remove('text-error');
         });
     });
 
@@ -72,10 +78,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (loginForm) {
         loginForm.addEventListener('submit', () => {
             // Hide any previous error
-            if (errorAlert) errorAlert.classList.add('hidden');
+            if (errorAlert) {
+                errorAlert.classList.add('hidden');
+                errorAlert.classList.remove('flex');
+            }
 
             // Show spinner
-            submitBtn.disabled = true;
+            if (submitBtn)  submitBtn.disabled = true;
             if (btnText)    btnText.classList.add('hidden');
             if (btnSpinner) btnSpinner.classList.remove('hidden');
 
