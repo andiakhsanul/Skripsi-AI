@@ -1,4 +1,4 @@
-@extends('layouts.auth')
+@extends('layouts.portal')
 
 @section('title', 'Admin Dashboard | KIP-K UNAIR')
 @section('description', 'Dashboard admin untuk monitoring pengajuan KIP-K mahasiswa UNAIR')

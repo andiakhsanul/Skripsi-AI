@@ -2,30 +2,31 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\UserRole;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\LoginRequest;
 use App\Services\Auth\CredentialAuthenticationService;
-use Illuminate\Http\Request;
+use App\Services\Auth\LoginRateLimiter;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\Rule;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class LoginController extends Controller
 {
     public function __construct(
         private readonly CredentialAuthenticationService $credentialAuthenticationService,
+        private readonly LoginRateLimiter $loginRateLimiter,
     ) {}
 
-    /**
-     * Handle a login request.
-     */
-    public function login(Request $request)
+    public function create(): View
     {
-        $credentials = $request->validate([
-            'email'    => ['required', 'email'],
-            'password' => ['required'],
-            'role' => ['required', 'string', Rule::in(UserRole::values())],
-        ]);
+        return view('pages.auth.login');
+    }
 
+    public function login(LoginRequest $request): RedirectResponse
+    {
+        $this->loginRateLimiter->ensureIsNotRateLimited($request);
+
+        $credentials = $request->validated();
         $remember = $request->boolean('remember');
 
         $user = $this->credentialAuthenticationService->attempt(
@@ -35,15 +36,14 @@ class LoginController extends Controller
         );
 
         if ($user) {
+            $this->loginRateLimiter->clear($request);
             Auth::login($user, $remember);
             $request->session()->regenerate();
 
-            $destination = $user->role === UserRole::Admin->value
-                ? route('admin.dashboard')
-                : route('dashboard');
-
-            return redirect()->intended($destination);
+            return redirect()->intended(route('dashboard'));
         }
+
+        $this->loginRateLimiter->hit($request);
 
         return back()
             ->withInput($request->only('email', 'role'))
@@ -52,10 +52,7 @@ class LoginController extends Controller
             ]);
     }
 
-    /**
-     * Log the user out.
-     */
-    public function logout(Request $request)
+    public function logout(\Illuminate\Http\Request $request): RedirectResponse
     {
         Auth::logout();
 

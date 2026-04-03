@@ -234,6 +234,65 @@ class SaasV1FlowTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_admin_can_login_via_web_form_with_explicit_role(): void
+    {
+        $admin = User::factory()->create([
+            'email' => 'admin-login@example.com',
+            'password' => 'admin12345',
+            'role' => 'admin',
+        ]);
+
+        $response = $this->from(route('login'))->post(route('login.post'), [
+            'email' => 'ADMIN-LOGIN@EXAMPLE.COM',
+            'password' => 'admin12345',
+            'role' => 'admin',
+        ]);
+
+        $response->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_login_fails_when_role_does_not_match_user_role(): void
+    {
+        User::factory()->create([
+            'email' => 'admin-mismatch@example.com',
+            'password' => 'admin12345',
+            'role' => 'admin',
+        ]);
+
+        $response = $this->from(route('login'))->post(route('login.post'), [
+            'email' => 'admin-mismatch@example.com',
+            'password' => 'admin12345',
+            'role' => 'mahasiswa',
+        ]);
+
+        $response
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('email');
+
+        $this->assertGuest();
+    }
+
+    public function test_guest_can_register_student_account_via_web_form(): void
+    {
+        $response = $this->post(route('register.store'), [
+            'name' => 'Mahasiswa Baru',
+            'email' => 'maba@example.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertRedirect(route('student.dashboard'));
+
+        $this->assertDatabaseHas('users', [
+            'name' => 'Mahasiswa Baru',
+            'email' => 'maba@example.com',
+            'role' => 'mahasiswa',
+        ]);
+
+        $this->assertAuthenticated();
+    }
+
     public function test_mahasiswa_cannot_access_legacy_ml_routes(): void
     {
         $student = User::factory()->create([
@@ -299,6 +358,50 @@ class SaasV1FlowTest extends TestCase
                 && ($request['triggered_by_user_id'] ?? null) === $admin->id
                 && ($request['triggered_by_email'] ?? null) === $admin->email;
         });
+    }
+
+    public function test_student_dashboard_page_renders_history_and_summary_cards(): void
+    {
+        Storage::fake('public');
+
+        $student = User::factory()->create([
+            'name' => 'Bunga Maharani',
+            'email' => 'bunga@example.com',
+            'role' => 'mahasiswa',
+        ]);
+
+        StudentApplication::query()->create([
+            'student_user_id' => $student->id,
+            'schema_version' => 1,
+            'submission_source' => 'online_student',
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 2,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'submitted_pdf_path' => 'applications/bunga-maharani.pdf',
+            'submitted_pdf_original_name' => 'bunga-maharani.pdf',
+            'submitted_pdf_uploaded_at' => now(),
+            'status' => 'Submitted',
+        ]);
+
+        $response = $this
+            ->actingAs($student)
+            ->get(route('student.dashboard'));
+
+        $response
+            ->assertOk()
+            ->assertSee('History of Applications')
+            ->assertSee('Bunga Maharani')
+            ->assertSee('Form Pengajuan Menyusul');
     }
 
     public function test_admin_dashboard_page_renders_summary_and_application_rows(): void

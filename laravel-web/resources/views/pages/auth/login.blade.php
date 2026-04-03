@@ -1,4 +1,4 @@
-@extends('layouts.auth')
+@extends('layouts.portal')
 
 @section('title', 'Login Portal | KIP-K UNAIR')
 @section('description', 'Login Portal Sistem Informasi KIP-Kuliah Universitas Airlangga')
@@ -75,20 +75,6 @@
                 <p class="text-on-surface-variant text-sm">Masuk ke akun Anda untuk melanjutkan akses portal.</p>
             </div>
 
-            {{-- Role Switcher --}}
-            <div class="bg-surface-container p-1 rounded-xl flex items-center shadow-sm">
-                <button
-                    type="button"
-                    class="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 bg-surface text-primary shadow-sm"
-                    id="role-mahasiswa"
-                >Mahasiswa</button>
-                <button
-                    type="button"
-                    class="flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-300"
-                    id="role-admin"
-                >Administrator</button>
-            </div>
-
             {{-- Error Alert --}}
             @if($errors->any())
             <div class="flex items-start gap-3 p-4 bg-error-container text-on-error-container rounded-xl border-t-2 border-error animate-slide-in" id="error-alert">
@@ -104,9 +90,40 @@
             @endif
 
             {{-- Login Form --}}
-            <form class="space-y-6" id="login-form" method="POST" action="{{ route('login') }}">
+            <form class="space-y-6" id="login-form" method="POST" action="{{ route('login.post') }}">
                 @csrf
-                <input type="hidden" name="role" id="selected-role" value="{{ old('role', 'mahasiswa') }}">
+
+                {{-- Role Switcher --}}
+                <fieldset class="space-y-2">
+                    <legend class="px-1 text-xs font-bold uppercase tracking-widest text-on-surface-variant">Masuk Sebagai</legend>
+                    <div class="grid grid-cols-2 gap-2 rounded-xl bg-surface-container p-1 shadow-sm">
+                        <label class="cursor-pointer">
+                            <input
+                                type="radio"
+                                name="role"
+                                value="mahasiswa"
+                                class="peer sr-only"
+                                {{ old('role', 'mahasiswa') === 'mahasiswa' ? 'checked' : '' }}
+                            >
+                            <span class="flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition-all duration-200 peer-checked:bg-surface peer-checked:text-primary peer-checked:shadow-sm">
+                                Mahasiswa
+                            </span>
+                        </label>
+
+                        <label class="cursor-pointer">
+                            <input
+                                type="radio"
+                                name="role"
+                                value="admin"
+                                class="peer sr-only"
+                                {{ old('role') === 'admin' ? 'checked' : '' }}
+                            >
+                            <span class="flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-on-surface-variant transition-all duration-200 peer-checked:bg-surface peer-checked:text-primary peer-checked:shadow-sm">
+                                Administrator
+                            </span>
+                        </label>
+                    </div>
+                </fieldset>
 
                 {{-- Email --}}
                 <div class="space-y-2">
@@ -118,10 +135,12 @@
                             name="email"
                             type="email"
                             value="{{ old('email') }}"
-                            class="w-full pl-12 pr-4 py-4 bg-surface border-none ring-1 ring-outline/50 focus:ring-2 focus:ring-primary rounded-xl text-on-background placeholder:text-outline/70 transition-all outline-none shadow-sm"
+                            class="w-full pl-12 pr-4 py-4 bg-surface border-none ring-1 ring-outline/50 focus:ring-2 focus:ring-primary rounded-xl text-on-background placeholder:text-outline/70 transition-all outline-none shadow-sm @error('email') ring-2 ring-error @enderror"
                             placeholder="nama@student.unair.ac.id"
                             required
                             autocomplete="email"
+                            spellcheck="false"
+                            autocapitalize="off"
                         />
                     </div>
                 </div>
@@ -174,7 +193,7 @@
             {{-- Footer Links --}}
             <div class="pt-8 border-t border-outline-variant text-center space-y-4">
                 <p class="text-sm text-on-surface-variant">
-                    Belum punya akun? <a class="text-primary font-bold hover:underline underline-offset-4" href="#">Daftar KIP-K</a>
+                    Belum punya akun? <a class="text-primary font-bold hover:underline underline-offset-4" href="{{ route('register') }}">Daftar KIP-K</a>
                 </p>
                 <div class="flex justify-center gap-6">
                     <a class="text-[10px] uppercase tracking-widest font-bold text-outline hover:text-primary transition-colors" href="#">Privacy Policy</a>
@@ -192,12 +211,9 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        // ─── Elements ───────────────────────────────────────
-        const btnMhs      = document.getElementById('role-mahasiswa');
-        const btnAdm      = document.getElementById('role-admin');
         const emailInput  = document.getElementById('email');
         const pwInput     = document.getElementById('password');
-        const roleInput   = document.getElementById('selected-role');
+        const roleInputs  = Array.from(document.querySelectorAll('input[name="role"]'));
         const togglePwBtn = document.getElementById('toggle-pw');
         const pwIcon      = document.getElementById('pw-icon');
         const loginForm   = document.getElementById('login-form');
@@ -207,35 +223,20 @@
         const errorAlert  = document.getElementById('error-alert');
         const errorClose  = document.getElementById('error-close');
 
-        // ─── Class sets for role switcher ────────────────────
-        const ACTIVE   = 'flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold transition-all duration-300 bg-surface text-primary shadow-sm';
-        const INACTIVE = 'flex-1 py-2.5 px-4 rounded-lg text-sm font-semibold text-on-surface-variant hover:text-on-surface transition-all duration-300';
+        const applyRolePlaceholder = () => {
+            if (!emailInput) return;
 
-        const applyRoleState = (role) => {
-            if (!btnMhs || !btnAdm || !emailInput || !roleInput) return;
-
-            roleInput.value = role;
-
-            if (role === 'admin') {
-                btnAdm.className = ACTIVE;
-                btnMhs.className = INACTIVE;
-                emailInput.placeholder = 'admin@unair.ac.id';
-
-                return;
-            }
-
-            btnMhs.className = ACTIVE;
-            btnAdm.className = INACTIVE;
-            emailInput.placeholder = 'nama@student.unair.ac.id';
+            const selectedRole = roleInputs.find((input) => input.checked)?.value ?? 'mahasiswa';
+            emailInput.placeholder = selectedRole === 'admin'
+                ? 'admin@unair.ac.id'
+                : 'nama@student.unair.ac.id';
         };
 
-        // ─── Role Switcher ─────────────────────────────────
-        if (btnMhs && btnAdm && emailInput && roleInput) {
-            applyRoleState(roleInput.value);
+        roleInputs.forEach((input) => {
+            input.addEventListener('change', applyRolePlaceholder);
+        });
 
-            btnMhs.addEventListener('click', () => applyRoleState('mahasiswa'));
-            btnAdm.addEventListener('click', () => applyRoleState('admin'));
-        }
+        applyRolePlaceholder();
 
         // ─── Password Toggle ───────────────────────────────
         if (togglePwBtn && pwInput && pwIcon) {

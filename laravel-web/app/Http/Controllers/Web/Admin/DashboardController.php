@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\AdminDashboardService;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 use Illuminate\Validation\Rule;
+use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
@@ -22,7 +22,7 @@ class DashboardController extends Controller
             'priority' => ['nullable', 'string', Rule::in(['high', 'normal'])],
         ]);
 
-        return view('admin.dashboard', [
+        return view('pages.admin.dashboard', [
             'admin' => $request->user(),
             'summary' => $this->adminDashboardService->summary(),
             'applications' => $this->adminDashboardService->paginateApplications($filters, 10),

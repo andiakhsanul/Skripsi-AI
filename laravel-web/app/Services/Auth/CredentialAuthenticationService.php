@@ -9,7 +9,8 @@ class CredentialAuthenticationService
 {
     public function attempt(string $email, string $password, ?string $expectedRole = null): ?User
     {
-        $user = User::query()->where('email', $email)->first();
+        $normalizedEmail = str($email)->trim()->lower()->value();
+        $user = User::query()->where('email', $normalizedEmail)->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
             return null;
