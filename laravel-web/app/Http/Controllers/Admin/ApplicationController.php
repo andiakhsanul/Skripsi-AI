@@ -59,7 +59,9 @@ class ApplicationController extends Controller
         return response()->json([
             'status' => 'success',
             'data' => array_merge($application->toArray(), [
-                'submitted_pdf_url' => Storage::disk('public')->url($application->submitted_pdf_path),
+                'submitted_pdf_url' => $application->submitted_pdf_path !== null
+                    ? Storage::disk('public')->url($application->submitted_pdf_path)
+                    : null,
             ]),
         ]);
     }

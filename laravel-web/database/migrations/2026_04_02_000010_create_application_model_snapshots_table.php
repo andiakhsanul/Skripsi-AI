@@ -7,28 +7,38 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * @return list<string>
      */
+    private function encodedFeatureColumns(): array
+    {
+        return [
+            'kip',
+            'pkh',
+            'kks',
+            'dtks',
+            'sktm',
+            'penghasilan_gabungan',
+            'penghasilan_ayah',
+            'penghasilan_ibu',
+            'jumlah_tanggungan',
+            'anak_ke',
+            'status_orangtua',
+            'status_rumah',
+            'daya_listrik',
+        ];
+    }
+
     public function up(): void
     {
         Schema::create('application_model_snapshots', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('application_id')->unique()->constrained('student_applications')->cascadeOnDelete();
             $table->unsignedInteger('schema_version');
+            $table->unsignedBigInteger('model_version_id')->nullable();
 
-            $table->unsignedTinyInteger('kip');
-            $table->unsignedTinyInteger('pkh');
-            $table->unsignedTinyInteger('kks');
-            $table->unsignedTinyInteger('dtks');
-            $table->unsignedTinyInteger('sktm');
-            $table->unsignedTinyInteger('penghasilan_gabungan');
-            $table->unsignedTinyInteger('penghasilan_ayah');
-            $table->unsignedTinyInteger('penghasilan_ibu');
-            $table->unsignedTinyInteger('jumlah_tanggungan');
-            $table->unsignedTinyInteger('anak_ke');
-            $table->unsignedTinyInteger('status_orangtua');
-            $table->unsignedTinyInteger('status_rumah');
-            $table->unsignedTinyInteger('daya_listrik');
+            foreach ($this->encodedFeatureColumns() as $column) {
+                $table->unsignedTinyInteger($column);
+            }
 
             $table->boolean('model_ready')->default(false);
             $table->string('catboost_label', 20)->nullable();
@@ -45,12 +55,10 @@ return new class extends Migration
 
             $table->index(['schema_version', 'review_priority']);
             $table->index(['model_ready', 'final_recommendation']);
+            $table->index(['model_version_id', 'snapshotted_at'], 'app_model_snapshots_model_version_idx');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('application_model_snapshots');

@@ -7,8 +7,27 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     /**
-     * Run the migrations.
+     * @return list<string>
      */
+    private function encodedFeatureColumns(): array
+    {
+        return [
+            'kip',
+            'pkh',
+            'kks',
+            'dtks',
+            'sktm',
+            'penghasilan_gabungan',
+            'penghasilan_ayah',
+            'penghasilan_ibu',
+            'jumlah_tanggungan',
+            'anak_ke',
+            'status_orangtua',
+            'status_rumah',
+            'daya_listrik',
+        ];
+    }
+
     public function up(): void
     {
         Schema::create('spk_training_data', function (Blueprint $table): void {
@@ -16,19 +35,9 @@ return new class extends Migration
             $table->unsignedBigInteger('source_application_id')->nullable()->unique();
             $table->unsignedInteger('schema_version')->default(1);
 
-            $table->unsignedTinyInteger('kip');
-            $table->unsignedTinyInteger('pkh');
-            $table->unsignedTinyInteger('kks');
-            $table->unsignedTinyInteger('dtks');
-            $table->unsignedTinyInteger('sktm');
-            $table->unsignedTinyInteger('penghasilan_gabungan');
-            $table->unsignedTinyInteger('penghasilan_ayah');
-            $table->unsignedTinyInteger('penghasilan_ibu');
-            $table->unsignedTinyInteger('jumlah_tanggungan');
-            $table->unsignedTinyInteger('anak_ke');
-            $table->unsignedTinyInteger('status_orangtua');
-            $table->unsignedTinyInteger('status_rumah');
-            $table->unsignedTinyInteger('daya_listrik');
+            foreach ($this->encodedFeatureColumns() as $column) {
+                $table->unsignedTinyInteger($column);
+            }
 
             $table->string('label', 20);
             $table->unsignedTinyInteger('label_class');
@@ -39,12 +48,10 @@ return new class extends Migration
 
             $table->index(['schema_version', 'label_class']);
             $table->index(['is_active', 'updated_at']);
+            $table->index(['source_application_id', 'schema_version']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('spk_training_data');

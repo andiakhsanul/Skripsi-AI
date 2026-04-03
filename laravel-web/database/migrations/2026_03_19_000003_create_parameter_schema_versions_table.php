@@ -6,12 +6,9 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('parameter_schema_versions', function (Blueprint $table) {
+        Schema::create('parameter_schema_versions', function (Blueprint $table): void {
             $table->id();
             $table->unsignedInteger('version')->unique();
             $table->string('source_file_name');
@@ -24,9 +21,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('parameter_schema_versions');

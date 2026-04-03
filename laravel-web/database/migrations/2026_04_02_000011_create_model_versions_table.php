@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('version_name')->unique();
             $table->unsignedInteger('schema_version')->default(1);
             $table->string('status', 20)->default('ready');
-            $table->unsignedBigInteger('triggered_by_user_id')->nullable();
+            $table->foreignId('triggered_by_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('triggered_by_email')->nullable();
             $table->string('training_table', 100)->default('spk_training_data');
             $table->string('primary_model', 50)->default('catboost');
