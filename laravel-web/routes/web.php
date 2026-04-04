@@ -3,6 +3,7 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Web\Admin\ModelRetrainController as AdminModelRetrainController;
 use App\Http\Controllers\Web\DashboardRedirectController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\Student\DashboardController as StudentDashboardController;
@@ -33,5 +34,8 @@ Route::middleware('auth')->group(function (): void {
 
     Route::middleware('role.admin')->prefix('admin')->group(function (): void {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/models/retrain', [AdminModelRetrainController::class, 'index'])->name('admin.models.retrain');
+        Route::post('/models/retrain/sync-training', [AdminModelRetrainController::class, 'syncTraining'])->name('admin.models.retrain.sync-training');
+        Route::post('/models/retrain/run', [AdminModelRetrainController::class, 'retrain'])->name('admin.models.retrain.run');
     });
 });

@@ -149,13 +149,12 @@
         </span>
 
         <div class="mt-8 px-4">
-            <button
-                type="button"
-                data-retrain-endpoint="{{ url('/api/admin/models/retrain') }}"
-                class="w-full rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+            <a
+                href="{{ route('admin.models.retrain') }}"
+                class="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
             >
                 Latih Ulang Model
-            </button>
+            </a>
         </div>
     </nav>
 
@@ -190,14 +189,13 @@
                 >
                     <span class="material-symbols-outlined block">monitoring</span>
                 </a>
-                <button
-                    type="button"
-                    data-retrain-endpoint="{{ url('/api/admin/models/retrain') }}"
+                <a
+                    href="{{ route('admin.models.retrain') }}"
                     class="rounded-lg p-2 transition-all hover:bg-slate-50"
                     title="Latih ulang model"
                 >
                     <span class="material-symbols-outlined block">model_training</span>
-                </button>
+                </a>
             </div>
 
             <div class="flex items-center gap-3 border-l border-slate-100 pl-4 md:pl-6">
@@ -244,14 +242,13 @@
                     Muat Ulang
                 </a>
 
-                <button
-                    type="button"
-                    data-retrain-endpoint="{{ url('/api/admin/models/retrain') }}"
+                <a
+                    href="{{ route('admin.models.retrain') }}"
                     class="flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-on-secondary shadow-lg shadow-secondary/20 transition-all hover:scale-[1.02]"
                 >
                     <span class="material-symbols-outlined text-lg">model_training</span>
                     Latih Ulang Model
-                </button>
+                </a>
             </div>
         </section>
 
@@ -642,18 +639,6 @@
                 }
             }
         };
-
-        document.querySelectorAll('[data-retrain-endpoint]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                const data = await postJson(button.dataset.retrainEndpoint, {}, button);
-
-                if (!data) {
-                    return;
-                }
-
-                showNotice(data.message || 'Retrain model berhasil dipicu.');
-            });
-        });
 
         document.querySelectorAll('[data-decision-endpoint]').forEach((button) => {
             button.addEventListener('click', async () => {

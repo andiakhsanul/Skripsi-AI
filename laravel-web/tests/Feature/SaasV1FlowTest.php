@@ -347,6 +347,30 @@ class SaasV1FlowTest extends TestCase
             'imported_by' => $admin->id,
         ]);
 
+        SpkTrainingData::query()->create([
+            'schema_version' => 2,
+            'encoding_version' => 1,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'label' => 'Layak',
+            'label_class' => 0,
+            'decision_status' => 'Verified',
+            'finalized_by_user_id' => $admin->id,
+            'finalized_at' => now(),
+            'is_active' => true,
+        ]);
+
         Http::fake([
             'http://flask-api:5000/api/retrain' => Http::response([
                 'status' => 'success',
@@ -568,5 +592,103 @@ class SaasV1FlowTest extends TestCase
             ->assertSee('Bunga Maharani')
             ->assertSee('Latih Ulang Model')
             ->assertSee('CatBoost dan Naive Bayes memberi hasil yang berbeda.');
+    }
+
+    public function test_admin_retrain_page_renders_with_training_summary(): void
+    {
+        $admin = User::factory()->create([
+            'name' => 'Admin UNAIR',
+            'role' => 'admin',
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->get(route('admin.models.retrain'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Retrain Model')
+            ->assertSee('Sinkronkan Data Training')
+            ->assertSee('Mulai Retrain via Flask');
+    }
+
+    public function test_admin_can_sync_training_and_trigger_retrain_from_web_page(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'admin-retrain@example.com',
+        ]);
+
+        ParameterSchemaVersion::query()->create([
+            'version' => 3,
+            'source_file_name' => 'schema-v3.csv',
+            'parameter_definitions' => [
+                ['name' => 'kip', 'type' => 'integer', 'is_core' => true],
+            ],
+            'is_active' => true,
+            'imported_by' => $admin->id,
+        ]);
+
+        $application = StudentApplication::query()->create([
+            'schema_version' => 3,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Nabila Kusuma',
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_ayah_rupiah' => 700000,
+            'penghasilan_ibu_rupiah' => 200000,
+            'penghasilan_gabungan_rupiah' => 900000,
+            'jumlah_tanggungan_raw' => 6,
+            'anak_ke_raw' => 4,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'menumpang',
+            'daya_listrik_text' => '450 VA',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+            'admin_decided_by' => $admin->id,
+            'admin_decided_at' => now(),
+        ]);
+
+        Http::fake([
+            'http://flask-api:5000/api/retrain' => Http::response([
+                'status' => 'success',
+                'message' => 'Retrain model berhasil dijalankan',
+                'schema_version' => 3,
+                'training_summary' => [
+                    'rows_used' => 1,
+                    'model_version_name' => 'ready-schema-v3-demo',
+                ],
+            ], 200),
+        ]);
+
+        $syncResponse = $this
+            ->actingAs($admin)
+            ->post(route('admin.models.retrain.sync-training'));
+
+        $syncResponse->assertRedirect(route('admin.models.retrain'));
+
+        $encoding = ApplicationFeatureEncoding::query()->where('application_id', $application->id)->firstOrFail();
+
+        $this->assertDatabaseHas('spk_training_data', [
+            'source_application_id' => $application->id,
+            'source_encoding_id' => $encoding->id,
+            'label_class' => 0,
+        ]);
+
+        $retrainResponse = $this
+            ->actingAs($admin)
+            ->post(route('admin.models.retrain.run'));
+
+        $retrainResponse->assertRedirect(route('admin.models.retrain'));
+
+        Http::assertSent(function ($request) use ($admin): bool {
+            return $request->url() === 'http://flask-api:5000/api/retrain'
+                && ($request['schema_version'] ?? null) === 3
+                && ($request['triggered_by_user_id'] ?? null) === $admin->id
+                && ($request['triggered_by_email'] ?? null) === $admin->email;
+        });
     }
 }

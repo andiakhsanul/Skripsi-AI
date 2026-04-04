@@ -3,28 +3,20 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\MlGatewayService;
-use App\Services\ParameterSchemaService;
+use App\Services\AdminModelRetrainService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ModelController extends Controller
 {
     public function __construct(
-        private readonly MlGatewayService $mlGatewayService,
-        private readonly ParameterSchemaService $parameterSchemaService,
+        private readonly AdminModelRetrainService $adminModelRetrainService,
     ) {}
 
     public function retrain(Request $request): JsonResponse
     {
-        $schemaVersion = $this->parameterSchemaService->getActiveSchema()?->version ?? 1;
-
         try {
-            $mlResponse = $this->mlGatewayService->retrain([
-                'triggered_by_user_id' => $request->user()->id,
-                'triggered_by_email' => $request->user()->email,
-                'schema_version' => $schemaVersion,
-            ]);
+            $result = $this->adminModelRetrainService->triggerRetrain($request->user());
         } catch (\Throwable $throwable) {
             return response()->json([
                 'status' => 'error',
@@ -36,8 +28,9 @@ class ModelController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => 'Retrain model berhasil dipicu',
-            'schema_version' => $schemaVersion,
-            'ml_response' => $mlResponse,
+            'schema_version' => $result['schema_version'],
+            'training_rows' => $result['training_rows'],
+            'ml_response' => $result['ml_response'],
         ]);
     }
 }

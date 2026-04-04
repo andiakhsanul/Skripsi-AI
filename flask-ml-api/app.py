@@ -169,6 +169,32 @@ def load_saved_models() -> None:
     MODEL_REGISTRY["metadata"] = metadata
 
 
+def ensure_latest_models_loaded(force_reload: bool = False) -> None:
+    latest_ready = None
+
+    try:
+        latest_ready = fetch_latest_model_version_record(status="ready")
+    except Exception:
+        latest_ready = None
+
+    current_metadata = MODEL_REGISTRY.get("metadata") or {}
+    current_version_name = current_metadata.get("version_name")
+    latest_version_name = latest_ready.get("version_name") if latest_ready else None
+    needs_reload = force_reload
+
+    if MODEL_REGISTRY["catboost"] is None or MODEL_REGISTRY["naive_bayes"] is None:
+        needs_reload = True
+
+    if latest_version_name and latest_version_name != current_version_name:
+        needs_reload = True
+
+    if latest_ready is None and (MODEL_REGISTRY["catboost"] is None or MODEL_REGISTRY["naive_bayes"] is None):
+        needs_reload = True
+
+    if needs_reload:
+        load_saved_models()
+
+
 def fetch_training_dataframe(schema_version: Optional[int] = None) -> pd.DataFrame:
     query = sql.SQL(
         "SELECT kip, pkh, kks, dtks, sktm, "
@@ -214,6 +240,7 @@ def transform_features_for_naive_bayes(features: pd.DataFrame) -> pd.DataFrame:
 
 
 def infer_with_dual_model(features: pd.DataFrame) -> dict:
+    ensure_latest_models_loaded()
     catboost_model = MODEL_REGISTRY["catboost"]
     nb_model = MODEL_REGISTRY["naive_bayes"]
     model_ready = catboost_model is not None and nb_model is not None
@@ -568,6 +595,7 @@ def get_prediction_input(payload: dict) -> pd.DataFrame:
 
 @app.route("/api/health", methods=["GET"])
 def health_check():
+    ensure_latest_models_loaded()
     catboost_ready = MODEL_REGISTRY["catboost"] is not None
     nb_ready = MODEL_REGISTRY["naive_bayes"] is not None
 

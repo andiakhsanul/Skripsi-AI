@@ -128,7 +128,7 @@ class MlGatewayService
         $retrainUrl = env('FLASK_RETRAIN_URL', 'http://flask-api:5000/api/retrain');
         $internalToken = env('FLASK_INTERNAL_TOKEN', 'spk_internal_dev_token');
 
-        $response = Http::timeout(30)
+        $response = Http::timeout(120)
             ->retry(1, 300)
             ->withHeaders([
                 'X-Internal-Token' => $internalToken,
@@ -136,7 +136,11 @@ class MlGatewayService
             ->post($retrainUrl, $payload);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Retrain gagal diproses service ML. HTTP '.$response->status());
+            $body = $response->json() ?? [];
+            $message = $body['message'] ?? 'Retrain gagal diproses service ML.';
+            $detail = $body['detail'] ?? null;
+
+            throw new RuntimeException(trim($message.' '.($detail ? "Detail: {$detail}" : 'HTTP '.$response->status())));
         }
 
         return $response->json() ?? [];
