@@ -207,6 +207,12 @@ def probability_for_class(model, features: pd.DataFrame, target_class: int = 1) 
     return float(probabilities[1])
 
 
+def transform_features_for_naive_bayes(features: pd.DataFrame) -> pd.DataFrame:
+    transformed = features.copy().astype(int)
+    transformed.loc[:, ORDINAL_FEATURES] = transformed[ORDINAL_FEATURES] - 1
+    return transformed
+
+
 def infer_with_dual_model(features: pd.DataFrame) -> dict:
     catboost_model = MODEL_REGISTRY["catboost"]
     nb_model = MODEL_REGISTRY["naive_bayes"]
@@ -214,7 +220,8 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
 
     if model_ready:
         cb_probability = probability_for_class(catboost_model, features, target_class=1)
-        nb_probability = probability_for_class(nb_model, features, target_class=1)
+        nb_features = transform_features_for_naive_bayes(features)
+        nb_probability = probability_for_class(nb_model, nb_features, target_class=1)
 
         pred_cb, confidence_cb = derive_label_and_confidence(cb_probability)
         pred_nb, confidence_nb = derive_label_and_confidence(nb_probability)
@@ -427,6 +434,8 @@ def train_and_save_models(
     x_full = cleaned[FEATURE_COLUMNS].astype(int)
     y_full = cleaned[TARGET_COLUMN].astype(int)
     x_train, x_valid, y_train, y_valid, validation_strategy = split_training_dataset(x_full, y_full)
+    nb_x_train = transform_features_for_naive_bayes(x_train)
+    nb_x_valid = transform_features_for_naive_bayes(x_valid) if x_valid is not None else None
 
     catboost_model = CatBoostClassifier(
         iterations=150,
@@ -443,11 +452,11 @@ def train_and_save_models(
         cb_valid_accuracy = float(accuracy_score(y_valid, catboost_model.predict(x_valid)))
 
     naive_bayes_model = CategoricalNB()
-    naive_bayes_model.fit(x_train, y_train)
-    nb_train_accuracy = float(accuracy_score(y_train, naive_bayes_model.predict(x_train)))
+    naive_bayes_model.fit(nb_x_train, y_train)
+    nb_train_accuracy = float(accuracy_score(y_train, naive_bayes_model.predict(nb_x_train)))
     nb_valid_accuracy = None
-    if x_valid is not None and y_valid is not None:
-        nb_valid_accuracy = float(accuracy_score(y_valid, naive_bayes_model.predict(x_valid)))
+    if nb_x_valid is not None and y_valid is not None:
+        nb_valid_accuracy = float(accuracy_score(y_valid, naive_bayes_model.predict(nb_x_valid)))
 
     ensure_model_directory()
     trained_at = datetime.now(timezone.utc)

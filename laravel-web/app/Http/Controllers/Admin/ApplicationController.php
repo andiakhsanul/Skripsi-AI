@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApplicationStatusLog;
+use App\Models\SpkTrainingData;
 use App\Models\StudentApplication;
+use App\Services\ApplicationInferenceService;
 use App\Services\TrainingDataSyncService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ class ApplicationController extends Controller
 {
     public function __construct(
         private readonly TrainingDataSyncService $trainingDataSyncService,
+        private readonly ApplicationInferenceService $applicationInferenceService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -26,7 +29,7 @@ class ApplicationController extends Controller
         ]);
 
         $applications = StudentApplication::query()
-            ->with(['student:id,name,email', 'modelSnapshot'])
+            ->with(['student:id,name,email', 'currentEncoding', 'modelSnapshot'])
             ->when($validated['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when(
                 $validated['review_priority'] ?? null,
@@ -52,6 +55,7 @@ class ApplicationController extends Controller
                 'student:id,name,email',
                 'adminDecider:id,name,email',
                 'logs',
+                'currentEncoding',
                 'modelSnapshot',
             ])
             ->findOrFail($id);
@@ -76,20 +80,87 @@ class ApplicationController extends Controller
         return $this->finalize($request, $id, 'Rejected');
     }
 
+    public function runPredictions(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'status' => ['nullable', 'string', 'in:Submitted,Verified,Rejected'],
+            'limit' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'only_missing' => ['nullable', 'boolean'],
+        ]);
+
+        $query = StudentApplication::query()
+            ->when($validated['status'] ?? null, fn ($builder, $status) => $builder->where('status', $status))
+            ->when(
+                $validated['only_missing'] ?? true,
+                fn ($builder) => $builder->whereDoesntHave('modelSnapshot')
+            )
+            ->orderBy('id');
+
+        if (isset($validated['limit'])) {
+            $query->limit((int) $validated['limit']);
+        }
+
+        $applications = $query->get();
+        $success = 0;
+        $failed = [];
+
+        foreach ($applications as $application) {
+            try {
+                $this->applicationInferenceService->syncPredictionSnapshot($application, $request->user()->id);
+                $success++;
+            } catch (\Throwable $throwable) {
+                $failed[] = [
+                    'application_id' => $application->id,
+                    'message' => $throwable->getMessage(),
+                ];
+            }
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Batch prediction selesai diproses.',
+            'data' => [
+                'processed' => $applications->count(),
+                'succeeded' => $success,
+                'failed' => count($failed),
+                'errors' => $failed,
+            ],
+        ]);
+    }
+
+    public function syncFinalizedTraining(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'force_resync' => ['nullable', 'boolean'],
+        ]);
+
+        $result = $this->trainingDataSyncService->syncFinalizedApplications(
+            $request->user()->id,
+            (bool) ($validated['force_resync'] ?? false),
+        );
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Sinkronisasi data training selesai.',
+            'data' => $result,
+        ]);
+    }
+
     public function showTrainingData(int $id): JsonResponse
     {
         $application = StudentApplication::query()
-            ->with(['student:id,name,email', 'modelSnapshot'])
+            ->with(['student:id,name,email', 'currentEncoding', 'modelSnapshot'])
             ->findOrFail($id);
 
-        $trainingData = DB::table('spk_training_data')
+        $trainingData = SpkTrainingData::query()
             ->where('source_application_id', $id)
+            ->latest('id')
             ->first();
 
         if (! $trainingData) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data training belum tersedia. Pastikan pengajuan sudah diverifikasi.',
+                'message' => 'Data training belum tersedia. Jalankan sinkronisasi finalized terlebih dahulu.',
             ], 404);
         }
 
@@ -97,7 +168,8 @@ class ApplicationController extends Controller
             'status' => 'success',
             'data' => [
                 'application_id' => $id,
-                'student_name' => $application->student?->name ?? '-',
+                'student_name' => $application->student?->name ?? $application->applicant_name ?? '-',
+                'current_encoding' => $application->currentEncoding,
                 'model_snapshot' => $application->modelSnapshot,
                 'training_data' => $trainingData,
                 'encoding_legend' => [
@@ -137,11 +209,12 @@ class ApplicationController extends Controller
             'correction_note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $exists = DB::table('spk_training_data')
+        $trainingData = SpkTrainingData::query()
             ->where('source_application_id', $id)
-            ->exists();
+            ->latest('id')
+            ->first();
 
-        if (! $exists) {
+        if (! $trainingData) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Data training belum tersedia untuk pengajuan ini.',
@@ -156,9 +229,7 @@ class ApplicationController extends Controller
             $updateData['label_class'] = $validated['label'] === 'Indikasi' ? 1 : 0;
         }
 
-        DB::table('spk_training_data')
-            ->where('source_application_id', $id)
-            ->update($updateData);
+        $trainingData->update($updateData);
 
         return response()->json([
             'status' => 'success',
@@ -202,9 +273,9 @@ class ApplicationController extends Controller
                 'metadata' => ['admin_decision' => $status],
             ]);
 
-            $this->trainingDataSyncService->syncFromApplication($application);
+            $this->trainingDataSyncService->syncFromApplication($application, $request->user()->id);
 
-            return $application->fresh(['modelSnapshot']);
+            return $application->fresh(['currentEncoding', 'modelSnapshot']);
         });
 
         return response()->json([

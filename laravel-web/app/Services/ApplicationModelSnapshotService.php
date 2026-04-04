@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
+use App\Models\ApplicationFeatureEncoding;
 use App\Models\ApplicationModelSnapshot;
 use App\Models\StudentApplication;
 
 class ApplicationModelSnapshotService
 {
     /**
-     * @param array<string, int> $encodedFeatures
      * @param array<string, mixed> $inference
      * @param array<string, mixed> $ruleScore
      */
-    public function syncFromApplication(
+    public function syncFromEncoding(
         StudentApplication $application,
-        array $encodedFeatures,
+        ApplicationFeatureEncoding $encoding,
         array $inference,
         array $ruleScore,
         string $reviewPriority
@@ -22,21 +22,10 @@ class ApplicationModelSnapshotService
         return ApplicationModelSnapshot::query()->updateOrCreate(
             ['application_id' => $application->id],
             [
+                'encoding_id' => $encoding->id,
                 'schema_version' => $application->schema_version,
                 'model_version_id' => $inference['model_version_id'] ?? null,
-                'kip' => (int) ($encodedFeatures['kip'] ?? 0),
-                'pkh' => (int) ($encodedFeatures['pkh'] ?? 0),
-                'kks' => (int) ($encodedFeatures['kks'] ?? 0),
-                'dtks' => (int) ($encodedFeatures['dtks'] ?? 0),
-                'sktm' => (int) ($encodedFeatures['sktm'] ?? 0),
-                'penghasilan_gabungan' => (int) ($encodedFeatures['penghasilan_gabungan'] ?? 3),
-                'penghasilan_ayah' => (int) ($encodedFeatures['penghasilan_ayah'] ?? 3),
-                'penghasilan_ibu' => (int) ($encodedFeatures['penghasilan_ibu'] ?? 3),
-                'jumlah_tanggungan' => (int) ($encodedFeatures['jumlah_tanggungan'] ?? 3),
-                'anak_ke' => (int) ($encodedFeatures['anak_ke'] ?? 3),
-                'status_orangtua' => (int) ($encodedFeatures['status_orangtua'] ?? 3),
-                'status_rumah' => (int) ($encodedFeatures['status_rumah'] ?? 3),
-                'daya_listrik' => (int) ($encodedFeatures['daya_listrik'] ?? 3),
+                ...$encoding->toFeatureArray(),
                 'model_ready' => (bool) ($inference['model_ready'] ?? false),
                 'catboost_label' => $inference['catboost_label'] ?? null,
                 'catboost_confidence' => $inference['catboost_confidence'] ?? null,

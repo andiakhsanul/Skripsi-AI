@@ -6,15 +6,17 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ApplicationModelSnapshot extends Model
+class SpkTrainingData extends Model
 {
     use HasFactory;
 
+    protected $table = 'spk_training_data';
+
     protected $fillable = [
-        'application_id',
-        'encoding_id',
+        'source_application_id',
+        'source_encoding_id',
         'schema_version',
-        'model_version_id',
+        'encoding_version',
         'kip',
         'pkh',
         'kks',
@@ -28,24 +30,23 @@ class ApplicationModelSnapshot extends Model
         'status_orangtua',
         'status_rumah',
         'daya_listrik',
-        'model_ready',
-        'catboost_label',
-        'catboost_confidence',
-        'naive_bayes_label',
-        'naive_bayes_confidence',
-        'disagreement_flag',
-        'final_recommendation',
-        'review_priority',
-        'rule_score',
-        'rule_recommendation',
-        'snapshotted_at',
+        'label',
+        'label_class',
+        'decision_status',
+        'finalized_by_user_id',
+        'finalized_at',
+        'is_active',
+        'admin_corrected',
+        'correction_note',
     ];
 
     protected function casts(): array
     {
         return [
-            'encoding_id' => 'integer',
-            'model_version_id' => 'integer',
+            'source_application_id' => 'integer',
+            'source_encoding_id' => 'integer',
+            'schema_version' => 'integer',
+            'encoding_version' => 'integer',
             'kip' => 'integer',
             'pkh' => 'integer',
             'kks' => 'integer',
@@ -59,25 +60,26 @@ class ApplicationModelSnapshot extends Model
             'status_orangtua' => 'integer',
             'status_rumah' => 'integer',
             'daya_listrik' => 'integer',
-            'model_ready' => 'boolean',
-            'disagreement_flag' => 'boolean',
-            'rule_score' => 'float',
-            'snapshotted_at' => 'datetime',
+            'label_class' => 'integer',
+            'finalized_by_user_id' => 'integer',
+            'finalized_at' => 'datetime',
+            'is_active' => 'boolean',
+            'admin_corrected' => 'boolean',
         ];
     }
 
     public function application(): BelongsTo
     {
-        return $this->belongsTo(StudentApplication::class, 'application_id');
+        return $this->belongsTo(StudentApplication::class, 'source_application_id');
     }
 
-    public function encoding(): BelongsTo
+    public function sourceEncoding(): BelongsTo
     {
-        return $this->belongsTo(ApplicationFeatureEncoding::class, 'encoding_id');
+        return $this->belongsTo(ApplicationFeatureEncoding::class, 'source_encoding_id');
     }
 
-    public function modelVersion(): BelongsTo
+    public function finalizedBy(): BelongsTo
     {
-        return $this->belongsTo(ModelVersion::class, 'model_version_id');
+        return $this->belongsTo(User::class, 'finalized_by_user_id');
     }
 }

@@ -18,7 +18,7 @@ Kolom utama:
 
 Catatan bisnis:
 - Tabel ini sudah tepat untuk auth Laravel.
-- Jika nanti admin tidak dibuat dari registrasi umum, admin sebaiknya dibuat lewat seeder atau panel internal.
+- Admin sebaiknya dibuat lewat seeder atau panel internal, bukan registrasi publik.
 
 ## Tabel `parameter_schema_versions`
 
@@ -34,8 +34,8 @@ Kolom utama:
 - `created_at`, `updated_at`: audit waktu.
 
 Catatan bisnis:
-- Tabel ini berguna jika aturan parameter bisa berubah per batch atau per tahun.
-- Jika V1 Anda tetap hanya 13 fitur tanpa perubahan struktur, tabel ini tetap berguna tetapi tidak perlu terlalu kompleks.
+- Tabel ini berguna jika aturan parameter berubah per batch atau per tahun.
+- Untuk V1, tabel ini tetap dipertahankan agar encoding dan retrain bisa dilacak per versi.
 
 ## Tabel `student_applications`
 
@@ -59,30 +59,15 @@ Tabel ini adalah tabel bisnis utama. Fungsinya menyimpan data pengajuan mahasisw
 - `source_label_text`: label mentah dari file sumber, misalnya `layak`, `indikasi`, atau catatan lain.
 - `imported_at`: waktu import offline.
 
-### Data bantuan sosial
+### Data mentah bantuan sosial
 - `kip`
 - `pkh`
 - `kks`
 - `dtks`
 - `sktm`
 
-Catatan:
-- Lima kolom ini tetap cocok disimpan langsung di tabel bisnis karena nilainya memang jawaban mentah `0/1`.
-
-### Data ordinal yang saat ini masih transisi
-- `penghasilan_gabungan`
-- `penghasilan_ayah`
-- `penghasilan_ibu`
-- `jumlah_tanggungan`
-- `anak_ke`
-- `status_orangtua`
-- `status_rumah`
-- `daya_listrik`
-
-Catatan:
-- Delapan kolom ini sekarang dibuat `nullable`.
-- Secara desain bisnis terbaru, kolom-kolom ini seharusnya tidak menjadi sumber utama data mentah.
-- Kolom-kolom ini lebih cocok dipakai sebagai kolom transisi atau snapshot hasil encoding sebelum nanti dipindah penuh ke layer model.
+Catatan bisnis:
+- Lima kolom ini disimpan langsung di tabel bisnis karena nilainya memang jawaban mentah `0/1` dari user atau berkas offline.
 
 ### Data mentah yang menjadi sumber encoding
 - `penghasilan_ayah_rupiah`: nominal penghasilan ayah.
@@ -95,7 +80,8 @@ Catatan:
 - `daya_listrik_text`: teks mentah daya listrik.
 
 Catatan bisnis:
-- Ini adalah arah yang benar jika sistem Anda memang dua lapis: data mentah dulu, encoding kemudian.
+- Tabel ini sekarang diposisikan sebagai tabel raw input, bukan tabel model.
+- Encoding `1/2/3` tidak lagi dijadikan sumber utama di tabel ini.
 
 ### Dokumen mahasiswa
 - `submitted_pdf_path`: path PDF yang diunggah ke storage Laravel.
@@ -114,8 +100,42 @@ Catatan bisnis:
 - `created_at`, `updated_at`: audit waktu umum.
 
 Catatan bisnis:
-- `status` dan `admin_decision` masih masuk akal dipisah jika nanti Anda ingin ada status tambahan seperti `Under Review`.
-- Jika alur Anda tetap sederhana dan hanya tiga status, dua kolom ini bisa dipertimbangkan untuk disederhanakan di iterasi berikutnya.
+- `status` dan `admin_decision` masih masuk akal dipisah jika nanti ada status tambahan seperti `Under Review`.
+
+## Tabel `application_feature_encodings`
+
+Tabel ini adalah layer transformasi dari `student_applications` ke fitur model.
+
+Kolom utama:
+- `id`: primary key row encoding.
+- `application_id`: relasi ke pengajuan sumber.
+- `schema_version`: versi schema saat encoding dibuat.
+- `encoding_version`: versi aturan encoder internal.
+- `encoded_by_user_id`: user yang memicu encoding jika ada.
+- `is_current`: menandai encoding aktif yang dipakai sistem saat ini.
+- `validation_errors`: error validasi jika suatu saat Anda memilih menyimpan row gagal.
+- `encoded_at`: waktu encoding dibuat.
+- `created_at`, `updated_at`: audit waktu umum.
+
+### Fitur encoded untuk model
+- `kip`
+- `pkh`
+- `kks`
+- `dtks`
+- `sktm`
+- `penghasilan_gabungan`
+- `penghasilan_ayah`
+- `penghasilan_ibu`
+- `jumlah_tanggungan`
+- `anak_ke`
+- `status_orangtua`
+- `status_rumah`
+- `daya_listrik`
+
+Catatan bisnis:
+- Ini adalah sumber fitur canonical untuk model.
+- `student_applications` tetap menyimpan data mentah, sedangkan tabel ini menyimpan hasil kategorisasi `0/1` dan `1/2/3`.
+- Jika aturan encoding berubah, satu pengajuan bisa punya lebih dari satu versi encoding.
 
 ## Tabel `application_status_logs`
 
@@ -143,10 +163,11 @@ Tabel ini menyimpan snapshot hasil encoding dan hasil inferensi model untuk satu
 Kolom utama:
 - `id`: primary key snapshot.
 - `application_id`: satu snapshot untuk satu pengajuan.
+- `encoding_id`: encoding yang dipakai saat snapshot dibuat.
 - `schema_version`: versi schema saat snapshot dibuat.
 - `model_version_id`: versi model yang dipakai saat prediksi.
 
-### Fitur encoded untuk model
+### Fitur encoded pada saat prediksi
 - `kip`
 - `pkh`
 - `kks`
@@ -176,8 +197,8 @@ Kolom utama:
 - `created_at`, `updated_at`: audit waktu.
 
 Catatan bisnis:
-- Tabel ini sudah tepat untuk memisahkan data prediksi dari data bisnis.
-- Ini memang tempat yang benar untuk menyimpan hasil encoding, bukan `student_applications`.
+- Tabel ini menyimpan salinan fitur encoded sebagai snapshot beku, agar hasil prediksi tetap bisa diaudit walaupun encoding aktif berubah di masa depan.
+- Tabel ini memisahkan hasil prediksi dari data bisnis mentah.
 
 ## Tabel `spk_training_data`
 
@@ -186,9 +207,11 @@ Tabel ini menyimpan dataset final yang dipakai untuk retrain model.
 Kolom utama:
 - `id`: primary key dataset row.
 - `source_application_id`: relasi logis ke pengajuan sumber.
+- `source_encoding_id`: relasi ke row encoding yang menjadi sumber training.
 - `schema_version`: versi schema encoding yang dipakai.
+- `encoding_version`: versi encoder saat row training dibentuk.
 
-### Fitur encoded
+### Fitur encoded untuk training
 - `kip`
 - `pkh`
 - `kks`
@@ -206,14 +229,19 @@ Kolom utama:
 ### Label training
 - `label`: label teks, `Layak` atau `Indikasi`.
 - `label_class`: class numerik, `0` atau `1`.
+- `decision_status`: keputusan final admin pada application sumber.
+- `finalized_by_user_id`: admin yang memfinalisasi.
+- `finalized_at`: waktu finalisasi label.
 - `is_active`: apakah row aktif dipakai retrain.
 - `admin_corrected`: apakah admin pernah koreksi manual row training.
 - `correction_note`: alasan koreksi.
 - `created_at`, `updated_at`: audit waktu.
 
 Catatan bisnis:
-- Ini adalah tabel yang tepat untuk encoding dan training.
-- Jika nanti Anda ingin full traceability, Anda bisa menambah `encoded_from_snapshot_id` atau `encoded_at`.
+- Ini adalah tabel canonical untuk retrain model.
+- Tabel ini menyimpan snapshot fitur encoded + label final admin, jadi dataset training tidak berubah walaupun raw data atau aturan encoding berubah nanti.
+- Untuk CatBoost, data di tabel ini bisa dipakai langsung.
+- Untuk Categorical Naive Bayes, preprocessing khusus `1/2/3 -> 0/1/2` dilakukan di Flask saat train/predict, bukan disimpan sebagai kolom tambahan di database.
 
 ## Tabel `model_versions`
 
@@ -252,17 +280,17 @@ Catatan bisnis:
 
 ## Evaluasi proses bisnis saat ini
 
-Proses saat ini sudah mendekati arsitektur yang benar:
+Struktur yang sekarang dipakai sudah mengikuti arsitektur yang benar:
 - `student_applications` untuk data operasional dan mentah.
-- `application_model_snapshots` untuk hasil encoding dan inferensi.
-- `spk_training_data` untuk dataset retrain final.
+- `application_feature_encodings` untuk hasil transformasi raw ke fitur model.
+- `application_model_snapshots` untuk snapshot inferensi model.
+- `spk_training_data` untuk dataset retrain final yang beku.
 - `model_versions` untuk histori model.
 
-Hal yang masih transisi:
-- Delapan kolom encoded ordinal masih ada di `student_applications`.
-- Itu aman untuk kompatibilitas kode saat ini, tetapi secara desain jangka menengah kolom tersebut sebaiknya tidak lagi menjadi sumber kebenaran utama.
-
-Rekomendasi urutan perbaikan berikutnya:
-1. Ubah form submit mahasiswa agar mengirim data mentah, bukan kode ordinal.
-2. Buat service encoder khusus dari `student_applications` mentah ke `application_model_snapshots` dan `spk_training_data`.
-3. Setelah alur raw sudah penuh dipakai, pertimbangkan menghapus kolom encoded ordinal dari `student_applications`.
+Alur bisnis yang disarankan:
+1. Mahasiswa submit data mentah ke `student_applications`.
+2. Sistem membentuk `application_feature_encodings` dari data mentah.
+3. Sistem memanggil Flask dan menyimpan hasil ke `application_model_snapshots`.
+4. Admin memutuskan `Verified` atau `Rejected`.
+5. Sistem menyalin encoding aktif + label final ke `spk_training_data`.
+6. Flask retrain CatBoost dan Naive Bayes dari `spk_training_data`.

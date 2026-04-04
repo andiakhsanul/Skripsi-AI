@@ -28,12 +28,15 @@ Route::middleware(['web', 'auth'])->group(function (): void {
         Route::get('/stats', [AdminStatsController::class, 'index']);
         Route::post('/parameters/import', [AdminParameterSchemaController::class, 'import']);
         Route::get('/parameters/schema-versions', [AdminParameterSchemaController::class, 'versions']);
+
+        Route::post('/applications/run-predictions', [AdminApplicationController::class, 'runPredictions']);
         Route::get('/applications', [AdminApplicationController::class, 'index']);
         Route::get('/applications/{id}', [AdminApplicationController::class, 'show']);
         Route::post('/applications/{id}/verify', [AdminApplicationController::class, 'verify']);
         Route::post('/applications/{id}/reject', [AdminApplicationController::class, 'reject']);
         Route::get('/applications/{id}/training-data', [AdminApplicationController::class, 'showTrainingData']);
         Route::put('/applications/{id}/training-data', [AdminApplicationController::class, 'updateTrainingData']);
+        Route::post('/training/sync-finalized', [AdminApplicationController::class, 'syncFinalizedTraining']);
         Route::post('/models/retrain', [AdminModelController::class, 'retrain']);
     });
 

@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Models\ApplicationFeatureEncoding;
 use App\Models\ApplicationModelSnapshot;
 use App\Models\ParameterSchemaVersion;
+use App\Models\SpkTrainingData;
 use App\Models\StudentApplication;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -100,14 +102,13 @@ class SaasV1FlowTest extends TestCase
                 'kks' => 1,
                 'dtks' => 1,
                 'sktm' => 0,
-                'penghasilan_gabungan' => 1,
-                'penghasilan_ayah' => 1,
-                'penghasilan_ibu' => 1,
-                'jumlah_tanggungan' => 2,
-                'anak_ke' => 2,
-                'status_orangtua' => 3,
-                'status_rumah' => 2,
-                'daya_listrik' => 2,
+                'penghasilan_ayah_rupiah' => 700000,
+                'penghasilan_ibu_rupiah' => 200000,
+                'jumlah_tanggungan_raw' => 4,
+                'anak_ke_raw' => 3,
+                'status_orangtua_text' => 'Lengkap',
+                'status_rumah_text' => 'Sewa',
+                'daya_listrik_text' => '900 VA',
                 'submitted_pdf' => UploadedFile::fake()->create('formulir-kipk.pdf', 500, 'application/pdf'),
             ]);
 
@@ -117,6 +118,7 @@ class SaasV1FlowTest extends TestCase
             ->assertJsonPath('data.status', 'Submitted');
 
         $applicationId = $submitResponse->json('data.id');
+        $encoding = ApplicationFeatureEncoding::query()->where('application_id', $applicationId)->firstOrFail();
 
         $verifyResponse = $this
             ->actingAs($admin)
@@ -133,10 +135,22 @@ class SaasV1FlowTest extends TestCase
             'id' => $applicationId,
             'status' => 'Verified',
             'admin_decision' => 'Verified',
+            'penghasilan_ayah_rupiah' => 700000,
+            'penghasilan_gabungan_rupiah' => 900000,
+        ]);
+
+        $this->assertDatabaseHas('application_feature_encodings', [
+            'id' => $encoding->id,
+            'application_id' => $applicationId,
+            'penghasilan_gabungan' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 2,
+            'status_rumah' => 2,
         ]);
 
         $this->assertDatabaseHas('application_model_snapshots', [
             'application_id' => $applicationId,
+            'encoding_id' => $encoding->id,
             'model_version_id' => 7,
             'final_recommendation' => 'Layak',
             'review_priority' => 'high',
@@ -144,6 +158,7 @@ class SaasV1FlowTest extends TestCase
 
         $this->assertDatabaseHas('spk_training_data', [
             'source_application_id' => $applicationId,
+            'source_encoding_id' => $encoding->id,
             'label' => 'Layak',
             'schema_version' => 1,
         ]);
@@ -185,14 +200,13 @@ class SaasV1FlowTest extends TestCase
                 'kks' => 1,
                 'dtks' => 0,
                 'sktm' => 1,
-                'penghasilan_gabungan' => 1,
-                'penghasilan_ayah' => 1,
-                'penghasilan_ibu' => 1,
-                'jumlah_tanggungan' => 1,
-                'anak_ke' => 2,
-                'status_orangtua' => 2,
-                'status_rumah' => 2,
-                'daya_listrik' => 2,
+                'penghasilan_ayah_rupiah' => 500000,
+                'penghasilan_ibu_rupiah' => 0,
+                'jumlah_tanggungan_raw' => 6,
+                'anak_ke_raw' => 5,
+                'status_orangtua_text' => 'Yatim',
+                'status_rumah_text' => 'Menumpang',
+                'daya_listrik_text' => '450 VA',
                 'submitted_pdf' => UploadedFile::fake()->create('dokumen-pengajuan.pdf', 500, 'application/pdf'),
             ]);
 
@@ -360,6 +374,55 @@ class SaasV1FlowTest extends TestCase
         });
     }
 
+    public function test_admin_can_sync_finalized_training_for_raw_applications(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $application = StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Citra Ayuningtyas',
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_ayah_rupiah' => 500000,
+            'penghasilan_ibu_rupiah' => 100000,
+            'penghasilan_gabungan_rupiah' => 600000,
+            'jumlah_tanggungan_raw' => 6,
+            'anak_ke_raw' => 5,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'menumpang',
+            'daya_listrik_text' => '450 VA',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+            'admin_decided_by' => $admin->id,
+            'admin_decided_at' => now(),
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->postJson('/api/admin/training/sync-finalized');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.processed', 1)
+            ->assertJsonPath('data.synced', 1);
+
+        $encoding = ApplicationFeatureEncoding::query()->where('application_id', $application->id)->firstOrFail();
+
+        $this->assertDatabaseHas('spk_training_data', [
+            'source_application_id' => $application->id,
+            'source_encoding_id' => $encoding->id,
+            'label' => 'Layak',
+            'label_class' => 0,
+        ]);
+    }
+
     public function test_student_dashboard_page_renders_history_and_summary_cards(): void
     {
         Storage::fake('public');
@@ -374,19 +437,21 @@ class SaasV1FlowTest extends TestCase
             'student_user_id' => $student->id,
             'schema_version' => 1,
             'submission_source' => 'online_student',
+            'applicant_name' => $student->name,
+            'applicant_email' => $student->email,
             'kip' => 1,
             'pkh' => 0,
             'kks' => 1,
             'dtks' => 0,
             'sktm' => 1,
-            'penghasilan_gabungan' => 1,
-            'penghasilan_ayah' => 1,
-            'penghasilan_ibu' => 2,
-            'jumlah_tanggungan' => 2,
-            'anak_ke' => 2,
-            'status_orangtua' => 3,
-            'status_rumah' => 2,
-            'daya_listrik' => 2,
+            'penghasilan_ayah_rupiah' => 1000000,
+            'penghasilan_ibu_rupiah' => 500000,
+            'penghasilan_gabungan_rupiah' => 1500000,
+            'jumlah_tanggungan_raw' => 4,
+            'anak_ke_raw' => 3,
+            'status_orangtua_text' => 'Lengkap',
+            'status_rumah_text' => 'Sewa',
+            'daya_listrik_text' => '900 VA',
             'submitted_pdf_path' => 'applications/bunga-maharani.pdf',
             'submitted_pdf_original_name' => 'bunga-maharani.pdf',
             'submitted_pdf_uploaded_at' => now(),
@@ -420,36 +485,61 @@ class SaasV1FlowTest extends TestCase
         $application = StudentApplication::query()->create([
             'student_user_id' => $student->id,
             'schema_version' => 1,
+            'submission_source' => 'online_student',
+            'applicant_name' => $student->name,
+            'applicant_email' => $student->email,
             'kip' => 1,
             'pkh' => 0,
             'kks' => 1,
             'dtks' => 0,
             'sktm' => 1,
-            'penghasilan_gabungan' => 1,
-            'penghasilan_ayah' => 2,
-            'penghasilan_ibu' => 2,
-            'jumlah_tanggungan' => 1,
-            'anak_ke' => 2,
-            'status_orangtua' => 3,
-            'status_rumah' => 2,
-            'daya_listrik' => 2,
+            'penghasilan_ayah_rupiah' => 1500000,
+            'penghasilan_ibu_rupiah' => 500000,
+            'penghasilan_gabungan_rupiah' => 2000000,
+            'jumlah_tanggungan_raw' => 6,
+            'anak_ke_raw' => 3,
+            'status_orangtua_text' => 'Lengkap',
+            'status_rumah_text' => 'Sewa',
+            'daya_listrik_text' => '900 VA',
             'submitted_pdf_path' => 'applications/bunga-maharani.pdf',
             'submitted_pdf_original_name' => 'bunga-maharani.pdf',
             'submitted_pdf_uploaded_at' => now(),
             'status' => 'Submitted',
         ]);
 
+        $encoding = ApplicationFeatureEncoding::query()->create([
+            'application_id' => $application->id,
+            'schema_version' => 1,
+            'encoding_version' => 1,
+            'is_current' => true,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 1,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 2,
+            'penghasilan_ayah' => 2,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 1,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'encoded_at' => now(),
+        ]);
+
         ApplicationModelSnapshot::query()->create([
             'application_id' => $application->id,
+            'encoding_id' => $encoding->id,
             'schema_version' => 1,
             'kip' => 1,
             'pkh' => 0,
             'kks' => 1,
             'dtks' => 0,
             'sktm' => 1,
-            'penghasilan_gabungan' => 1,
+            'penghasilan_gabungan' => 2,
             'penghasilan_ayah' => 2,
-            'penghasilan_ibu' => 2,
+            'penghasilan_ibu' => 1,
             'jumlah_tanggungan' => 1,
             'anak_ke' => 2,
             'status_orangtua' => 3,
@@ -474,9 +564,9 @@ class SaasV1FlowTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('Scholarship Dashboard')
+            ->assertSee('Dasbor Beasiswa')
             ->assertSee('Bunga Maharani')
-            ->assertSee('Retrain Model')
-            ->assertSee('CatBoost dan Naive Bayes memberi hasil berbeda.');
+            ->assertSee('Latih Ulang Model')
+            ->assertSee('CatBoost dan Naive Bayes memberi hasil yang berbeda.');
     }
 }

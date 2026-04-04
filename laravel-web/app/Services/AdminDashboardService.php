@@ -83,10 +83,16 @@ class AdminDashboardService
             ->when(
                 $filters['q'] ?? null,
                 function (Builder $query, string $term): void {
-                    $query->whereHas('student', function (Builder $studentQuery) use ($term): void {
-                        $studentQuery
-                            ->where('name', 'like', "%{$term}%")
-                            ->orWhere('email', 'like', "%{$term}%");
+                    $query->where(function (Builder $scopedQuery) use ($term): void {
+                        $scopedQuery
+                            ->whereHas('student', function (Builder $studentQuery) use ($term): void {
+                                $studentQuery
+                                    ->where('name', 'like', "%{$term}%")
+                                    ->orWhere('email', 'like', "%{$term}%");
+                            })
+                            ->orWhere('applicant_name', 'like', "%{$term}%")
+                            ->orWhere('applicant_email', 'like', "%{$term}%")
+                            ->orWhere('source_reference_number', 'like', "%{$term}%");
                     });
                 }
             )

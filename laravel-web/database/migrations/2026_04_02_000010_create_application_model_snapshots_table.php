@@ -33,6 +33,7 @@ return new class extends Migration
         Schema::create('application_model_snapshots', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('application_id')->unique()->constrained('student_applications')->cascadeOnDelete();
+            $table->foreignId('encoding_id')->constrained('application_feature_encodings')->cascadeOnDelete();
             $table->unsignedInteger('schema_version');
             $table->unsignedBigInteger('model_version_id')->nullable();
 
@@ -53,6 +54,7 @@ return new class extends Migration
             $table->timestamp('snapshotted_at')->nullable();
             $table->timestamps();
 
+            $table->index(['encoding_id', 'snapshotted_at']);
             $table->index(['schema_version', 'review_priority']);
             $table->index(['model_ready', 'final_recommendation']);
             $table->index(['model_version_id', 'snapshotted_at'], 'app_model_snapshots_model_version_idx');

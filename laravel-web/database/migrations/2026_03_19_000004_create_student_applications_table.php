@@ -14,23 +14,6 @@ return new class extends Migration
         return ['kip', 'pkh', 'kks', 'dtks', 'sktm'];
     }
 
-    /**
-     * @return list<string>
-     */
-    private function encodedOrdinalColumns(): array
-    {
-        return [
-            'penghasilan_gabungan',
-            'penghasilan_ayah',
-            'penghasilan_ibu',
-            'jumlah_tanggungan',
-            'anak_ke',
-            'status_orangtua',
-            'status_rumah',
-            'daya_listrik',
-        ];
-    }
-
     public function up(): void
     {
         Schema::create('student_applications', function (Blueprint $table): void {
@@ -53,10 +36,6 @@ return new class extends Migration
 
             foreach ($this->socialSupportColumns() as $column) {
                 $table->unsignedTinyInteger($column);
-            }
-
-            foreach ($this->encodedOrdinalColumns() as $column) {
-                $table->unsignedTinyInteger($column)->nullable();
             }
 
             $table->unsignedBigInteger('penghasilan_ayah_rupiah')->nullable();

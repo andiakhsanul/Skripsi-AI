@@ -32,8 +32,10 @@ return new class extends Migration
     {
         Schema::create('spk_training_data', function (Blueprint $table): void {
             $table->id();
-            $table->unsignedBigInteger('source_application_id')->nullable()->unique();
+            $table->foreignId('source_application_id')->nullable()->constrained('student_applications')->cascadeOnDelete();
+            $table->foreignId('source_encoding_id')->nullable()->constrained('application_feature_encodings')->cascadeOnDelete();
             $table->unsignedInteger('schema_version')->default(1);
+            $table->unsignedInteger('encoding_version')->default(1);
 
             foreach ($this->encodedFeatureColumns() as $column) {
                 $table->unsignedTinyInteger($column);
@@ -41,11 +43,15 @@ return new class extends Migration
 
             $table->string('label', 20);
             $table->unsignedTinyInteger('label_class');
+            $table->string('decision_status', 20)->nullable();
+            $table->foreignId('finalized_by_user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->timestamp('finalized_at')->nullable();
             $table->boolean('is_active')->default(true);
             $table->boolean('admin_corrected')->default(false);
             $table->text('correction_note')->nullable();
             $table->timestamps();
 
+            $table->unique(['source_encoding_id'], 'spk_training_data_source_encoding_unique');
             $table->index(['schema_version', 'label_class']);
             $table->index(['is_active', 'updated_at']);
             $table->index(['source_application_id', 'schema_version']);
