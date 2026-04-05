@@ -13,7 +13,8 @@
     $statusRumahOptions = $options['status_rumah'];
     $dayaListrikOptions = $options['daya_listrik'];
     $fieldValue = fn (string $field, mixed $default = null) => old($field, $existingApplication?->{$field} ?? $default);
-    $selectedBinary = fn (string $field, int $default = 0) => (string) $fieldValue($field, $default);
+    $selectedBinary = fn (string $field) => (string) $fieldValue($field, '');
+    $selectedStatusRumah = fn (string $option) => $fieldValue('status_rumah_text') === $option;
     $formAction = $isEditMode ? route('student.applications.update', $existingApplication?->id) : route('student.applications.store');
     $submitLabel = $isEditMode ? 'Simpan Revisi' : 'Kirim Pengajuan';
     $heroTitle = $isEditMode ? 'Revisi Pengajuan KIP-K' : 'Pengajuan KIP-K';
@@ -158,11 +159,21 @@
                                 <p class="mt-1 text-xs font-medium leading-5 text-slate-500">{{ $meta['description'] }}</p>
                             </div>
                         </div>
-                        <div class="mt-4 grid grid-cols-2 gap-2">
+                        <div class="mt-4 grid grid-cols-2 gap-2" data-radio-card-group="binary">
                             @foreach ($binaryOptions as $option)
-                                <label class="cursor-pointer rounded-xl border px-3 py-3 text-center text-sm font-bold transition {{ $selectedBinary($field, 0) === (string) $option['value'] ? 'border-primary bg-primary-container text-primary' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40' }}">
-                                    <input type="radio" class="sr-only" name="{{ $field }}" value="{{ $option['value'] }}" @checked($selectedBinary($field, 0) === (string) $option['value']) />
-                                    {{ $option['label'] }}
+                                <label
+                                    data-radio-card
+                                    class="cursor-pointer rounded-xl border px-3 py-3 text-center text-sm font-bold transition {{ $selectedBinary($field) === (string) $option['value'] ? 'border-primary bg-primary-container text-primary shadow-sm shadow-primary/10' : 'border-slate-200 bg-white text-slate-600 hover:border-primary/40 hover:bg-primary/5' }}"
+                                >
+                                    <input
+                                        type="radio"
+                                        class="sr-only"
+                                        name="{{ $field }}"
+                                        value="{{ $option['value'] }}"
+                                        @checked($selectedBinary($field) === (string) $option['value'])
+                                        required
+                                    />
+                                    <span class="block">{{ $option['label'] }}</span>
                                 </label>
                             @endforeach
                         </div>
@@ -269,11 +280,21 @@
             <div class="grid gap-8 lg:grid-cols-2">
                 <div class="space-y-4">
                     <label class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Status Rumah</label>
-                    <div class="grid gap-3">
+                    <div class="grid gap-3" data-radio-card-group="status-rumah">
                         @foreach ($statusRumahOptions as $option)
-                            <label class="flex items-center justify-between rounded-2xl border border-slate-200 bg-surface-container-low px-4 py-4 text-sm font-semibold text-on-surface transition hover:border-primary/40">
+                            <label
+                                data-radio-card
+                                class="flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 text-sm font-semibold transition {{ $selectedStatusRumah($option) ? 'border-primary bg-primary/5 text-primary shadow-sm shadow-primary/10' : 'border-slate-200 bg-surface-container-low text-on-surface hover:border-primary/40 hover:bg-primary/5' }}"
+                            >
                                 <span>{{ $option }}</span>
-                                <input type="radio" name="status_rumah_text" value="{{ $option }}" class="text-primary focus:ring-primary" @checked($fieldValue('status_rumah_text') === $option) />
+                                <input
+                                    type="radio"
+                                    name="status_rumah_text"
+                                    value="{{ $option }}"
+                                    class="text-primary focus:ring-primary"
+                                    @checked($selectedStatusRumah($option))
+                                    required
+                                />
                             </label>
                         @endforeach
                     </div>
@@ -355,12 +376,29 @@
         const combinedDisplay = document.getElementById('combined-income-display');
         const pdfInput = document.getElementById('submitted_pdf');
         const uploadContainer = pdfInput?.closest('label');
-
-        if (!fatherInput || !motherInput || !combinedDisplay) {
-            return;
-        }
+        const activeClassesByGroup = {
+            binary: ['border-primary', 'bg-primary-container', 'text-primary', 'shadow-sm', 'shadow-primary/10'],
+            'status-rumah': ['border-primary', 'bg-primary/5', 'text-primary', 'shadow-sm', 'shadow-primary/10'],
+        };
+        const inactiveClassesByGroup = {
+            binary: ['border-slate-200', 'bg-white', 'text-slate-600'],
+            'status-rumah': ['border-slate-200', 'bg-surface-container-low', 'text-on-surface'],
+        };
 
         const formatter = new Intl.NumberFormat('id-ID');
+        const syncRadioCardGroup = (group) => {
+            const groupName = group.dataset.radioCardGroup;
+            const activeClasses = activeClassesByGroup[groupName] ?? [];
+            const inactiveClasses = inactiveClassesByGroup[groupName] ?? [];
+
+            group.querySelectorAll('[data-radio-card]').forEach((card) => {
+                const input = card.querySelector('input[type="radio"]');
+                const isChecked = Boolean(input?.checked);
+
+                activeClasses.forEach((className) => card.classList.toggle(className, isChecked));
+                inactiveClasses.forEach((className) => card.classList.toggle(className, ! isChecked));
+            });
+        };
 
         const updateCombinedIncome = () => {
             const father = Number.parseInt(fatherInput.value || '0', 10) || 0;
@@ -368,8 +406,19 @@
             combinedDisplay.textContent = `Rp ${formatter.format(father + mother)}`;
         };
 
-        fatherInput.addEventListener('input', updateCombinedIncome);
-        motherInput.addEventListener('input', updateCombinedIncome);
+        if (fatherInput && motherInput && combinedDisplay) {
+            fatherInput.addEventListener('input', updateCombinedIncome);
+            motherInput.addEventListener('input', updateCombinedIncome);
+            updateCombinedIncome();
+        }
+
+        document.querySelectorAll('[data-radio-card-group]').forEach((group) => {
+            syncRadioCardGroup(group);
+
+            group.querySelectorAll('input[type="radio"]').forEach((input) => {
+                input.addEventListener('change', () => syncRadioCardGroup(group));
+            });
+        });
 
         if (pdfInput && uploadContainer) {
             pdfInput.addEventListener('change', () => {

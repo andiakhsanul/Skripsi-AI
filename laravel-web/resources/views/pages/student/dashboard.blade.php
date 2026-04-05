@@ -21,7 +21,6 @@
     $studentName = $student->name ?? 'Mahasiswa';
     $notice = session('student_notice');
     $latestApplication = $summary['latest_application'] ?? null;
-    $latestRecommendation = $summary['latest_recommendation'] ?? null;
     $latestStatusLabel = $statusLabels[$latestStatus] ?? $latestStatus;
     $latestDecisionReady = (bool) ($summary['latest_decision_ready'] ?? false);
     $latestDecisionStatus = $summary['latest_decision_status'] ?? null;
@@ -43,7 +42,7 @@
 
     $statusDescription = match ($latestStatus) {
         'Verified' => 'Pantau halaman detail untuk melihat keputusan final dan catatan admin jika tersedia.',
-        'Rejected' => 'Silakan buka detail pengajuan untuk melihat rekomendasi sistem, catatan admin, dan dokumen yang sudah Anda kirim.',
+        'Rejected' => 'Silakan buka detail pengajuan untuk melihat catatan admin dan dokumen yang sudah Anda kirim.',
         'Submitted' => 'Sistem sudah menerima data mentah Anda. Admin akan meninjau dan memberi keputusan final setelah melihat keseluruhan data.',
         default => 'Mulai pengajuan pertama Anda untuk masuk ke alur verifikasi KIP-K UNAIR.',
     };
@@ -65,7 +64,7 @@
         ['label' => 'Total Pengajuan', 'value' => $summary['total'], 'icon' => 'article', 'tone' => 'bg-blue-50 text-blue-700'],
         ['label' => 'Menunggu', 'value' => $summary['submitted'], 'icon' => 'schedule', 'tone' => 'bg-yellow-50 text-yellow-700'],
         ['label' => 'Lolos', 'value' => $summary['verified'], 'icon' => 'check_circle', 'tone' => 'bg-emerald-50 text-emerald-700'],
-        ['label' => 'Indikasi', 'value' => $summary['rejected'], 'icon' => 'warning', 'tone' => 'bg-error-container text-error'],
+        ['label' => 'Dokumen', 'value' => $summary['has_documents'] ? 'Ada' : 'Belum', 'icon' => 'picture_as_pdf', 'tone' => 'bg-slate-100 text-slate-700'],
     ];
 @endphp
 
@@ -150,10 +149,6 @@
                         <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $latestStatusClass }}">{{ $latestStatusLabel }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-white/70">Rekomendasi Sistem</span>
-                        <span class="text-sm font-medium text-white">{{ $latestRecommendation ?? 'Belum diproses' }}</span>
-                    </div>
-                    <div class="flex items-center justify-between">
                         <span class="text-sm text-white/70">Dokumen Tersedia</span>
                         <span class="text-sm font-medium text-white">{{ $summary['has_documents'] ? 'Ya' : 'Belum' }}</span>
                     </div>
@@ -177,7 +172,7 @@
 
             @if ($latestApplication)
                 <div class="flex flex-col gap-2 text-sm font-semibold md:items-end">
-                    <span>Rekomendasi: {{ $latestRecommendation ?? 'Belum diproses' }}</span>
+                    <span>Status: {{ $latestStatusLabel }}</span>
                     <span>
                         Dikirim: {{ $latestApplication->created_at?->translatedFormat('d M Y H:i') ?? '-' }}
                     </span>
@@ -200,7 +195,7 @@
                     <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{{ $card['label'] }}</span>
                 </div>
                 <div>
-                    <p class="text-3xl font-black text-on-surface">{{ number_format($card['value']) }}</p>
+                    <p class="text-3xl font-black text-on-surface">{{ is_numeric($card['value']) ? number_format((int) $card['value']) : $card['value'] }}</p>
                 </div>
             </div>
         @endforeach
@@ -252,7 +247,7 @@
                                     <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">ID Pengajuan</th>
                                     <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Tanggal Kirim</th>
                                     <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Status</th>
-                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Rekomendasi</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Dokumen</th>
                                     <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">Aksi</th>
                                 </tr>
                             </thead>
@@ -261,13 +256,7 @@
                                     @php
                                         $statusClass = $statusClasses[$application->status] ?? 'bg-slate-100 text-slate-600 border-t-2 border-slate-300';
                                         $displayId = 'KIPK-'.($application->created_at?->format('Y') ?? now()->format('Y')).'-'.str_pad((string) $application->id, 3, '0', STR_PAD_LEFT);
-                                        $snapshot = $application->modelSnapshot;
                                         $canEdit = $application->canBeRevisedByStudent();
-                                        $decisionBadge = match ($application->admin_decision) {
-                                            'Verified' => ['label' => 'Final: Lolos', 'class' => 'bg-emerald-50 text-emerald-700'],
-                                            'Rejected' => ['label' => 'Final: Indikasi', 'class' => 'bg-error-container text-error'],
-                                            default => null,
-                                        };
                                     @endphp
                                     <tr class="transition-colors hover:bg-slate-50/60">
                                         <td class="px-6 py-4">
@@ -280,19 +269,12 @@
                                         </td>
                                         <td class="px-6 py-4 text-sm text-on-surface-variant">{{ $application->created_at?->translatedFormat('d M Y') }}</td>
                                         <td class="px-6 py-4">
-                                            <div class="flex flex-col gap-2">
-                                                <span class="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $statusClass }}">
-                                                    {{ $statusLabels[$application->status] ?? $application->status }}
-                                                </span>
-                                                @if ($decisionBadge)
-                                                    <span class="inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] {{ $decisionBadge['class'] }}">
-                                                        {{ $decisionBadge['label'] }}
-                                                    </span>
-                                                @endif
-                                            </div>
+                                            <span class="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $statusClass }}">
+                                                {{ $statusLabels[$application->status] ?? $application->status }}
+                                            </span>
                                         </td>
                                         <td class="px-6 py-4 text-sm font-semibold text-on-surface">
-                                            {{ $snapshot?->final_recommendation ?? 'Belum diproses model' }}
+                                            {{ $application->hasSubmittedPdf() ? 'Tersedia' : 'Belum ada' }}
                                         </td>
                                         <td class="px-6 py-4">
                                             <div class="flex justify-center gap-2">
