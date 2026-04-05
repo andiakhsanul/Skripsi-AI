@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ModelVersion;
 use App\Services\AdminModelRetrainService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -65,6 +66,31 @@ class ModelRetrainController extends Controller
                 'type' => 'success',
                 'title' => 'Retrain model berhasil',
                 'message' => "Schema v{$result['schema_version']} dilatih ulang menggunakan {$rowsUsed} data aktif.",
+            ]);
+    }
+
+    public function activate(Request $request, ModelVersion $modelVersion): RedirectResponse
+    {
+        try {
+            $result = $this->adminModelRetrainService->activateModelVersion($modelVersion, $request->user());
+        } catch (\Throwable $throwable) {
+            return redirect()
+                ->route('admin.models.retrain')
+                ->with('admin_notice', [
+                    'type' => 'error',
+                    'title' => 'Aktivasi versi model gagal',
+                    'message' => $throwable->getMessage(),
+                ]);
+        }
+
+        $activated = $result['activated_version'];
+
+        return redirect()
+            ->route('admin.models.retrain')
+            ->with('admin_notice', [
+                'type' => 'success',
+                'title' => 'Versi model aktif diperbarui',
+                'message' => "Versi {$activated?->version_name} sekarang menjadi model aktif untuk prediksi berikutnya.",
             ]);
     }
 }

@@ -109,6 +109,8 @@ def current_model_metadata() -> dict:
         "model_version_name": metadata.get("version_name"),
         "model_trained_at": serialize_datetime(metadata.get("trained_at")),
         "model_schema_version": metadata.get("schema_version"),
+        "model_is_current": bool(metadata.get("is_current", False)),
+        "model_activated_at": serialize_datetime(metadata.get("activated_at")),
     }
 
 
@@ -120,9 +122,11 @@ def fetch_latest_model_version_record(status: str = "ready") -> Optional[dict]:
             version_name,
             schema_version,
             status,
+            is_current,
             catboost_artifact_path,
             naive_bayes_artifact_path,
-            trained_at
+            trained_at,
+            activated_at
         FROM {table_name}
         WHERE status = %s
         ORDER BY trained_at DESC NULLS LAST, id DESC
@@ -137,58 +141,141 @@ def fetch_latest_model_version_record(status: str = "ready") -> Optional[dict]:
             return dict(row) if row else None
 
 
+def fetch_active_model_version_record(status: str = "ready") -> Optional[dict]:
+    query = sql.SQL(
+        """
+        SELECT
+            id,
+            version_name,
+            schema_version,
+            status,
+            is_current,
+            catboost_artifact_path,
+            naive_bayes_artifact_path,
+            trained_at,
+            activated_at
+        FROM {table_name}
+        WHERE status = %s
+          AND is_current = TRUE
+        ORDER BY activated_at DESC NULLS LAST, trained_at DESC NULLS LAST, id DESC
+        LIMIT 1
+        """
+    ).format(table_name=sql.Identifier(MODEL_VERSIONS_TABLE))
+
+    with psycopg2.connect(**db_config()) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (status,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+
+def fetch_model_version_record_by_id(model_version_id: int, status: Optional[str] = None) -> Optional[dict]:
+    clauses = [sql.SQL("id = %s")]
+    params = [model_version_id]
+
+    if status is not None:
+        clauses.append(sql.SQL("status = %s"))
+        params.append(status)
+
+    query = sql.SQL(
+        """
+        SELECT
+            id,
+            version_name,
+            schema_version,
+            status,
+            is_current,
+            catboost_artifact_path,
+            naive_bayes_artifact_path,
+            trained_at,
+            activated_at
+        FROM {table_name}
+        WHERE {where_clause}
+        LIMIT 1
+        """
+    ).format(
+        table_name=sql.Identifier(MODEL_VERSIONS_TABLE),
+        where_clause=sql.SQL(" AND ").join(clauses),
+    )
+
+    with psycopg2.connect(**db_config()) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, tuple(params))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+
+def load_models_from_version_record(metadata: Optional[dict], persist_canonical: bool = False) -> bool:
+    if metadata is None:
+        return False
+
+    catboost_path = resolve_artifact_path(
+        metadata.get("catboost_artifact_path"),
+        CATBOOST_MODEL_PATH,
+    )
+    naive_bayes_path = resolve_artifact_path(
+        metadata.get("naive_bayes_artifact_path"),
+        NAIVE_BAYES_MODEL_PATH,
+    )
+
+    if not catboost_path.exists() or not naive_bayes_path.exists():
+        return False
+
+    catboost_model = joblib.load(catboost_path)
+    naive_bayes_model = joblib.load(naive_bayes_path)
+
+    if persist_canonical:
+        joblib.dump(catboost_model, CATBOOST_MODEL_PATH)
+        joblib.dump(naive_bayes_model, NAIVE_BAYES_MODEL_PATH)
+
+    MODEL_REGISTRY["catboost"] = catboost_model
+    MODEL_REGISTRY["naive_bayes"] = naive_bayes_model
+    MODEL_REGISTRY["metadata"] = metadata
+
+    return True
+
+
 def load_saved_models() -> None:
     metadata = None
 
     try:
-        metadata = fetch_latest_model_version_record(status="ready")
+        metadata = fetch_active_model_version_record(status="ready")
+        if not load_models_from_version_record(metadata):
+            metadata = fetch_latest_model_version_record(status="ready")
+            if load_models_from_version_record(metadata):
+                return
     except Exception:
         metadata = None
 
-    catboost_path = resolve_artifact_path(
-        metadata.get("catboost_artifact_path") if metadata else None,
-        CATBOOST_MODEL_PATH,
-    )
-    naive_bayes_path = resolve_artifact_path(
-        metadata.get("naive_bayes_artifact_path") if metadata else None,
-        NAIVE_BAYES_MODEL_PATH,
-    )
+    if CATBOOST_MODEL_PATH.exists():
+        MODEL_REGISTRY["catboost"] = joblib.load(CATBOOST_MODEL_PATH)
 
-    if not catboost_path.exists():
-        catboost_path = CATBOOST_MODEL_PATH
-
-    if not naive_bayes_path.exists():
-        naive_bayes_path = NAIVE_BAYES_MODEL_PATH
-
-    if catboost_path.exists():
-        MODEL_REGISTRY["catboost"] = joblib.load(catboost_path)
-
-    if naive_bayes_path.exists():
-        MODEL_REGISTRY["naive_bayes"] = joblib.load(naive_bayes_path)
+    if NAIVE_BAYES_MODEL_PATH.exists():
+        MODEL_REGISTRY["naive_bayes"] = joblib.load(NAIVE_BAYES_MODEL_PATH)
 
     MODEL_REGISTRY["metadata"] = metadata
 
 
 def ensure_latest_models_loaded(force_reload: bool = False) -> None:
-    latest_ready = None
+    active_ready = None
 
     try:
-        latest_ready = fetch_latest_model_version_record(status="ready")
+        active_ready = fetch_active_model_version_record(status="ready") or fetch_latest_model_version_record(status="ready")
     except Exception:
-        latest_ready = None
+        active_ready = None
 
     current_metadata = MODEL_REGISTRY.get("metadata") or {}
     current_version_name = current_metadata.get("version_name")
-    latest_version_name = latest_ready.get("version_name") if latest_ready else None
+    active_version_name = active_ready.get("version_name") if active_ready else None
     needs_reload = force_reload
 
     if MODEL_REGISTRY["catboost"] is None or MODEL_REGISTRY["naive_bayes"] is None:
         needs_reload = True
 
-    if latest_version_name and latest_version_name != current_version_name:
+    if active_version_name and active_version_name != current_version_name:
         needs_reload = True
 
-    if latest_ready is None and (MODEL_REGISTRY["catboost"] is None or MODEL_REGISTRY["naive_bayes"] is None):
+    if active_ready is None and (MODEL_REGISTRY["catboost"] is None or MODEL_REGISTRY["naive_bayes"] is None):
         needs_reload = True
 
     if needs_reload:
@@ -330,6 +417,7 @@ def persist_model_version_record(payload: dict) -> dict:
             version_name,
             schema_version,
             status,
+            is_current,
             triggered_by_user_id,
             triggered_by_email,
             training_table,
@@ -350,12 +438,13 @@ def persist_model_version_record(payload: dict) -> dict:
             note,
             error_message,
             trained_at,
+            activated_at,
             created_at,
             updated_at
         ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
         )
-        RETURNING id, version_name, schema_version, status, trained_at
+        RETURNING id, version_name, schema_version, status, is_current, trained_at, activated_at
         """
     ).format(table_name=sql.Identifier(MODEL_VERSIONS_TABLE))
 
@@ -365,6 +454,7 @@ def persist_model_version_record(payload: dict) -> dict:
         payload["version_name"],
         payload.get("schema_version"),
         payload.get("status", "ready"),
+        bool(payload.get("is_current", False)),
         payload.get("triggered_by_user_id"),
         payload.get("triggered_by_email"),
         payload.get("training_table", TRAINING_TABLE),
@@ -385,6 +475,7 @@ def persist_model_version_record(payload: dict) -> dict:
         payload.get("note"),
         payload.get("error_message"),
         payload.get("trained_at"),
+        payload.get("activated_at"),
         now,
         now,
     )
@@ -394,6 +485,57 @@ def persist_model_version_record(payload: dict) -> dict:
             cursor.execute(query, params)
             row = cursor.fetchone()
             return dict(row)
+
+
+def mark_model_version_as_current(model_version_id: int, activated_at: Optional[datetime] = None) -> dict:
+    activation_time = activated_at or datetime.now(timezone.utc)
+
+    with psycopg2.connect(**db_config()) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(
+                sql.SQL(
+                    """
+                    UPDATE {table_name}
+                    SET is_current = FALSE, updated_at = %s
+                    WHERE is_current = TRUE
+                    """
+                ).format(table_name=sql.Identifier(MODEL_VERSIONS_TABLE)),
+                (activation_time,),
+            )
+
+            cursor.execute(
+                sql.SQL(
+                    """
+                    UPDATE {table_name}
+                    SET is_current = TRUE, activated_at = %s, updated_at = %s
+                    WHERE id = %s AND status = 'ready'
+                    RETURNING id, version_name, schema_version, status, is_current, catboost_artifact_path, naive_bayes_artifact_path, trained_at, activated_at
+                    """
+                ).format(table_name=sql.Identifier(MODEL_VERSIONS_TABLE)),
+                (activation_time, activation_time, model_version_id),
+            )
+            row = cursor.fetchone()
+
+        conn.commit()
+
+    if not row:
+        raise ValueError("Versi model siap tidak ditemukan atau tidak dapat diaktifkan.")
+
+    return dict(row)
+
+
+def activate_model_version(model_version_id: int) -> dict:
+    target_version = fetch_model_version_record_by_id(model_version_id, status="ready")
+    if target_version is None:
+        raise ValueError("Versi model siap tidak ditemukan.")
+
+    if not load_models_from_version_record(target_version, persist_canonical=True):
+        raise ValueError("Artifact model untuk versi yang dipilih tidak ditemukan.")
+
+    activated_record = mark_model_version_as_current(model_version_id)
+    MODEL_REGISTRY["metadata"] = activated_record
+
+    return activated_record
 
 
 def register_failed_retrain(
@@ -407,6 +549,7 @@ def register_failed_retrain(
         "version_name": build_version_name(schema_version, trained_at, status="failed"),
         "schema_version": schema_version or 1,
         "status": "failed",
+        "is_current": False,
         "triggered_by_user_id": triggered_by_user_id,
         "triggered_by_email": triggered_by_email,
         "training_table": TRAINING_TABLE,
@@ -415,6 +558,7 @@ def register_failed_retrain(
         "note": "Retrain gagal sebelum model baru diaktifkan.",
         "error_message": error_message,
         "trained_at": trained_at,
+        "activated_at": None,
     }
 
     try:
@@ -511,6 +655,7 @@ def train_and_save_models(
             "version_name": version_name,
             "schema_version": schema_version or 1,
             "status": "ready",
+            "is_current": True,
             "triggered_by_user_id": triggered_by_user_id,
             "triggered_by_email": triggered_by_email,
             "training_table": TRAINING_TABLE,
@@ -530,16 +675,19 @@ def train_and_save_models(
             "naive_bayes_validation_accuracy": rounded_or_none(nb_valid_accuracy),
             "note": note,
             "trained_at": trained_at,
+            "activated_at": trained_at,
         }
     )
 
     joblib.dump(catboost_model, CATBOOST_MODEL_PATH)
     joblib.dump(naive_bayes_model, NAIVE_BAYES_MODEL_PATH)
 
+    activated_record = mark_model_version_as_current(version_record["id"], activated_at=trained_at)
+
     MODEL_REGISTRY["catboost"] = catboost_model
     MODEL_REGISTRY["naive_bayes"] = naive_bayes_model
     MODEL_REGISTRY["metadata"] = {
-        **version_record,
+        **activated_record,
         "catboost_artifact_path": relative_artifact_path(catboost_versioned_path),
         "naive_bayes_artifact_path": relative_artifact_path(naive_bayes_versioned_path),
     }
@@ -633,6 +781,55 @@ def predict():
             jsonify({
                 "status": "error",
                 "message": "Terjadi kesalahan internal pada service ML",
+                "detail": str(exc),
+            }),
+            500,
+        )
+
+
+@app.route("/api/models/activate", methods=["POST"])
+def activate_model():
+    try:
+        if not check_internal_token():
+            return jsonify({"status": "error", "message": "Token internal tidak valid"}), 401
+
+        payload = request.get_json(silent=True) or {}
+        if payload.get("model_version_id") is None:
+            raise ValueError("model_version_id wajib dikirim.")
+
+        try:
+            model_version_id = int(payload["model_version_id"])
+        except (TypeError, ValueError) as exc:
+            raise ValueError("model_version_id harus berupa angka integer.") from exc
+
+        if model_version_id <= 0:
+            raise ValueError("model_version_id harus lebih besar dari 0.")
+
+        activated = activate_model_version(model_version_id)
+
+        return (
+            jsonify({
+                "status": "success",
+                "message": "Versi model aktif berhasil diperbarui",
+                "model_version": {
+                    "id": activated["id"],
+                    "version_name": activated["version_name"],
+                    "schema_version": activated["schema_version"],
+                    "trained_at": serialize_datetime(activated.get("trained_at")),
+                    "activated_at": serialize_datetime(activated.get("activated_at")),
+                    "is_current": bool(activated.get("is_current", False)),
+                },
+                **current_model_metadata(),
+            }),
+            200,
+        )
+    except ValueError as exc:
+        return jsonify({"status": "error", "message": str(exc)}), 400
+    except Exception as exc:
+        return (
+            jsonify({
+                "status": "error",
+                "message": "Aktivasi versi model gagal dijalankan",
                 "detail": str(exc),
             }),
             500,

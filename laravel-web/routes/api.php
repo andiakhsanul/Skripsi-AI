@@ -38,6 +38,7 @@ Route::middleware(['web', 'auth'])->group(function (): void {
         Route::put('/applications/{id}/training-data', [AdminApplicationController::class, 'updateTrainingData']);
         Route::post('/training/sync-finalized', [AdminApplicationController::class, 'syncFinalizedTraining']);
         Route::post('/models/retrain', [AdminModelController::class, 'retrain']);
+        Route::post('/models/{modelVersion}/activate', [AdminModelController::class, 'activate']);
     });
 
     Route::prefix('spk')->middleware('role.admin')->group(function (): void {

@@ -78,7 +78,7 @@ services:
       db:
         condition: service_healthy
     volumes:
-      - ml_models:/app/models
+      - ./flask-ml-api/models:/app/models
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
       interval: 15s
@@ -143,6 +143,5 @@ networks:
 
 volumes:
   db_data:
-  ml_models:
   pdf_uploads:
   pgadmin_data:

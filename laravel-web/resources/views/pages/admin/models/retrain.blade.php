@@ -14,6 +14,7 @@
     $notice = session('admin_notice');
     $activeSchema = $payload['active_schema'];
     $modelStatus = $payload['model_status'];
+    $activeModel = $payload['active_model'];
     $latestReadyModel = $payload['latest_ready_model'];
     $latestAttempt = $payload['latest_attempt'];
     $recentVersions = $payload['recent_model_versions'];
@@ -143,8 +144,8 @@
                             </div>
                             <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
                                 <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Versi Siap Terakhir</p>
-                                <p class="mt-2 text-sm font-bold">{{ $latestReadyModel?->version_name ?? 'Belum ada model siap' }}</p>
-                                <p class="mt-1 text-xs text-blue-100/80">{{ optional($latestReadyModel?->trained_at)->format('d M Y H:i') ?? 'Menunggu retrain pertama' }}</p>
+                                <p class="mt-2 text-sm font-bold">{{ $activeModel?->version_name ?? 'Belum ada model aktif' }}</p>
+                                <p class="mt-1 text-xs text-blue-100/80">{{ optional($activeModel?->activated_at ?? $activeModel?->trained_at)->format('d M Y H:i') ?? 'Menunggu retrain pertama' }}</p>
                             </div>
                         </div>
                     </div>
@@ -234,7 +235,7 @@
                     <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5">
                         <div>
                             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Histori Retrain</p>
-                            <h3 class="mt-1 text-xl font-extrabold text-on-surface">Versi model terbaru</h3>
+                            <h3 class="mt-1 text-xl font-extrabold text-on-surface">Histori versi model</h3>
                         </div>
                     </div>
 
@@ -246,13 +247,19 @@
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Status</th>
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Akurasi</th>
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Waktu</th>
+                                    <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50">
                                 @forelse ($recentVersions as $modelVersion)
                                     <tr class="hover:bg-slate-50/60">
                                         <td class="px-8 py-5">
-                                            <p class="text-sm font-bold text-on-surface">{{ $modelVersion->version_name }}</p>
+                                            <div class="flex flex-wrap items-center gap-2">
+                                                <p class="text-sm font-bold text-on-surface">{{ $modelVersion->version_name }}</p>
+                                                @if ($modelVersion->is_current)
+                                                    <span class="rounded-full bg-primary-container px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-on-primary-container">Aktif</span>
+                                                @endif
+                                            </div>
                                             <p class="mt-1 text-[11px] text-slate-400">Skema v{{ $modelVersion->schema_version }} · {{ $modelVersion->rows_used ?? 0 }} baris</p>
                                         </td>
                                         <td class="px-8 py-5">
@@ -267,11 +274,35 @@
                                         <td class="px-8 py-5">
                                             <p class="text-sm font-semibold text-on-surface">{{ optional($modelVersion->trained_at)->format('d/m/Y H:i') ?? '-' }}</p>
                                             <p class="mt-1 text-[11px] text-slate-400">{{ $modelVersion->triggeredBy?->name ?? $modelVersion->triggered_by_email ?? 'Sistem' }}</p>
+                                            <p class="mt-1 text-[11px] text-slate-400">Aktif: {{ optional($modelVersion->activated_at)->format('d/m/Y H:i') ?? '-' }}</p>
+                                        </td>
+                                        <td class="px-8 py-5 text-right">
+                                            @if ($modelVersion->status === 'ready' && ! $modelVersion->is_current)
+                                                <form method="POST" action="{{ route('admin.models.retrain.activate', $modelVersion) }}">
+                                                    @csrf
+                                                    <button
+                                                        type="submit"
+                                                        class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-700 transition hover:bg-slate-50"
+                                                    >
+                                                        <span class="material-symbols-outlined text-sm">restore</span>
+                                                        Jadikan Aktif
+                                                    </button>
+                                                </form>
+                                            @elseif ($modelVersion->is_current)
+                                                <span class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-white">
+                                                    <span class="material-symbols-outlined text-sm">verified</span>
+                                                    Model Aktif
+                                                </span>
+                                            @else
+                                                <span class="inline-flex items-center rounded-xl bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-500">
+                                                    Tidak bisa diaktifkan
+                                                </span>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-8 py-14 text-center">
+                                        <td colspan="5" class="px-8 py-14 text-center">
                                             <p class="text-sm font-semibold text-slate-500">Belum ada histori retrain. Jalankan sinkronisasi training lalu retrain pertama.</p>
                                         </td>
                                     </tr>
@@ -284,13 +315,17 @@
                 <div class="space-y-6">
                     <div class="rounded-3xl bg-white p-6 shadow-lg">
                         <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Model Aktif</p>
-                        @if ($latestReadyModel)
+                        @if ($activeModel)
                             <div class="mt-4 rounded-2xl bg-surface-container p-5">
-                                <p class="text-sm font-black text-on-surface">{{ $latestReadyModel->version_name }}</p>
+                                <div class="flex items-center justify-between gap-3">
+                                    <p class="text-sm font-black text-on-surface">{{ $activeModel->version_name }}</p>
+                                    <span class="rounded-full bg-primary-container px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-on-primary-container">Aktif</span>
+                                </div>
                                 <p class="mt-2 text-sm font-medium text-slate-500">CatBoost adalah model primer. Naive Bayes digunakan sebagai pembanding disagreement.</p>
                                 <div class="mt-4 space-y-2 text-sm">
-                                    <p class="font-semibold text-on-surface">CatBoost: {{ $latestReadyModel->catboost_validation_accuracy ?? $latestReadyModel->catboost_train_accuracy ?? '-' }}</p>
-                                    <p class="font-semibold text-on-surface">Naive Bayes: {{ $latestReadyModel->naive_bayes_validation_accuracy ?? $latestReadyModel->naive_bayes_train_accuracy ?? '-' }}</p>
+                                    <p class="font-semibold text-on-surface">CatBoost: {{ $activeModel->catboost_validation_accuracy ?? $activeModel->catboost_train_accuracy ?? '-' }}</p>
+                                    <p class="font-semibold text-on-surface">Naive Bayes: {{ $activeModel->naive_bayes_validation_accuracy ?? $activeModel->naive_bayes_train_accuracy ?? '-' }}</p>
+                                    <p class="font-semibold text-on-surface">Diaktifkan: {{ optional($activeModel->activated_at ?? $activeModel->trained_at)->format('d M Y H:i') ?? '-' }}</p>
                                 </div>
                             </div>
                         @else
@@ -298,6 +333,14 @@
                                 <p class="text-sm font-semibold">Belum ada model siap. Setelah data training aktif tersedia, jalankan retrain pertama melalui tombol di atas.</p>
                             </div>
                         @endif
+                    </div>
+
+                    <div class="rounded-3xl bg-white p-6 shadow-lg">
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Versi Siap Terbaru</p>
+                        <div class="mt-4 rounded-2xl bg-surface-container p-5">
+                            <p class="text-sm font-black text-on-surface">{{ $latestReadyModel?->version_name ?? 'Belum ada model siap' }}</p>
+                            <p class="mt-2 text-sm font-medium text-slate-500">Versi siap terbaru belum tentu menjadi model aktif jika admin melakukan rollback ke versi sebelumnya.</p>
+                        </div>
                     </div>
 
                     <div class="rounded-3xl bg-white p-6 shadow-lg">

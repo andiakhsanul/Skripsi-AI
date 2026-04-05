@@ -4,65 +4,103 @@
 @section('description', 'Dashboard mahasiswa untuk memantau pengajuan KIP-K Universitas Airlangga')
 
 @php
-    $studentName = $student->name ?? 'Mahasiswa';
-    $initials = collect(preg_split('/\s+/', trim($studentName)) ?: [])
-        ->filter()
-        ->map(fn ($part) => strtoupper(mb_substr($part, 0, 1)))
-        ->take(2)
-        ->implode('');
-
     $statusClasses = [
         'Submitted' => 'bg-secondary-container text-on-secondary-container border-t-2 border-secondary',
         'Verified' => 'bg-emerald-100 text-emerald-700 border-t-2 border-emerald-500',
         'Rejected' => 'bg-error-container text-on-error-container border-t-2 border-error',
     ];
 
+    $statusLabels = [
+        'Submitted' => 'Menunggu',
+        'Verified' => 'Lolos',
+        'Rejected' => 'Indikasi',
+    ];
+
     $latestStatus = $summary['latest_status'] ?? 'Belum ada';
     $latestStatusClass = $statusClasses[$latestStatus] ?? 'bg-slate-100 text-slate-600 border-t-2 border-slate-300';
+    $studentName = $student->name ?? 'Mahasiswa';
+    $notice = session('student_notice');
+    $latestApplication = $summary['latest_application'] ?? null;
+    $latestRecommendation = $summary['latest_recommendation'] ?? null;
+    $latestStatusLabel = $statusLabels[$latestStatus] ?? $latestStatus;
+    $latestDecisionReady = (bool) ($summary['latest_decision_ready'] ?? false);
+    $latestDecisionStatus = $summary['latest_decision_status'] ?? null;
+    $latestDecisionAt = $summary['latest_decision_at'] ?? null;
+
+    $statusFilterOptions = [
+        ['value' => '', 'label' => 'Semua'],
+        ['value' => 'Submitted', 'label' => 'Menunggu'],
+        ['value' => 'Verified', 'label' => 'Lolos'],
+        ['value' => 'Rejected', 'label' => 'Indikasi'],
+    ];
+
+    $statusHeadline = match ($latestStatus) {
+        'Verified' => 'Pengajuan terbaru Anda sudah dinyatakan lolos.',
+        'Rejected' => 'Pengajuan terbaru Anda masuk kategori indikasi.',
+        'Submitted' => 'Pengajuan terbaru Anda sedang menunggu keputusan admin.',
+        default => 'Belum ada pengajuan aktif pada akun ini.',
+    };
+
+    $statusDescription = match ($latestStatus) {
+        'Verified' => 'Pantau halaman detail untuk melihat keputusan final dan catatan admin jika tersedia.',
+        'Rejected' => 'Silakan buka detail pengajuan untuk melihat rekomendasi sistem, catatan admin, dan dokumen yang sudah Anda kirim.',
+        'Submitted' => 'Sistem sudah menerima data mentah Anda. Admin akan meninjau dan memberi keputusan final setelah melihat keseluruhan data.',
+        default => 'Mulai pengajuan pertama Anda untuk masuk ke alur verifikasi KIP-K UNAIR.',
+    };
+
+    $decisionBannerClasses = match ($latestStatus) {
+        'Verified' => 'border-emerald-200 bg-emerald-50 text-emerald-800',
+        'Rejected' => 'border-red-200 bg-error-container text-on-error-container',
+        'Submitted' => 'border-yellow-200 bg-secondary-fixed text-on-secondary-fixed',
+        default => 'border-slate-200 bg-surface-container-low text-slate-700',
+    };
+
+    $decisionNotificationClasses = match ($latestDecisionStatus) {
+        'Verified' => 'border-emerald-200 bg-emerald-50 text-emerald-800',
+        'Rejected' => 'border-red-200 bg-error-container text-on-error-container',
+        default => 'border-slate-200 bg-white text-slate-700',
+    };
 
     $statCards = [
         ['label' => 'Total Pengajuan', 'value' => $summary['total'], 'icon' => 'article', 'tone' => 'bg-blue-50 text-blue-700'],
-        ['label' => 'Diproses', 'value' => $summary['submitted'], 'icon' => 'schedule', 'tone' => 'bg-yellow-50 text-yellow-700'],
+        ['label' => 'Menunggu', 'value' => $summary['submitted'], 'icon' => 'schedule', 'tone' => 'bg-yellow-50 text-yellow-700'],
         ['label' => 'Lolos', 'value' => $summary['verified'], 'icon' => 'check_circle', 'tone' => 'bg-emerald-50 text-emerald-700'],
         ['label' => 'Indikasi', 'value' => $summary['rejected'], 'icon' => 'warning', 'tone' => 'bg-error-container text-error'],
     ];
 @endphp
 
 @section('content')
-<header class="fixed top-0 z-50 w-full border-b border-slate-100 bg-white/80 shadow-sm backdrop-blur-md">
-    <div class="mx-auto flex h-16 w-full max-w-screen-2xl items-center justify-between px-6">
-        <div class="flex items-center gap-8">
-            <a href="{{ route('student.dashboard') }}" class="text-xl font-extrabold tracking-tighter text-blue-800">KIP-K UNAIR</a>
-            <nav class="hidden items-center gap-6 text-sm font-medium tracking-tight md:flex">
-                <a href="{{ route('student.dashboard') }}" class="border-b-2 border-yellow-500 pb-1 text-blue-700">Dashboard</a>
-                <span class="cursor-not-allowed text-slate-400">Pengajuan</span>
-                <span class="cursor-not-allowed text-slate-400">Dokumen</span>
-                <span class="cursor-not-allowed text-slate-400">Pesan</span>
-            </nav>
-        </div>
-
-        <div class="flex items-center gap-4">
-            <div class="hidden text-right md:block">
-                <p class="text-sm font-bold text-on-surface">{{ $studentName }}</p>
-                <p class="text-[11px] font-medium text-slate-400">{{ $student->email }}</p>
-            </div>
-            <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-primary-container font-bold text-primary shadow-sm">
-                {{ $initials !== '' ? $initials : 'MH' }}
-            </div>
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-50 hover:text-error" title="Logout">
-                    <span class="material-symbols-outlined block">logout</span>
-                </button>
-            </form>
-        </div>
-    </div>
-</header>
+@include('pages.student.partials.topbar', ['student' => $student])
 
 <main class="mx-auto max-w-7xl px-6 pb-12 pt-24">
-    @if(session('status'))
-        <div class="mb-6 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            {{ session('status') }}
+    @if($notice)
+        <div class="mb-6 rounded-2xl border px-4 py-3 text-sm font-semibold {{ ($notice['type'] ?? 'success') === 'error' ? 'border-red-200 bg-error-container text-on-error-container' : 'border-emerald-100 bg-emerald-50 text-emerald-700' }}">
+            <p class="font-black uppercase tracking-[0.18em]">{{ $notice['title'] ?? 'Informasi' }}</p>
+            <p class="mt-1">{{ $notice['message'] ?? '' }}</p>
+        </div>
+    @endif
+
+    @if ($latestDecisionReady && $latestApplication)
+        <div class="mb-6 rounded-2xl border px-5 py-4 shadow-sm {{ $decisionNotificationClasses }}">
+            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div class="flex items-start gap-3">
+                    <span class="material-symbols-outlined mt-0.5">notifications_active</span>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Notifikasi Keputusan</p>
+                        <p class="mt-1 text-sm font-black">
+                            Admin sudah memberi keputusan final: {{ $statusLabels[$latestDecisionStatus] ?? $latestDecisionStatus }}
+                        </p>
+                        <p class="mt-1 text-sm opacity-90">
+                            {{ $latestDecisionAt ? 'Diputuskan pada '.$latestDecisionAt->translatedFormat('d M Y H:i') : 'Silakan buka detail pengajuan terbaru untuk melihat hasil lengkap.' }}
+                        </p>
+                    </div>
+                </div>
+
+                <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-current/15 bg-white/40 px-4 py-3 text-sm font-black transition hover:bg-white/60">
+                    <span class="material-symbols-outlined text-base">visibility</span>
+                    Lihat Keputusan
+                </a>
+            </div>
         </div>
     @endif
 
@@ -78,30 +116,42 @@
 
         <div class="relative z-10 flex flex-col items-start justify-between gap-8 p-8 md:flex-row md:items-center md:p-12">
             <div class="max-w-xl">
-                <span class="mb-2 block text-[10px] font-bold uppercase tracking-widest text-secondary">Welcome back, Airlangga Student</span>
-                <h1 class="font-headline text-3xl font-extrabold tracking-tight text-white md:text-4xl">Empowering your academic excellence.</h1>
+                <span class="mb-2 block text-[10px] font-bold uppercase tracking-widest text-secondary">Portal Mahasiswa KIP-K</span>
+                <h1 class="font-headline text-3xl font-extrabold tracking-tight text-white md:text-4xl">Ajukan data sekali, lalu pantau hasilnya dengan tenang.</h1>
                 <p class="mt-4 text-sm leading-relaxed text-white/80">
-                    Monitor riwayat pengajuan, status verifikasi, dan dokumen KIP-K Anda dalam satu portal mahasiswa.
+                    Lengkapi data pengajuan KIP-K, unggah dokumen PDF, lalu tunggu hasil rekomendasi sistem dan keputusan final admin di portal ini.
                 </p>
-                <button type="button" class="mt-6 flex cursor-not-allowed items-center gap-2 rounded-lg bg-secondary px-8 py-3.5 font-bold text-on-secondary-fixed shadow-lg shadow-secondary/20 opacity-80">
-                    <span class="material-symbols-outlined">add</span>
-                    Form Pengajuan Menyusul
-                </button>
+                <div class="mt-6 flex flex-wrap gap-3">
+                    <a href="{{ route('student.applications.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-secondary px-8 py-3.5 font-bold text-on-secondary-fixed shadow-lg shadow-secondary/20 transition-all hover:-translate-y-0.5 active:scale-95">
+                        <span class="material-symbols-outlined">add</span>
+                        Ajukan KIP-K
+                    </a>
+                    @if ($latestApplication)
+                        <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/20">
+                            <span class="material-symbols-outlined">visibility</span>
+                            Lihat Hasil Terbaru
+                        </a>
+                    @endif
+                </div>
             </div>
 
             <div class="w-full rounded-xl border border-white/30 bg-white/20 p-6 backdrop-blur-md md:w-80">
                 <h3 class="flex items-center gap-2 text-lg font-bold text-white">
                     <span class="material-symbols-outlined">assignment_turned_in</span>
-                    Status Summary
+                    Ringkasan Status
                 </h3>
                 <div class="mt-4 space-y-4">
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-white/70">Total Pengajuan</span>
+                        <span class="text-sm text-white/70">Pengajuan Aktif</span>
                         <span class="text-sm font-medium text-white">{{ $summary['total'] }}</span>
                     </div>
                     <div class="flex items-center justify-between">
-                        <span class="text-sm text-white/70">Status Terakhir</span>
-                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $latestStatusClass }}">{{ $latestStatus }}</span>
+                        <span class="text-sm text-white/70">Status Terbaru</span>
+                        <span class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $latestStatusClass }}">{{ $latestStatusLabel }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm text-white/70">Rekomendasi Sistem</span>
+                        <span class="text-sm font-medium text-white">{{ $latestRecommendation ?? 'Belum diproses' }}</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-sm text-white/70">Dokumen Tersedia</span>
@@ -109,6 +159,34 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="mb-10 rounded-2xl border px-5 py-5 shadow-sm {{ $decisionBannerClasses }}">
+        <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Hasil Terbaru</p>
+                <h2 class="mt-2 text-xl font-black">{{ $statusHeadline }}</h2>
+                <p class="mt-2 max-w-3xl text-sm leading-7 opacity-90">{{ $statusDescription }}</p>
+                @if ($latestApplication && $latestApplication->admin_decision_note)
+                    <p class="mt-3 text-sm font-medium leading-7 opacity-90">
+                        Catatan admin: {{ $latestApplication->admin_decision_note }}
+                    </p>
+                @endif
+            </div>
+
+            @if ($latestApplication)
+                <div class="flex flex-col gap-2 text-sm font-semibold md:items-end">
+                    <span>Rekomendasi: {{ $latestRecommendation ?? 'Belum diproses' }}</span>
+                    <span>
+                        Dikirim: {{ $latestApplication->created_at?->translatedFormat('d M Y H:i') ?? '-' }}
+                    </span>
+                    <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="mt-1 inline-flex items-center gap-2 rounded-xl border border-current/15 bg-white/40 px-4 py-3 text-sm font-black transition hover:bg-white/60">
+                        <span class="material-symbols-outlined text-base">arrow_forward</span>
+                        Buka Detail Pengajuan
+                    </a>
+                </div>
+            @endif
         </div>
     </section>
 
@@ -131,17 +209,38 @@
     <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
         <section class="lg:col-span-2">
             <div class="mb-4 flex items-center justify-between">
-                <h2 class="font-headline text-xl font-extrabold tracking-tight text-on-surface">History of Applications</h2>
+                <h2 class="font-headline text-xl font-extrabold tracking-tight text-on-surface">Riwayat Pengajuan</h2>
                 <form method="GET" action="{{ route('student.dashboard') }}" class="relative">
+                    @if ($filters['status'])
+                        <input type="hidden" name="status" value="{{ $filters['status'] }}" />
+                    @endif
                     <span class="material-symbols-outlined absolute inset-y-0 left-3 flex items-center text-sm text-slate-400">search</span>
                     <input
                         type="text"
                         name="q"
                         value="{{ $filters['q'] }}"
-                        placeholder="Cari ID atau status..."
+                        placeholder="Cari ID pengajuan..."
                         class="w-52 rounded-lg bg-surface px-4 py-2 pl-9 text-sm shadow-sm outline-none transition-all focus:ring-2 focus:ring-primary/20"
                     />
                 </form>
+            </div>
+
+            <div class="mb-4 flex flex-wrap gap-2">
+                @foreach ($statusFilterOptions as $option)
+                    @php
+                        $active = ($filters['status'] ?? '') === $option['value'];
+                        $params = array_filter([
+                            'status' => $option['value'] !== '' ? $option['value'] : null,
+                            'q' => $filters['q'] ?: null,
+                        ]);
+                    @endphp
+                    <a
+                        href="{{ route('student.dashboard', $params) }}"
+                        class="{{ $active ? 'border-primary bg-primary-container text-primary' : 'border-slate-200 bg-white text-slate-500 hover:border-primary/30 hover:text-primary' }} inline-flex items-center rounded-full border px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition"
+                    >
+                        {{ $option['label'] }}
+                    </a>
+                @endforeach
             </div>
 
             <div class="overflow-hidden rounded-xl bg-surface shadow-sm">
@@ -150,11 +249,11 @@
                         <table class="w-full border-collapse text-left">
                             <thead>
                                 <tr class="border-b border-slate-100 bg-surface-container-low">
-                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Application ID</th>
-                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Submission Date</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">ID Pengajuan</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Tanggal Kirim</th>
                                     <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Status</th>
-                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Recommendation</th>
-                                    <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">Actions</th>
+                                    <th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">Rekomendasi</th>
+                                    <th class="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-widest text-slate-500">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50">
@@ -163,6 +262,12 @@
                                         $statusClass = $statusClasses[$application->status] ?? 'bg-slate-100 text-slate-600 border-t-2 border-slate-300';
                                         $displayId = 'KIPK-'.($application->created_at?->format('Y') ?? now()->format('Y')).'-'.str_pad((string) $application->id, 3, '0', STR_PAD_LEFT);
                                         $snapshot = $application->modelSnapshot;
+                                        $canEdit = $application->canBeRevisedByStudent();
+                                        $decisionBadge = match ($application->admin_decision) {
+                                            'Verified' => ['label' => 'Final: Lolos', 'class' => 'bg-emerald-50 text-emerald-700'],
+                                            'Rejected' => ['label' => 'Final: Indikasi', 'class' => 'bg-error-container text-error'],
+                                            default => null,
+                                        };
                                     @endphp
                                     <tr class="transition-colors hover:bg-slate-50/60">
                                         <td class="px-6 py-4">
@@ -175,9 +280,16 @@
                                         </td>
                                         <td class="px-6 py-4 text-sm text-on-surface-variant">{{ $application->created_at?->translatedFormat('d M Y') }}</td>
                                         <td class="px-6 py-4">
-                                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $statusClass }}">
-                                                {{ $application->status }}
-                                            </span>
+                                            <div class="flex flex-col gap-2">
+                                                <span class="inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold uppercase {{ $statusClass }}">
+                                                    {{ $statusLabels[$application->status] ?? $application->status }}
+                                                </span>
+                                                @if ($decisionBadge)
+                                                    <span class="inline-flex w-fit rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] {{ $decisionBadge['class'] }}">
+                                                        {{ $decisionBadge['label'] }}
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </td>
                                         <td class="px-6 py-4 text-sm font-semibold text-on-surface">
                                             {{ $snapshot?->final_recommendation ?? 'Belum diproses model' }}
@@ -200,13 +312,22 @@
                                                 @endif
 
                                                 <a
-                                                    href="{{ url('/api/student/applications/'.$application->id) }}"
-                                                    target="_blank"
+                                                    href="{{ route('student.applications.show', $application->id) }}"
                                                     class="rounded p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-primary"
-                                                    title="Lihat detail JSON"
+                                                    title="Lihat detail pengajuan"
                                                 >
                                                     <span class="material-symbols-outlined">visibility</span>
                                                 </a>
+
+                                                @if($canEdit)
+                                                    <a
+                                                        href="{{ route('student.applications.edit', $application->id) }}"
+                                                        class="rounded p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-primary"
+                                                        title="Revisi pengajuan"
+                                                    >
+                                                        <span class="material-symbols-outlined">edit_square</span>
+                                                    </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -224,7 +345,25 @@
                             <span class="material-symbols-outlined text-4xl">folder_open</span>
                         </div>
                         <h3 class="text-lg font-bold text-on-surface">Belum ada pengajuan</h3>
-                        <p class="mt-2 max-w-xs text-sm text-on-surface-variant">Anda belum memiliki riwayat pengajuan KIP-K pada akun ini.</p>
+                        <p class="mt-2 max-w-xs text-sm text-on-surface-variant">Anda belum memiliki riwayat pengajuan KIP-K pada akun ini. Mulai dari form pengajuan, unggah satu PDF, lalu pantau hasilnya dari dashboard ini.</p>
+                        <div class="mt-6 grid max-w-xl gap-3 md:grid-cols-3">
+                            <div class="rounded-2xl bg-surface-container-low px-4 py-4 text-left">
+                                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Langkah 1</p>
+                                <p class="mt-2 text-sm font-black text-on-surface">Isi data mentah</p>
+                            </div>
+                            <div class="rounded-2xl bg-surface-container-low px-4 py-4 text-left">
+                                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Langkah 2</p>
+                                <p class="mt-2 text-sm font-black text-on-surface">Unggah PDF pendukung</p>
+                            </div>
+                            <div class="rounded-2xl bg-surface-container-low px-4 py-4 text-left">
+                                <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Langkah 3</p>
+                                <p class="mt-2 text-sm font-black text-on-surface">Tunggu hasil admin</p>
+                            </div>
+                        </div>
+                        <a href="{{ route('student.applications.create') }}" class="mt-6 inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-blue-700">
+                            <span class="material-symbols-outlined text-sm">add</span>
+                            Buat Pengajuan Pertama
+                        </a>
                     </div>
                 @endif
             </div>
@@ -237,8 +376,8 @@
                         <span class="material-symbols-outlined">person</span>
                     </div>
                     <div>
-                        <h4 class="font-bold text-on-surface">Student Profile</h4>
-                        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant">Portal Summary</p>
+                        <h4 class="font-bold text-on-surface">Profil Mahasiswa</h4>
+                        <p class="text-[10px] uppercase tracking-widest text-on-surface-variant">Ringkasan Portal</p>
                     </div>
                 </div>
 
@@ -253,36 +392,38 @@
                     </div>
                     <div class="rounded-lg bg-surface-container-low p-3">
                         <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-400">Role</p>
-                        <p class="mt-1 text-sm font-semibold capitalize text-on-surface">{{ $student->role }}</p>
+                        <p class="mt-1 text-sm font-semibold capitalize text-on-surface">Mahasiswa</p>
                     </div>
                 </div>
             </section>
 
             <section class="rounded-xl bg-tertiary p-6 text-white shadow-lg">
-                <h4 class="text-lg font-bold">Need assistance?</h4>
+                <h4 class="text-lg font-bold">Butuh bantuan?</h4>
                 <p class="mt-2 text-sm text-white/70">
-                    Hubungi helpdesk KIP-K UNAIR jika Anda membutuhkan bantuan terkait status pengajuan atau kelengkapan dokumen.
+                    Gunakan panel ini sebagai pengingat alur mahasiswa: submit data mentah, tunggu review admin, lalu cek kembali detail pengajuan setelah ada keputusan.
                 </p>
+                <div class="mt-6 space-y-3">
+                    <div class="rounded-lg bg-white/10 px-4 py-3">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Panduan Cepat</p>
+                        <p class="mt-2 text-sm font-medium text-white">Simpan revisi hanya selama admin belum memberi keputusan final.</p>
+                    </div>
+                    <div class="rounded-lg bg-white/10 px-4 py-3">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Dokumen</p>
+                        <p class="mt-2 text-sm font-medium text-white">Pastikan PDF pendukung Anda selalu memuat bukti terbaru dan terbaca jelas.</p>
+                    </div>
+                </div>
                 <div class="mt-6 grid grid-cols-2 gap-3">
-                    <button type="button" class="rounded-lg bg-white/10 py-2 text-xs font-bold transition-all hover:bg-white/20">Documentation</button>
-                    <button type="button" class="rounded-lg bg-white/10 py-2 text-xs font-bold transition-all hover:bg-white/20">Help Center</button>
+                    <a href="{{ route('student.applications.create') }}" class="rounded-lg bg-white/10 py-2 text-center text-xs font-bold transition-all hover:bg-white/20">Form Pengajuan</a>
+                    @if ($latestApplication)
+                        <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="rounded-lg bg-white/10 py-2 text-center text-xs font-bold transition-all hover:bg-white/20">Hasil Terbaru</a>
+                    @else
+                        <button type="button" class="rounded-lg bg-white/10 py-2 text-xs font-bold transition-all hover:bg-white/20">Menunggu Data</button>
+                    @endif
                 </div>
             </section>
         </aside>
     </div>
 </main>
 
-<footer class="border-t border-slate-100 bg-white py-8">
-    <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-8 md:flex-row">
-        <div class="flex flex-col items-center gap-1 md:items-start">
-            <span class="font-bold text-slate-900">KIP-K Management System</span>
-            <span class="text-[10px] uppercase tracking-widest text-slate-400">© 2026 Universitas Airlangga</span>
-        </div>
-        <div class="flex gap-6">
-            <a href="#" class="text-[10px] uppercase tracking-widest text-slate-400 transition-all hover:text-blue-500 hover:underline">Privacy Policy</a>
-            <a href="#" class="text-[10px] uppercase tracking-widest text-slate-400 transition-all hover:text-blue-500 hover:underline">Terms of Service</a>
-            <a href="#" class="text-[10px] uppercase tracking-widest text-slate-400 transition-all hover:text-blue-500 hover:underline">Contact Support</a>
-        </div>
-    </div>
-</footer>
+@include('pages.student.partials.footer')
 @endsection

@@ -3,21 +3,21 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ApplicationStatusLog;
-use App\Models\SpkTrainingData;
 use App\Models\StudentApplication;
-use App\Services\ApplicationInferenceService;
+use App\Services\AdminApplicationReviewService;
+use App\Services\AdminTrainingDataReviewService;
 use App\Services\TrainingDataSyncService;
+use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class ApplicationController extends Controller
 {
     public function __construct(
         private readonly TrainingDataSyncService $trainingDataSyncService,
-        private readonly ApplicationInferenceService $applicationInferenceService,
+        private readonly AdminApplicationReviewService $reviewService,
+        private readonly AdminTrainingDataReviewService $trainingDataReviewService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -50,22 +50,12 @@ class ApplicationController extends Controller
 
     public function show(int $id): JsonResponse
     {
-        $application = StudentApplication::query()
-            ->with([
-                'student:id,name,email',
-                'adminDecider:id,name,email',
-                'logs',
-                'currentEncoding',
-                'modelSnapshot',
-            ])
-            ->findOrFail($id);
+        $application = $this->reviewService->detail($id);
 
         return response()->json([
             'status' => 'success',
             'data' => array_merge($application->toArray(), [
-                'submitted_pdf_url' => $application->submitted_pdf_path !== null
-                    ? Storage::disk('public')->url($application->submitted_pdf_path)
-                    : null,
+                'submitted_pdf_url' => $this->reviewService->documentUrl($application),
             ]),
         ]);
     }
@@ -88,43 +78,17 @@ class ApplicationController extends Controller
             'only_missing' => ['nullable', 'boolean'],
         ]);
 
-        $query = StudentApplication::query()
-            ->when($validated['status'] ?? null, fn ($builder, $status) => $builder->where('status', $status))
-            ->when(
-                $validated['only_missing'] ?? true,
-                fn ($builder) => $builder->whereDoesntHave('modelSnapshot')
-            )
-            ->orderBy('id');
-
-        if (isset($validated['limit'])) {
-            $query->limit((int) $validated['limit']);
-        }
-
-        $applications = $query->get();
-        $success = 0;
-        $failed = [];
-
-        foreach ($applications as $application) {
-            try {
-                $this->applicationInferenceService->syncPredictionSnapshot($application, $request->user()->id);
-                $success++;
-            } catch (\Throwable $throwable) {
-                $failed[] = [
-                    'application_id' => $application->id,
-                    'message' => $throwable->getMessage(),
-                ];
-            }
-        }
+        $result = $this->reviewService->batchRunPredictions(
+            $request->user()->id,
+            $validated['status'] ?? null,
+            isset($validated['limit']) ? (int) $validated['limit'] : null,
+            (bool) ($validated['only_missing'] ?? true),
+        );
 
         return response()->json([
             'status' => 'success',
             'message' => 'Batch prediction selesai diproses.',
-            'data' => [
-                'processed' => $applications->count(),
-                'succeeded' => $success,
-                'failed' => count($failed),
-                'errors' => $failed,
-            ],
+            'data' => $result,
         ]);
     }
 
@@ -148,19 +112,12 @@ class ApplicationController extends Controller
 
     public function showTrainingData(int $id): JsonResponse
     {
-        $application = StudentApplication::query()
-            ->with(['student:id,name,email', 'currentEncoding', 'modelSnapshot'])
-            ->findOrFail($id);
-
-        $trainingData = SpkTrainingData::query()
-            ->where('source_application_id', $id)
-            ->latest('id')
-            ->first();
-
-        if (! $trainingData) {
+        try {
+            $detail = $this->trainingDataReviewService->detail($id);
+        } catch (ValidationException $validationException) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data training belum tersedia. Jalankan sinkronisasi finalized terlebih dahulu.',
+                'message' => $validationException->getMessage(),
             ], 404);
         }
 
@@ -168,29 +125,17 @@ class ApplicationController extends Controller
             'status' => 'success',
             'data' => [
                 'application_id' => $id,
-                'student_name' => $application->student?->name ?? $application->applicant_name ?? '-',
-                'current_encoding' => $application->currentEncoding,
-                'model_snapshot' => $application->modelSnapshot,
-                'training_data' => $trainingData,
-                'encoding_legend' => [
-                    'binary' => 'KIP/PKH/KKS/DTKS/SKTM: 0=Tidak, 1=Ya',
-                    'ordinal' => '1=Prioritas Tinggi (paling rentan), 3=Prioritas Rendah',
-                    'income' => 'penghasilan: 1=<1jt, 2=1-4jt, 3=≥4jt',
-                    'dependents' => 'jumlah_tanggungan: 1=≥6 orang, 2=4-5 orang, 3=0-3 orang',
-                    'child' => 'anak_ke: 1=≥anak ke-5, 2=anak ke-3/4, 3=anak ke-1/2',
-                    'parent' => 'status_orangtua: 1=Yatim Piatu, 2=Yatim/Piatu, 3=Lengkap',
-                    'house' => 'status_rumah: 1=Tidak Punya, 2=Sewa/Menumpang, 3=Milik Sendiri',
-                    'power' => 'daya_listrik: 1=Non-PLN, 2=PLN 450-900VA, 3=PLN >900VA',
-                    'label' => 'label_class: 0=Layak, 1=Indikasi',
-                ],
+                'student_name' => $detail['application']->student?->name ?? $detail['application']->applicant_name ?? '-',
+                'current_encoding' => $detail['application']->currentEncoding,
+                'model_snapshot' => $detail['application']->modelSnapshot,
+                'training_data' => $detail['training_row'],
+                'encoding_legend' => $detail['legend'],
             ],
         ]);
     }
 
     public function updateTrainingData(Request $request, int $id): JsonResponse
     {
-        StudentApplication::query()->findOrFail($id);
-
         $validated = $request->validate([
             'kip' => ['sometimes', 'integer', 'in:0,1'],
             'pkh' => ['sometimes', 'integer', 'in:0,1'],
@@ -209,31 +154,19 @@ class ApplicationController extends Controller
             'correction_note' => ['nullable', 'string', 'max:500'],
         ]);
 
-        $trainingData = SpkTrainingData::query()
-            ->where('source_application_id', $id)
-            ->latest('id')
-            ->first();
-
-        if (! $trainingData) {
+        try {
+            $trainingData = $this->trainingDataReviewService->update($id, $validated);
+        } catch (ValidationException $validationException) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Data training belum tersedia untuk pengajuan ini.',
+                'message' => $validationException->getMessage(),
             ], 404);
         }
-
-        $updateData = array_filter($validated, static fn ($value): bool => $value !== null);
-        $updateData['admin_corrected'] = true;
-        $updateData['updated_at'] = now();
-
-        if (isset($validated['label'])) {
-            $updateData['label_class'] = $validated['label'] === 'Indikasi' ? 1 : 0;
-        }
-
-        $trainingData->update($updateData);
 
         return response()->json([
             'status' => 'success',
             'message' => 'Data training berhasil dikoreksi. Model akan menggunakan data ini saat retrain berikutnya.',
+            'data' => $trainingData,
         ]);
     }
 
@@ -243,40 +176,19 @@ class ApplicationController extends Controller
             'note' => ['nullable', 'string', 'max:1000'],
         ]);
 
-        $application = StudentApplication::query()->findOrFail($id);
-
-        if (! in_array($application->status, ['Submitted'], true)) {
+        try {
+            $application = $this->reviewService->finalize(
+                $id,
+                $request->user()->id,
+                $status,
+                $validated['note'] ?? null,
+            );
+        } catch (DomainException $domainException) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Pengajuan hanya dapat diputuskan dari status Submitted',
+                'message' => $domainException->getMessage(),
             ], 409);
         }
-
-        $application = DB::transaction(function () use ($application, $request, $validated, $status): StudentApplication {
-            $previousStatus = $application->status;
-
-            $application->forceFill([
-                'status' => $status,
-                'admin_decision' => $status,
-                'admin_decided_by' => $request->user()->id,
-                'admin_decision_note' => $validated['note'] ?? null,
-                'admin_decided_at' => now(),
-            ])->save();
-
-            ApplicationStatusLog::query()->create([
-                'application_id' => $application->id,
-                'actor_user_id' => $request->user()->id,
-                'from_status' => $previousStatus,
-                'to_status' => $status,
-                'action' => strtolower($status),
-                'note' => $validated['note'] ?? null,
-                'metadata' => ['admin_decision' => $status],
-            ]);
-
-            $this->trainingDataSyncService->syncFromApplication($application, $request->user()->id);
-
-            return $application->fresh(['currentEncoding', 'modelSnapshot']);
-        });
 
         return response()->json([
             'status' => 'success',

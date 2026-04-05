@@ -20,17 +20,52 @@ class DashboardController extends Controller
             'q' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', 'string', Rule::in(['Submitted', 'Verified', 'Rejected'])],
             'priority' => ['nullable', 'string', Rule::in(['high', 'normal'])],
+            'recommendation' => ['nullable', 'string', Rule::in(['Layak', 'Indikasi'])],
+            'disagreement' => ['nullable', 'string', Rule::in(['true', 'false'])],
+            'scope' => ['nullable', 'string', Rule::in(['all'])],
         ]);
+
+        $defaultFocusApplied = false;
+
+        if ($this->shouldApplyDefaultIndikasiFocus($request, $filters)) {
+            $filters['status'] = 'Submitted';
+            $filters['recommendation'] = 'Indikasi';
+            $defaultFocusApplied = true;
+        }
+
+        $viewFilters = [
+            'q' => $filters['q'] ?? '',
+            'status' => $filters['status'] ?? '',
+            'priority' => $filters['priority'] ?? '',
+            'recommendation' => $filters['recommendation'] ?? '',
+            'disagreement' => $filters['disagreement'] ?? '',
+            'scope' => $filters['scope'] ?? '',
+        ];
+
+        $applications = $this->adminDashboardService->paginateApplications($viewFilters, 10);
+        $applications->appends($viewFilters);
 
         return view('pages.admin.dashboard', [
             'admin' => $request->user(),
             'summary' => $this->adminDashboardService->summary(),
-            'applications' => $this->adminDashboardService->paginateApplications($filters, 10),
-            'filters' => [
-                'q' => $filters['q'] ?? '',
-                'status' => $filters['status'] ?? '',
-                'priority' => $filters['priority'] ?? '',
-            ],
+            'applications' => $applications,
+            'filters' => $viewFilters,
+            'defaultFocusApplied' => $defaultFocusApplied,
         ]);
+    }
+
+    /**
+     * @param array<string, mixed> $filters
+     */
+    private function shouldApplyDefaultIndikasiFocus(Request $request, array $filters): bool
+    {
+        if (($filters['scope'] ?? null) === 'all') {
+            return false;
+        }
+
+        $query = $request->query();
+        unset($query['page']);
+
+        return $query === [];
     }
 }

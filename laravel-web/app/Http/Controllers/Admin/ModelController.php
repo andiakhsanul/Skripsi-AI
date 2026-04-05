@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ModelVersion;
 use App\Services\AdminModelRetrainService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,6 +32,29 @@ class ModelController extends Controller
             'schema_version' => $result['schema_version'],
             'training_rows' => $result['training_rows'],
             'ml_response' => $result['ml_response'],
+        ]);
+    }
+
+    public function activate(Request $request, ModelVersion $modelVersion): JsonResponse
+    {
+        try {
+            $result = $this->adminModelRetrainService->activateModelVersion($modelVersion, $request->user());
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal mengaktifkan versi model',
+                'detail' => $throwable->getMessage(),
+            ], 502);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Versi model aktif berhasil diperbarui',
+            'data' => [
+                'model_version_id' => $result['activated_version']?->id,
+                'version_name' => $result['activated_version']?->version_name,
+                'ml_response' => $result['ml_response'],
+            ],
         ]);
     }
 }

@@ -145,4 +145,32 @@ class MlGatewayService
 
         return $response->json() ?? [];
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function activateModelVersion(int $modelVersionId): array
+    {
+        $activateUrl = env('FLASK_ACTIVATE_MODEL_URL', 'http://flask-api:5000/api/models/activate');
+        $internalToken = env('FLASK_INTERNAL_TOKEN', 'spk_internal_dev_token');
+
+        $response = Http::timeout(30)
+            ->retry(1, 300)
+            ->withHeaders([
+                'X-Internal-Token' => $internalToken,
+            ])
+            ->post($activateUrl, [
+                'model_version_id' => $modelVersionId,
+            ]);
+
+        if (! $response->successful()) {
+            $body = $response->json() ?? [];
+            $message = $body['message'] ?? 'Aktivasi versi model gagal diproses service ML.';
+            $detail = $body['detail'] ?? null;
+
+            throw new RuntimeException(trim($message.' '.($detail ? "Detail: {$detail}" : 'HTTP '.$response->status())));
+        }
+
+        return $response->json() ?? [];
+    }
 }

@@ -23,8 +23,15 @@ class StudentDashboardService
         $rejected = (clone $baseQuery)->where('status', 'Rejected')->count();
 
         $latestApplication = (clone $baseQuery)
+            ->with('modelSnapshot')
             ->latest('created_at')
             ->first();
+
+        $latestDecisionStatus = $latestApplication?->admin_decision;
+
+        if ($latestDecisionStatus === null && in_array($latestApplication?->status, ['Verified', 'Rejected'], true)) {
+            $latestDecisionStatus = $latestApplication?->status;
+        }
 
         return [
             'total' => $total,
@@ -34,6 +41,11 @@ class StudentDashboardService
             'latest_status' => $latestApplication?->status,
             'latest_submitted_at' => $latestApplication?->created_at,
             'has_documents' => (clone $baseQuery)->whereNotNull('submitted_pdf_path')->exists(),
+            'latest_application' => $latestApplication,
+            'latest_recommendation' => $latestApplication?->modelSnapshot?->final_recommendation,
+            'latest_decision_ready' => $latestDecisionStatus !== null,
+            'latest_decision_status' => $latestDecisionStatus,
+            'latest_decision_at' => $latestApplication?->admin_decided_at,
         ];
     }
 
@@ -45,6 +57,10 @@ class StudentDashboardService
         return StudentApplication::query()
             ->with('modelSnapshot')
             ->where('student_user_id', $student->id)
+            ->when(
+                $filters['status'] ?? null,
+                fn (Builder $query, string $status) => $query->where('status', $status)
+            )
             ->when(
                 $filters['q'] ?? null,
                 function (Builder $query, string $term): void {

@@ -27,6 +27,18 @@
         'normal' => 'Normal',
     ];
 
+    $recommendationOptions = [
+        '' => 'Semua rekomendasi',
+        'Indikasi' => 'Rekomendasi Indikasi',
+        'Layak' => 'Rekomendasi Layak',
+    ];
+
+    $disagreementOptions = [
+        '' => 'Semua selisih model',
+        'true' => 'Ada disagreement',
+        'false' => 'Selaras',
+    ];
+
     $statusDisplayLabels = [
         'Submitted' => 'Menunggu',
         'Verified' => 'Terverifikasi',
@@ -111,14 +123,10 @@
 
     $pageStart = max(1, $applications->currentPage() - 1);
     $pageEnd = min($applications->lastPage(), $applications->currentPage() + 1);
+    $notice = session('admin_notice');
 @endphp
 
 @section('content')
-<div
-    id="dashboard-notice"
-    class="hidden fixed right-4 top-4 z-50 max-w-sm rounded-2xl border px-4 py-3 text-sm font-semibold shadow-2xl"
-></div>
-
 <aside class="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-slate-100 bg-slate-50 md:flex">
     <div class="p-6">
         <p class="text-lg font-black uppercase tracking-[0.2em] text-blue-900">KIP-K UNAIR</p>
@@ -211,6 +219,20 @@
     </header>
 
     <div class="mx-auto w-full max-w-screen-2xl p-6 md:p-8">
+        @if ($notice)
+            <div class="mb-6 rounded-2xl border px-5 py-4 {{ ($notice['type'] ?? 'success') === 'error' ? 'border-red-200 bg-error-container text-on-error-container' : 'border-emerald-200 bg-emerald-50 text-emerald-800' }}">
+                <p class="text-sm font-black uppercase tracking-[0.18em]">{{ $notice['title'] ?? 'Informasi Sistem' }}</p>
+                <p class="mt-1 text-sm font-medium">{{ $notice['message'] ?? '' }}</p>
+            </div>
+        @endif
+
+        @if ($defaultFocusApplied)
+            <div class="mb-6 rounded-2xl border border-red-200 bg-error-container px-5 py-4 text-on-error-container">
+                <p class="text-sm font-black uppercase tracking-[0.18em]">Fokus Review Awal</p>
+                <p class="mt-1 text-sm font-medium">Dasbor dibuka dengan fokus pada pengajuan yang masih menunggu dan direkomendasikan <strong>Indikasi</strong>. Gunakan tombol <strong>Semua Pengajuan</strong> bila ingin melihat seluruh antrean.</p>
+            </div>
+        @endif
+
         <section class="mb-8 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
             <div>
                 <h1 class="mb-1 text-3xl font-extrabold tracking-tight text-on-surface">Dasbor Beasiswa</h1>
@@ -230,10 +252,42 @@
                         Koreksi admin:
                         <span class="text-primary">{{ $trainingStats['admin_corrected'] }}</span>
                     </span>
+                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
+                        Model indikasi:
+                        <span class="text-error">{{ $applicationStats['indikasi_recommendations'] }}</span>
+                    </span>
+                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
+                        Indikasi menunggu:
+                        <span class="text-error">{{ $applicationStats['indikasi_pending'] }}</span>
+                    </span>
+                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
+                        Disagreement:
+                        <span class="text-yellow-700">{{ $applicationStats['disagreement_cases'] }}</span>
+                    </span>
                 </div>
             </div>
 
             <div class="flex flex-wrap gap-3">
+                <form method="POST" action="{{ route('admin.applications.run-predictions') }}">
+                    @csrf
+                    <input type="hidden" name="only_missing" value="1" />
+                    <button
+                        type="submit"
+                        class="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface px-5 py-2.5 text-sm font-semibold text-on-surface transition-all hover:bg-surface-container"
+                    >
+                        <span class="material-symbols-outlined text-lg">auto_awesome</span>
+                        Buat Snapshot Model
+                    </button>
+                </form>
+
+                <a
+                    href="{{ route('admin.dashboard', ['status' => 'Submitted', 'recommendation' => 'Indikasi']) }}"
+                    class="flex items-center gap-2 rounded-xl border border-red-200 bg-error-container px-5 py-2.5 text-sm font-bold text-on-error-container transition-all hover:bg-red-100"
+                >
+                    <span class="material-symbols-outlined text-lg">rule</span>
+                    Fokus Indikasi Menunggu
+                </a>
+
                 <a
                     href="{{ route('admin.dashboard', $filters) }}"
                     class="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface px-5 py-2.5 text-sm font-semibold text-on-surface transition-all hover:bg-surface-container"
@@ -314,6 +368,18 @@
                     </div>
 
                     <div class="rounded-2xl bg-surface-container p-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Indikasi Menunggu</p>
+                        <p class="mt-2 text-2xl font-black text-error">{{ $applicationStats['indikasi_pending'] }}</p>
+                        <p class="mt-1 text-xs font-medium text-slate-500">Pengajuan yang sudah direkomendasikan indikasi dan masih menunggu keputusan final admin.</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-surface-container p-4">
+                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Disagreement Model</p>
+                        <p class="mt-2 text-2xl font-black text-yellow-700">{{ $applicationStats['disagreement_cases'] }}</p>
+                        <p class="mt-1 text-xs font-medium text-slate-500">Kasus ketika CatBoost dan Naive Bayes memberi hasil berbeda.</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-surface-container p-4">
                         <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Koreksi Data Latih</p>
                         <p class="mt-2 text-2xl font-black text-on-surface">{{ $trainingStats['admin_corrected'] }}</p>
                         <p class="mt-1 text-xs font-medium text-slate-500">Jumlah record training yang sudah dikoreksi manual oleh admin.</p>
@@ -355,6 +421,24 @@
                             @endforeach
                         </select>
 
+                        <select
+                            name="recommendation"
+                            class="cursor-pointer rounded-xl border-none bg-surface-container px-4 py-3 text-sm font-semibold focus:ring-primary/20"
+                        >
+                            @foreach ($recommendationOptions as $value => $label)
+                                <option value="{{ $value }}" @selected($filters['recommendation'] === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+
+                        <select
+                            name="disagreement"
+                            class="cursor-pointer rounded-xl border-none bg-surface-container px-4 py-3 text-sm font-semibold focus:ring-primary/20"
+                        >
+                            @foreach ($disagreementOptions as $value => $label)
+                                <option value="{{ $value }}" @selected($filters['disagreement'] === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+
                         <button
                             type="submit"
                             class="rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-primary/90"
@@ -363,13 +447,46 @@
                         </button>
 
                         <a
-                            href="{{ route('admin.dashboard') }}"
+                            href="{{ route('admin.dashboard', ['scope' => 'all']) }}"
                             class="rounded-xl bg-surface-container px-4 py-3 text-center text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-200"
                         >
                             Reset
                         </a>
                     </div>
                 </form>
+            </div>
+
+            <div class="flex flex-wrap gap-3 border-b border-slate-100 px-6 py-4">
+                <a
+                    href="{{ route('admin.dashboard', ['status' => 'Submitted', 'recommendation' => 'Indikasi']) }}"
+                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['status'] === 'Submitted' && $filters['recommendation'] === 'Indikasi' ? 'bg-error text-white' : 'bg-error-container text-on-error-container hover:bg-red-100' }}"
+                >
+                    Indikasi Menunggu
+                </a>
+                <a
+                    href="{{ route('admin.dashboard', ['scope' => 'all']) }}"
+                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['scope'] === 'all' && $filters['status'] === '' && $filters['priority'] === '' && $filters['recommendation'] === '' && $filters['disagreement'] === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}"
+                >
+                    Semua Pengajuan
+                </a>
+                <a
+                    href="{{ route('admin.dashboard', ['disagreement' => 'true']) }}"
+                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['disagreement'] === 'true' ? 'bg-yellow-600 text-white' : 'bg-secondary-container text-on-secondary-container hover:bg-yellow-100' }}"
+                >
+                    Hanya Disagreement
+                </a>
+                <a
+                    href="{{ route('admin.dashboard', ['priority' => 'high']) }}"
+                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['priority'] === 'high' ? 'bg-primary text-white' : 'bg-primary-container text-on-primary-container hover:bg-blue-100' }}"
+                >
+                    Prioritas Tinggi
+                </a>
+                <a
+                    href="{{ route('admin.dashboard', ['status' => 'Submitted']) }}"
+                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['status'] === 'Submitted' && $filters['priority'] === '' && $filters['recommendation'] === '' && $filters['disagreement'] === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}"
+                >
+                    Semua Menunggu
+                </a>
             </div>
 
             <div class="overflow-x-auto">
@@ -400,13 +517,18 @@
                                 $statusLabel = $statusDisplayLabels[$application->status] ?? $application->status;
                                 $priority = $snapshot?->review_priority ?? 'normal';
                                 $priorityDisplay = $priorityMeta[$priority] ?? $priorityMeta['normal'];
+                                $recommendationBadge = match ($snapshot?->final_recommendation) {
+                                    'Indikasi' => 'bg-error-container text-on-error-container border border-red-200',
+                                    'Layak' => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+                                    default => 'bg-slate-100 text-slate-600 border border-slate-200',
+                                };
                                 $pdfUrl = $application->submitted_pdf_path
                                     ? \Illuminate\Support\Facades\Storage::disk('public')->url($application->submitted_pdf_path)
                                     : $application->source_document_link;
                                 $documentLabel = $application->submitted_pdf_path ? 'PDF' : 'Berkas';
                             @endphp
 
-                            <tr class="transition-colors hover:bg-slate-50/50">
+                            <tr class="transition-colors {{ $snapshot?->final_recommendation === 'Indikasi' && $application->status === 'Submitted' ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-slate-50/50' }}">
                                 <td class="px-6 py-5">
                                     <div class="flex items-center gap-3">
                                         <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
@@ -435,8 +557,10 @@
                                     </div>
                                 </td>
                                 <td class="px-6 py-5">
-                                    <p class="text-sm font-semibold text-on-surface">
-                                        {{ $snapshot?->final_recommendation ?? 'Belum diproses model' }}
+                                    <p>
+                                        <span class="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] {{ $recommendationBadge }}">
+                                            {{ $snapshot?->final_recommendation ?? 'Belum diproses model' }}
+                                        </span>
                                     </p>
                                     <p class="text-[11px] text-slate-400">
                                         @if ($snapshot?->model_ready)
@@ -446,17 +570,16 @@
                                         @endif
                                     </p>
                                     @if ($snapshot?->disagreement_flag)
-                                        <p class="mt-1 text-[11px] font-semibold text-error">CatBoost dan Naive Bayes memberi hasil yang berbeda.</p>
+                                        <p class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Disagreement model</p>
                                     @endif
                                 </td>
                                 <td class="px-6 py-5">
                                     <div class="flex flex-wrap justify-end gap-2">
                                         <a
-                                            href="{{ url('/api/admin/applications/'.$application->id) }}"
-                                            target="_blank"
+                                            href="{{ route('admin.applications.show', $application) }}"
                                             class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
                                         >
-                                            Lihat
+                                            Tinjau
                                         </a>
 
                                         @if ($pdfUrl)
@@ -469,30 +592,9 @@
                                             </a>
                                         @endif
 
-                                        @if ($application->status === 'Submitted')
-                                            <button
-                                                type="button"
-                                                data-decision-endpoint="{{ url('/api/admin/applications/'.$application->id.'/verify') }}"
-                                                data-decision-action="verify"
-                                                data-student-name="{{ $studentName }}"
-                                                class="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700 transition-colors hover:bg-emerald-100"
-                                            >
-                                                Verifikasi
-                                            </button>
-                                            <button
-                                                type="button"
-                                                data-decision-endpoint="{{ url('/api/admin/applications/'.$application->id.'/reject') }}"
-                                                data-decision-action="reject"
-                                                data-student-name="{{ $studentName }}"
-                                                class="rounded-lg bg-error-container px-3 py-2 text-xs font-bold text-error transition-colors hover:bg-red-100"
-                                            >
-                                                Tolak
-                                            </button>
-                                        @else
-                                            <span class="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
-                                                Selesai
-                                            </span>
-                                        @endif
+                                        <span class="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
+                                            {{ $application->status === 'Submitted' ? 'Review Detail' : 'Selesai' }}
+                                        </span>
                                     </div>
                                 </td>
                             </tr>
@@ -571,98 +673,3 @@
     </footer>
 </main>
 @endsection
-
-@push('scripts')
-<script>
-    (() => {
-        const notice = document.getElementById('dashboard-notice');
-        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
-
-        const showNotice = (message, type = 'success') => {
-            if (!notice) {
-                return;
-            }
-
-            const palette = type === 'error'
-                ? ['bg-error-container', 'border-red-200', 'text-on-error-container']
-                : ['bg-white', 'border-slate-200', 'text-slate-700'];
-
-            notice.className = `fixed right-4 top-4 z-50 max-w-sm rounded-2xl border px-4 py-3 text-sm font-semibold shadow-2xl ${palette.join(' ')}`;
-            notice.textContent = message;
-            notice.classList.remove('hidden');
-
-            window.clearTimeout(window.__dashboardNoticeTimer);
-            window.__dashboardNoticeTimer = window.setTimeout(() => {
-                notice.classList.add('hidden');
-            }, 4000);
-        };
-
-        const postJson = async (endpoint, payload, button) => {
-            if (!endpoint || !csrfToken) {
-                showNotice('Konfigurasi request belum lengkap.', 'error');
-                return null;
-            }
-
-            const originalLabel = button?.innerHTML;
-
-            if (button) {
-                button.disabled = true;
-                button.innerHTML = 'Memproses...';
-            }
-
-            try {
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify(payload),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(data.message || 'Request gagal diproses.');
-                }
-
-                return data;
-            } catch (error) {
-                showNotice(error.message || 'Terjadi kesalahan saat memproses request.', 'error');
-                return null;
-            } finally {
-                if (button) {
-                    button.disabled = false;
-                    button.innerHTML = originalLabel;
-                }
-            }
-        };
-
-        document.querySelectorAll('[data-decision-endpoint]').forEach((button) => {
-            button.addEventListener('click', async () => {
-                const action = button.dataset.decisionAction === 'verify' ? 'verify' : 'reject';
-                const studentName = button.dataset.studentName || 'mahasiswa ini';
-                const promptLabel = action === 'verify'
-                    ? `Catatan verifikasi untuk ${studentName} (boleh kosong):`
-                    : `Alasan reject untuk ${studentName} (boleh kosong):`;
-                const note = window.prompt(promptLabel, '');
-
-                if (note === null) {
-                    return;
-                }
-
-                const data = await postJson(button.dataset.decisionEndpoint, { note }, button);
-
-                if (!data) {
-                    return;
-                }
-
-                showNotice(data.message || 'Status pengajuan berhasil diperbarui.');
-                window.setTimeout(() => window.location.reload(), 700);
-            });
-        });
-    })();
-</script>
-@endpush

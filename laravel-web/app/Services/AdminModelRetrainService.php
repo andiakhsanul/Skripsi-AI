@@ -40,6 +40,7 @@ class AdminModelRetrainService
             ->whereDoesntHave('modelSnapshot')
             ->count();
 
+        $activeModel = $this->currentActiveModel();
         $latestReadyModel = $this->latestReadyModel();
         $latestAttempt = $this->latestAttempt();
 
@@ -52,12 +53,13 @@ class AdminModelRetrainService
             'prediction_snapshots' => $predictionSnapshots,
             'applications_without_snapshot' => $applicationsWithoutSnapshot,
             'label_distribution' => $this->labelDistribution(),
+            'active_model' => $activeModel,
             'latest_ready_model' => $latestReadyModel,
             'latest_attempt' => $latestAttempt,
             'recent_model_versions' => $this->recentModelVersions(),
             'model_status' => [
-                'ready' => $latestReadyModel !== null,
-                'label' => $latestReadyModel !== null ? 'SIAP' : 'BELUM SIAP',
+                'ready' => $activeModel !== null,
+                'label' => $activeModel !== null ? 'SIAP' : 'BELUM SIAP',
             ],
         ];
     }
@@ -98,6 +100,24 @@ class AdminModelRetrainService
     }
 
     /**
+     * @return array<string, mixed>
+     */
+    public function activateModelVersion(ModelVersion $modelVersion, User $admin): array
+    {
+        if ($modelVersion->status !== 'ready') {
+            throw new RuntimeException('Hanya versi model dengan status siap yang dapat diaktifkan.');
+        }
+
+        $mlResponse = $this->mlGatewayService->activateModelVersion($modelVersion->id);
+
+        return [
+            'activated_version' => $modelVersion->fresh(),
+            'triggered_by' => $admin->email,
+            'ml_response' => $mlResponse,
+        ];
+    }
+
+    /**
      * @return array{layak:int, indikasi:int}
      */
     private function labelDistribution(): array
@@ -133,6 +153,17 @@ class AdminModelRetrainService
             ->where('status', 'ready')
             ->orderByRaw('COALESCE(trained_at, created_at) DESC, id DESC')
             ->first();
+    }
+
+    private function currentActiveModel(): ?ModelVersion
+    {
+        return ModelVersion::query()
+            ->with('triggeredBy:id,name,email')
+            ->where('status', 'ready')
+            ->where('is_current', true)
+            ->orderByRaw('COALESCE(activated_at, trained_at, created_at) DESC, id DESC')
+            ->first()
+            ?? $this->latestReadyModel();
     }
 
     private function latestAttempt(): ?ModelVersion

@@ -15,6 +15,7 @@ class ModelVersion extends Model
         'version_name',
         'schema_version',
         'status',
+        'is_current',
         'triggered_by_user_id',
         'triggered_by_email',
         'training_table',
@@ -35,12 +36,14 @@ class ModelVersion extends Model
         'note',
         'error_message',
         'trained_at',
+        'activated_at',
     ];
 
     protected function casts(): array
     {
         return [
             'schema_version' => 'integer',
+            'is_current' => 'boolean',
             'triggered_by_user_id' => 'integer',
             'dataset_rows_total' => 'integer',
             'rows_used' => 'integer',
@@ -52,6 +55,7 @@ class ModelVersion extends Model
             'naive_bayes_train_accuracy' => 'float',
             'naive_bayes_validation_accuracy' => 'float',
             'trained_at' => 'datetime',
+            'activated_at' => 'datetime',
         ];
     }
 

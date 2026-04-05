@@ -105,8 +105,23 @@ class StudentApplication extends Model
         return $this->hasMany(SpkTrainingData::class, 'source_application_id');
     }
 
+    public function latestTrainingRow(): HasOne
+    {
+        return $this->hasOne(SpkTrainingData::class, 'source_application_id')->latestOfMany();
+    }
+
     public function hasSubmittedPdf(): bool
     {
         return ! empty($this->submitted_pdf_path);
+    }
+
+    public function canBeRevisedByStudent(): bool
+    {
+        return $this->submission_source === 'online_student'
+            && $this->student_user_id !== null
+            && $this->status === 'Submitted'
+            && $this->admin_decision === null
+            && $this->admin_decided_by === null
+            && $this->admin_decided_at === null;
     }
 }

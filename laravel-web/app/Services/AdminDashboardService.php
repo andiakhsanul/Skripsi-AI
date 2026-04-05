@@ -25,6 +25,19 @@ class AdminDashboardService
             ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('review_priority', 'high'))
             ->count();
 
+        $indikasiRecommendations = StudentApplication::query()
+            ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('final_recommendation', 'Indikasi'))
+            ->count();
+
+        $indikasiPending = StudentApplication::query()
+            ->where('status', 'Submitted')
+            ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('final_recommendation', 'Indikasi'))
+            ->count();
+
+        $disagreementCases = StudentApplication::query()
+            ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('disagreement_flag', true))
+            ->count();
+
         $modelReady = DB::table('application_model_snapshots')
             ->where('model_ready', true)
             ->count();
@@ -49,6 +62,9 @@ class AdminDashboardService
                 'verified' => $verified,
                 'rejected' => $rejected,
                 'high_priority_pending' => $highPriorityPending,
+                'indikasi_recommendations' => $indikasiRecommendations,
+                'indikasi_pending' => $indikasiPending,
+                'disagreement_cases' => $disagreementCases,
                 'model_ready' => $modelReady,
             ],
             'training_data' => [
@@ -103,6 +119,28 @@ class AdminDashboardService
                     'modelSnapshot',
                     fn (Builder $snapshotQuery) => $snapshotQuery->where('review_priority', $priority)
                 )
+            )
+            ->when(
+                $filters['recommendation'] ?? null,
+                fn (Builder $query, string $recommendation) => $query->whereHas(
+                    'modelSnapshot',
+                    fn (Builder $snapshotQuery) => $snapshotQuery->where('final_recommendation', $recommendation)
+                )
+            )
+            ->when(
+                array_key_exists('disagreement', $filters) && $filters['disagreement'] !== '',
+                function (Builder $query) use ($filters): void {
+                    $enabled = filter_var($filters['disagreement'], FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+                    if ($enabled === null) {
+                        return;
+                    }
+
+                    $query->whereHas(
+                        'modelSnapshot',
+                        fn (Builder $snapshotQuery) => $snapshotQuery->where('disagreement_flag', $enabled)
+                    );
+                }
             )
             ->orderByDesc('created_at')
             ->paginate($perPage)

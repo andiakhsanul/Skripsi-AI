@@ -17,6 +17,7 @@ class DashboardController extends Controller
     {
         $filters = $request->validate([
             'q' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'in:Submitted,Verified,Rejected'],
         ]);
 
         $student = $request->user();
@@ -27,6 +28,7 @@ class DashboardController extends Controller
             'applications' => $this->studentDashboardService->paginateApplications($student, $filters, 8),
             'filters' => [
                 'q' => $filters['q'] ?? '',
+                'status' => $filters['status'] ?? '',
             ],
         ]);
     }
