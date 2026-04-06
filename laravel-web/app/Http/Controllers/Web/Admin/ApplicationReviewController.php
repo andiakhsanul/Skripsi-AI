@@ -18,11 +18,13 @@ class ApplicationReviewController extends Controller
     public function show(Request $request, int $application): View
     {
         $applicationRecord = $this->reviewService->detail($application);
+        $documentUrl = $this->reviewService->documentUrl($applicationRecord);
 
         return view('pages.admin.applications.show', [
             'admin' => $request->user(),
             'application' => $applicationRecord,
-            'documentUrl' => $this->reviewService->documentUrl($applicationRecord),
+            'documentUrl' => $documentUrl,
+            'page' => $this->reviewService->viewPayload($applicationRecord, $documentUrl),
         ]);
     }
 

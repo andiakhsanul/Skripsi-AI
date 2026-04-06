@@ -6,217 +6,42 @@
 @php
     $applicationStats = $summary['applications'];
     $trainingStats = $summary['training_data'];
-    $activeSchema = $summary['active_schema'];
-    $adminName = $admin->name ?? 'Admin';
-    $adminInitials = collect(preg_split('/\s+/', trim($adminName)) ?: [])
-        ->filter()
-        ->map(fn ($part) => strtoupper(mb_substr($part, 0, 1)))
-        ->take(2)
-        ->implode('');
-
-    $statusOptions = [
-        '' => 'Semua status',
-        'Submitted' => 'Menunggu',
-        'Verified' => 'Terverifikasi',
-        'Rejected' => 'Ditolak',
-    ];
-
-    $priorityOptions = [
-        '' => 'Semua prioritas',
-        'high' => 'Tinggi',
-        'normal' => 'Normal',
-    ];
-
-    $recommendationOptions = [
-        '' => 'Semua rekomendasi',
-        'Indikasi' => 'Rekomendasi Indikasi',
-        'Layak' => 'Rekomendasi Layak',
-    ];
-
-    $disagreementOptions = [
-        '' => 'Semua selisih model',
-        'true' => 'Ada disagreement',
-        'false' => 'Selaras',
-    ];
-
-    $statusDisplayLabels = [
-        'Submitted' => 'Menunggu',
-        'Verified' => 'Terverifikasi',
-        'Rejected' => 'Ditolak',
-    ];
-
-    $statusBadgeClasses = [
-        'Submitted' => 'bg-yellow-50 text-yellow-700 border border-yellow-100',
-        'Verified' => 'bg-emerald-50 text-emerald-600 border border-emerald-100',
-        'Rejected' => 'bg-error-container text-error border border-error/10',
-    ];
-
-    $priorityMeta = [
-        'high' => [
-            'dot' => 'bg-error',
-            'text' => 'text-error font-bold',
-            'label' => 'Tinggi',
-        ],
-        'normal' => [
-            'dot' => 'bg-slate-300',
-            'text' => 'text-slate-500 font-medium',
-            'label' => 'Normal',
-        ],
-    ];
-
-    $statCards = [
-        [
-            'label' => 'Total Pengajuan',
-            'value' => $applicationStats['total'],
-            'hint' => 'Semua pengajuan yang tercatat',
-            'hint_class' => 'text-slate-500',
-            'border' => 'border-primary',
-            'icon_wrap' => 'bg-primary/10 text-primary',
-            'icon' => 'groups',
-        ],
-        [
-            'label' => 'Menunggu',
-            'value' => $applicationStats['submitted'],
-            'hint' => 'Menunggu review admin',
-            'hint_class' => 'text-yellow-600',
-            'border' => 'border-yellow-500',
-            'icon_wrap' => 'bg-yellow-50 text-yellow-600',
-            'icon' => 'schedule',
-        ],
-        [
-            'label' => 'Terverifikasi',
-            'value' => $applicationStats['verified'],
-            'hint' => 'Diputuskan layak',
-            'hint_class' => 'text-emerald-600',
-            'border' => 'border-emerald-500',
-            'icon_wrap' => 'bg-emerald-50 text-emerald-600',
-            'icon' => 'check_circle',
-        ],
-        [
-            'label' => 'Ditolak',
-            'value' => $applicationStats['rejected'],
-            'hint' => 'Diputuskan indikasi',
-            'hint_class' => 'text-error',
-            'border' => 'border-error',
-            'icon_wrap' => 'bg-error-container text-error',
-            'icon' => 'cancel',
-        ],
-        [
-            'label' => 'Prioritas Tinggi',
-            'value' => $applicationStats['high_priority_pending'],
-            'hint' => 'Perlu tindakan cepat',
-            'hint_class' => 'text-primary',
-            'border' => 'border-primary-container',
-            'icon_wrap' => 'bg-primary-container text-primary',
-            'icon' => 'priority_high',
-        ],
-        [
-            'label' => 'Data Latih',
-            'value' => $trainingStats['total_active'],
-            'hint' => 'Siap untuk retrain',
-            'hint_class' => 'text-slate-500',
-            'border' => 'border-slate-900',
-            'icon_wrap' => 'bg-slate-100 text-slate-800',
-            'icon' => 'model_training',
-        ],
-    ];
-
+    $statusOptions = $page['filters']['status_options'];
+    $priorityOptions = $page['filters']['priority_options'];
+    $recommendationOptions = $page['filters']['recommendation_options'];
+    $disagreementOptions = $page['filters']['disagreement_options'];
+    $statusDisplayLabels = $page['status_display_labels'];
+    $statusBadgeClasses = $page['status_badge_classes'];
+    $priorityMeta = $page['priority_meta'];
+    $statCards = $page['stat_cards'];
+    $workflowCards = $page['workflow_cards'];
+    $operationCards = $page['operation_cards'];
     $pageStart = max(1, $applications->currentPage() - 1);
     $pageEnd = min($applications->lastPage(), $applications->currentPage() + 1);
     $notice = session('admin_notice');
 @endphp
 
 @section('content')
-<aside class="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-slate-100 bg-slate-50 md:flex">
-    <div class="p-6">
-        <p class="text-lg font-black uppercase tracking-[0.2em] text-blue-900">KIP-K UNAIR</p>
-    </div>
+@include('pages.admin.partials.sidebar', ['active' => 'dashboard'])
 
-    <nav class="flex flex-1 flex-col gap-2 p-4">
-        <a
-            href="{{ route('admin.dashboard') }}"
-            class="flex items-center gap-3 rounded-md border-t-2 border-yellow-500 bg-white px-4 py-3 font-semibold text-blue-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
-        >
-            <span class="material-symbols-outlined">dashboard_customize</span>
-            <span class="text-sm">Dasbor Admin</span>
-        </a>
-
-        <span class="flex cursor-not-allowed items-center gap-3 px-4 py-3 text-slate-500">
-            <span class="material-symbols-outlined">assignment_ind</span>
-            <span class="text-sm">Pengajuan</span>
-        </span>
-
-        <span class="flex cursor-not-allowed items-center gap-3 px-4 py-3 text-slate-500">
-            <span class="material-symbols-outlined">verified_user</span>
-            <span class="text-sm">Verifikasi</span>
-        </span>
-
-        <span class="flex cursor-not-allowed items-center gap-3 px-4 py-3 text-slate-500">
-            <span class="material-symbols-outlined">analytics</span>
-            <span class="text-sm">Laporan</span>
-        </span>
-
-        <div class="mt-8 px-4">
+<main class="min-h-screen bg-background md:ml-64">
+    <x-admin.topbar
+        :admin="$admin"
+        title="Administrator"
+        subtitle="Divisi Kemahasiswaan"
+        title-class="text-xl font-extrabold tracking-tighter text-blue-800"
+        subtitle-class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-400"
+        height-class="h-16"
+    >
+        <x-slot:actions>
             <a
                 href="{{ route('admin.models.retrain') }}"
-                class="flex w-full items-center justify-center rounded-xl bg-primary px-4 py-3 text-sm font-bold text-white shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95"
+                class="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white shadow-lg shadow-primary/20 transition hover:bg-blue-700"
             >
                 Latih Ulang Model
             </a>
-        </div>
-    </nav>
-
-    <div class="border-t border-slate-100 bg-slate-100/50 p-4">
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
-            <button
-                type="submit"
-                class="flex w-full items-center gap-3 px-4 py-3 text-left font-semibold text-slate-500 transition-colors hover:text-error"
-            >
-                <span class="material-symbols-outlined">logout</span>
-                <span class="text-sm">Keluar</span>
-            </button>
-        </form>
-    </div>
-</aside>
-
-<main class="min-h-screen md:ml-64">
-    <header class="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-100 bg-white/80 px-6 backdrop-blur-md md:px-8">
-        <div>
-            <h2 class="text-xl font-extrabold tracking-tighter text-blue-800">Administrator</h2>
-            <p class="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-400">Divisi Kemahasiswaan</p>
-        </div>
-
-        <div class="flex items-center gap-4 md:gap-6">
-            <div class="hidden items-center gap-4 text-slate-600 md:flex">
-                <a
-                    href="{{ url('/api/admin/stats') }}"
-                    target="_blank"
-                    class="rounded-lg p-2 transition-all hover:bg-slate-50"
-                    title="Lihat API statistik"
-                >
-                    <span class="material-symbols-outlined block">monitoring</span>
-                </a>
-                <a
-                    href="{{ route('admin.models.retrain') }}"
-                    class="rounded-lg p-2 transition-all hover:bg-slate-50"
-                    title="Latih ulang model"
-                >
-                    <span class="material-symbols-outlined block">model_training</span>
-                </a>
-            </div>
-
-            <div class="flex items-center gap-3 border-l border-slate-100 pl-4 md:pl-6">
-                <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/10 bg-primary-container font-bold text-primary shadow-sm">
-                    {{ $adminInitials !== '' ? $adminInitials : 'AD' }}
-                </div>
-                <div class="hidden text-right md:block">
-                    <p class="text-sm font-bold text-on-surface">{{ $adminName }}</p>
-                    <p class="text-[11px] font-medium text-slate-400">{{ $admin->email }}</p>
-                </div>
-            </div>
-        </div>
-    </header>
+        </x-slot:actions>
+    </x-admin.topbar>
 
     <div class="mx-auto w-full max-w-screen-2xl p-6 md:p-8">
         @if ($notice)
@@ -233,163 +58,172 @@
             </div>
         @endif
 
-        <section class="mb-8 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
-            <div>
-                <h1 class="mb-1 text-3xl font-extrabold tracking-tight text-on-surface">Dasbor Beasiswa</h1>
-                <p class="font-medium text-on-surface-variant">
-                    Monitoring pengajuan mahasiswa, hasil machine learning, dan keputusan admin dalam satu ruang kerja.
-                </p>
-                <div class="mt-4 flex flex-wrap gap-3 text-xs font-semibold">
-                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
-                        Skema aktif:
-                        <span class="text-primary">{{ $activeSchema?->version ? 'v'.$activeSchema->version : 'Belum ada' }}</span>
-                    </span>
-                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
-                        Snapshot siap:
-                        <span class="text-primary">{{ $applicationStats['model_ready'] }}</span>
-                    </span>
-                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
-                        Koreksi admin:
-                        <span class="text-primary">{{ $trainingStats['admin_corrected'] }}</span>
-                    </span>
-                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
-                        Model indikasi:
-                        <span class="text-error">{{ $applicationStats['indikasi_recommendations'] }}</span>
-                    </span>
-                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
-                        Indikasi menunggu:
-                        <span class="text-error">{{ $applicationStats['indikasi_pending'] }}</span>
-                    </span>
-                    <span class="rounded-full bg-white px-4 py-2 text-slate-600 shadow-sm ring-1 ring-outline-variant">
-                        Disagreement:
-                        <span class="text-yellow-700">{{ $applicationStats['disagreement_cases'] }}</span>
-                    </span>
+        <section class="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-12">
+            <div class="relative min-h-[360px] overflow-hidden rounded-3xl bg-primary px-8 py-10 text-white shadow-2xl xl:col-span-7 xl:px-10">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.08),transparent_55%)]"></div>
+                <div class="absolute -right-20 top-8 h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
+                <div class="absolute -bottom-16 left-12 h-40 w-40 rounded-full bg-secondary/20 blur-3xl"></div>
+
+                <div class="relative z-10">
+                    <span class="mb-4 block text-sm font-black uppercase tracking-[0.24em] text-secondary-container">Ruang Kerja Verifikator</span>
+                    <h1 class="max-w-3xl text-4xl font-black leading-tight tracking-tight">Dasbor Beasiswa untuk meninjau data mentah, membaca rekomendasi AI, dan menetapkan keputusan final secara terarah.</h1>
+                    <p class="mt-5 max-w-2xl text-sm font-medium leading-7 text-blue-100/90">
+                        Halaman ini menjadi pusat kerja admin untuk memilah antrean pengajuan, memprioritaskan kasus indikasi,
+                        dan menjaga agar hanya keputusan final yang benar-benar disetujui masuk ke data latih.
+                    </p>
+
+                    <div class="mt-6 flex flex-wrap gap-3 text-xs font-semibold">
+                        <span class="rounded-full bg-white/10 px-4 py-2 text-white ring-1 ring-white/15">
+                            Model indikasi:
+                            <span class="font-black text-secondary-container">{{ $applicationStats['indikasi_recommendations'] }}</span>
+                        </span>
+                        <span class="rounded-full bg-white/10 px-4 py-2 text-white ring-1 ring-white/15">
+                            Indikasi Menunggu:
+                            <span class="font-black text-secondary-container">{{ $applicationStats['indikasi_pending'] }}</span>
+                        </span>
+                        <span class="rounded-full bg-white/10 px-4 py-2 text-white ring-1 ring-white/15">
+                            Disagreement:
+                            <span class="font-black text-secondary-container">{{ $applicationStats['disagreement_cases'] }}</span>
+                        </span>
+                        <span class="rounded-full bg-white/10 px-4 py-2 text-white ring-1 ring-white/15">
+                            Data Siap Dilatih:
+                            <span class="font-black text-secondary-container">{{ number_format($trainingStats['total_active']) }}</span>
+                        </span>
+                    </div>
+
+                    <div class="mt-8 grid gap-4 md:grid-cols-3">
+                        @foreach ($workflowCards as $card)
+                            <article class="rounded-2xl border border-white/12 bg-white/10 p-4 backdrop-blur-sm">
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-10 w-10 items-center justify-center rounded-2xl {{ $card['tone'] }}">
+                                        <span class="material-symbols-outlined">{{ $card['icon'] }}</span>
+                                    </div>
+                                    <p class="text-sm font-black tracking-tight">{{ $card['title'] }}</p>
+                                </div>
+                                <p class="mt-3 text-sm font-medium leading-6 text-blue-100/90">{{ $card['description'] }}</p>
+                            </article>
+                        @endforeach
+                    </div>
                 </div>
             </div>
 
-            <div class="flex flex-wrap gap-3">
-                <form method="POST" action="{{ route('admin.applications.run-predictions') }}">
-                    @csrf
-                    <input type="hidden" name="only_missing" value="1" />
-                    <button
-                        type="submit"
-                        class="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface px-5 py-2.5 text-sm font-semibold text-on-surface transition-all hover:bg-surface-container"
-                    >
-                        <span class="material-symbols-outlined text-lg">auto_awesome</span>
-                        Buat Snapshot Model
-                    </button>
-                </form>
+            <div class="space-y-6 xl:col-span-5">
+                <div class="rounded-3xl border-t-4 border-secondary bg-white p-8 shadow-lg">
+                    <div class="mb-6 flex items-center gap-3">
+                        <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/15 text-yellow-700">
+                            <span class="material-symbols-outlined">hub</span>
+                        </div>
+                        <div>
+                            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Pusat Aksi Admin</p>
+                            <h2 class="text-xl font-extrabold text-on-surface">Pilih antrean prioritas dan jalankan tugas inti</h2>
+                        </div>
+                    </div>
 
-                <a
-                    href="{{ route('admin.dashboard', ['status' => 'Submitted', 'recommendation' => 'Indikasi']) }}"
-                    class="flex items-center gap-2 rounded-xl border border-red-200 bg-error-container px-5 py-2.5 text-sm font-bold text-on-error-container transition-all hover:bg-red-100"
-                >
-                    <span class="material-symbols-outlined text-lg">rule</span>
-                    Fokus Indikasi Menunggu
-                </a>
+                    <div class="space-y-4">
+                        <div class="rounded-2xl bg-surface-container p-4">
+                            <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Arahan Hari Ini</p>
+                            <p class="mt-2 text-sm font-semibold text-on-surface">Mulai dari pengajuan yang berstatus menunggu dan direkomendasikan <span class="text-error">Indikasi</span>, lalu lanjutkan ke kasus disagreement dan prioritas tinggi.</p>
+                        </div>
 
-                <a
-                    href="{{ route('admin.dashboard', $filters) }}"
-                    class="flex items-center gap-2 rounded-xl border border-outline-variant bg-surface px-5 py-2.5 text-sm font-semibold text-on-surface transition-all hover:bg-surface-container"
-                >
-                    <span class="material-symbols-outlined text-lg">refresh</span>
-                    Muat Ulang
-                </a>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            <form method="POST" action="{{ route('admin.applications.run-predictions') }}">
+                                @csrf
+                                <input type="hidden" name="only_missing" value="1" />
+                                <button
+                                    type="submit"
+                                    class="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-4 text-sm font-black text-white transition hover:bg-slate-800"
+                                >
+                                    <span class="material-symbols-outlined text-lg">auto_awesome</span>
+                                    Buat Snapshot Model
+                                </button>
+                            </form>
 
-                <a
-                    href="{{ route('admin.models.retrain') }}"
-                    class="flex items-center gap-2 rounded-xl bg-secondary px-5 py-2.5 text-sm font-bold text-on-secondary shadow-lg shadow-secondary/20 transition-all hover:scale-[1.02]"
-                >
-                    <span class="material-symbols-outlined text-lg">model_training</span>
-                    Latih Ulang Model
-                </a>
+                            <a
+                                href="{{ route('admin.dashboard', ['status' => 'Submitted', 'recommendation' => 'Indikasi']) }}"
+                                class="flex items-center justify-center gap-2 rounded-2xl bg-error px-4 py-4 text-sm font-black text-white shadow-lg shadow-error/20 transition hover:bg-red-600"
+                            >
+                                <span class="material-symbols-outlined text-lg">rule</span>
+                                Fokus Indikasi Menunggu
+                            </a>
+
+                            <a
+                                href="{{ route('admin.dashboard', $filters) }}"
+                                class="flex items-center justify-center gap-2 rounded-2xl border border-outline-variant bg-surface px-4 py-4 text-sm font-bold text-on-surface transition hover:bg-surface-container"
+                            >
+                                <span class="material-symbols-outlined text-lg">refresh</span>
+                                Muat Ulang
+                            </a>
+
+                            <a
+                                href="{{ route('admin.models.retrain') }}"
+                                class="flex items-center justify-center gap-2 rounded-2xl bg-secondary px-4 py-4 text-sm font-black text-on-secondary shadow-lg shadow-secondary/20 transition hover:scale-[1.01]"
+                            >
+                                <span class="material-symbols-outlined text-lg">model_training</span>
+                                Latih Ulang Model
+                            </a>
+
+                            <a
+                                href="{{ route('admin.applications.house-review') }}"
+                                class="flex items-center justify-center gap-2 rounded-2xl border border-outline-variant bg-surface px-4 py-4 text-sm font-bold text-on-surface transition hover:bg-surface-container"
+                            >
+                                <span class="material-symbols-outlined text-lg">home_work</span>
+                                Perbaikan Rumah
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rounded-3xl bg-white p-6 shadow-lg">
+                    <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Ringkasan Operasional</p>
+                    <div class="mt-4 space-y-4">
+                        <div class="rounded-2xl bg-surface-container p-4">
+                            <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Antrean Prioritas Tinggi</p>
+                            <p class="mt-2 text-2xl font-black text-error">{{ $applicationStats['high_priority_pending'] }}</p>
+                            <p class="mt-1 text-xs font-medium text-slate-500">Perlu tindakan cepat karena rekomendasi dan tingkat risikonya butuh review lebih dekat.</p>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2">
+                            @foreach ($operationCards as $card)
+                                <div class="rounded-2xl bg-surface-container p-4">
+                                    <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">{{ $card['label'] }}</p>
+                                    <p class="mt-2 text-xl font-black text-on-surface">{{ $card['value'] }}</p>
+                                    <p class="mt-1 text-xs font-medium text-slate-500">{{ $card['detail'] }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
 
         <section class="mb-10 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             @foreach ($statCards as $card)
-                <div class="flex flex-col justify-between rounded-xl bg-white p-5 shadow-sm transition-shadow duration-300 hover:shadow-lg border-t-2 {{ $card['border'] }}">
-                    <div class="mb-4 flex items-start justify-between">
-                        <div class="flex h-10 w-10 items-center justify-center rounded-lg {{ $card['icon_wrap'] }}">
-                            <span class="material-symbols-outlined">{{ $card['icon'] }}</span>
-                        </div>
-                        <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">{{ $card['label'] }}</span>
-                    </div>
-
-                    <div>
-                        <span class="mb-1 block text-3xl font-black text-on-surface">{{ number_format($card['value']) }}</span>
-                        <p class="text-[11px] font-bold {{ $card['hint_class'] }}">{{ $card['hint'] }}</p>
-                    </div>
-                </div>
+                @include('pages.admin.dashboard.partials.stat-card', [
+                    'label' => $card['label'],
+                    'value' => $card['value'],
+                    'hint' => $card['hint'],
+                    'hintClass' => $card['hint_class'],
+                    'border' => $card['border'],
+                    'iconWrap' => $card['icon_wrap'],
+                    'icon' => $card['icon'],
+                ])
             @endforeach
         </section>
 
-        <section class="mb-10 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-            <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-lg">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                        <span class="material-symbols-outlined">policy</span>
-                    </div>
-                    <div>
-                        <p class="text-sm font-black uppercase tracking-[0.2em] text-slate-400">Aturan Alur Kerja</p>
-                        <h2 class="text-xl font-extrabold text-on-surface">Keputusan akhir tetap di tangan admin</h2>
-                    </div>
+        <section class="overflow-hidden rounded-3xl bg-white shadow-lg">
+            <div class="flex flex-col gap-4 border-b border-slate-100 px-6 py-6 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Antrean Verifikasi</p>
+                    <h2 class="mt-1 text-2xl font-extrabold tracking-tight text-on-surface">Pusat tinjauan pengajuan mahasiswa</h2>
+                    <p class="mt-2 max-w-2xl text-sm font-medium text-on-surface-variant">Gunakan filter untuk memusatkan perhatian pada kasus indikasi, disagreement model, atau antrean menunggu yang belum diputuskan admin.</p>
                 </div>
 
-                <div class="mt-4 grid gap-3 md:grid-cols-3">
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Data Mahasiswa</p>
-                        <p class="mt-2 text-sm font-semibold text-on-surface">Mahasiswa mengirim 13 atribut utama dan dokumen pendukung melalui portal atau impor admin.</p>
-                    </div>
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Mesin Prediksi</p>
-                        <p class="mt-2 text-sm font-semibold text-on-surface">CatBoost menjadi rekomendasi utama, sementara Naive Bayes dipakai sebagai pembanding hasil.</p>
-                    </div>
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">Keputusan Akhir</p>
-                        <p class="mt-2 text-sm font-semibold text-on-surface">Status terverifikasi atau ditolak menjadi dasar data latih ketika proses retrain dijalankan.</p>
-                    </div>
+                <div class="rounded-2xl border border-outline-variant bg-surface-container-low px-4 py-3 text-right">
+                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Baris Saat Ini</p>
+                    <p class="mt-1 text-lg font-black text-on-surface">{{ number_format($applications->count()) }}</p>
                 </div>
             </div>
 
-            <div class="rounded-xl border border-slate-100 bg-white p-6 shadow-lg">
-                <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Ringkasan Sistem</p>
-                <div class="mt-4 space-y-4">
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Sumber Skema</p>
-                        <p class="mt-2 text-sm font-semibold text-on-surface">
-                            {{ $activeSchema?->source_file_name ?? 'Belum ada file schema aktif' }}
-                        </p>
-                    </div>
-
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Antrean Prioritas Tinggi</p>
-                        <p class="mt-2 text-2xl font-black text-error">{{ $applicationStats['high_priority_pending'] }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Indikasi Menunggu</p>
-                        <p class="mt-2 text-2xl font-black text-error">{{ $applicationStats['indikasi_pending'] }}</p>
-                        <p class="mt-1 text-xs font-medium text-slate-500">Pengajuan yang sudah direkomendasikan indikasi dan masih menunggu keputusan final admin.</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Disagreement Model</p>
-                        <p class="mt-2 text-2xl font-black text-yellow-700">{{ $applicationStats['disagreement_cases'] }}</p>
-                        <p class="mt-1 text-xs font-medium text-slate-500">Kasus ketika CatBoost dan Naive Bayes memberi hasil berbeda.</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-surface-container p-4">
-                        <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Koreksi Data Latih</p>
-                        <p class="mt-2 text-2xl font-black text-on-surface">{{ $trainingStats['admin_corrected'] }}</p>
-                        <p class="mt-1 text-xs font-medium text-slate-500">Jumlah record training yang sudah dikoreksi manual oleh admin.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-lg">
-            <div class="flex flex-col gap-4 border-b border-slate-100 p-6 lg:flex-row lg:items-center lg:justify-between">
+            <div class="border-b border-slate-100 px-6 py-5">
                 <form method="GET" action="{{ route('admin.dashboard') }}" class="flex w-full flex-col gap-3 lg:flex-row lg:items-center">
                     <div class="relative w-full lg:max-w-md">
                         <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
@@ -457,36 +291,45 @@
             </div>
 
             <div class="flex flex-wrap gap-3 border-b border-slate-100 px-6 py-4">
-                <a
-                    href="{{ route('admin.dashboard', ['status' => 'Submitted', 'recommendation' => 'Indikasi']) }}"
-                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['status'] === 'Submitted' && $filters['recommendation'] === 'Indikasi' ? 'bg-error text-white' : 'bg-error-container text-on-error-container hover:bg-red-100' }}"
-                >
-                    Indikasi Menunggu
-                </a>
-                <a
-                    href="{{ route('admin.dashboard', ['scope' => 'all']) }}"
-                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['scope'] === 'all' && $filters['status'] === '' && $filters['priority'] === '' && $filters['recommendation'] === '' && $filters['disagreement'] === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}"
-                >
-                    Semua Pengajuan
-                </a>
-                <a
-                    href="{{ route('admin.dashboard', ['disagreement' => 'true']) }}"
-                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['disagreement'] === 'true' ? 'bg-yellow-600 text-white' : 'bg-secondary-container text-on-secondary-container hover:bg-yellow-100' }}"
-                >
-                    Hanya Disagreement
-                </a>
-                <a
-                    href="{{ route('admin.dashboard', ['priority' => 'high']) }}"
-                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['priority'] === 'high' ? 'bg-primary text-white' : 'bg-primary-container text-on-primary-container hover:bg-blue-100' }}"
-                >
-                    Prioritas Tinggi
-                </a>
-                <a
-                    href="{{ route('admin.dashboard', ['status' => 'Submitted']) }}"
-                    class="rounded-full px-4 py-2 text-xs font-black uppercase tracking-[0.18em] transition {{ $filters['status'] === 'Submitted' && $filters['priority'] === '' && $filters['recommendation'] === '' && $filters['disagreement'] === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}"
-                >
-                    Semua Menunggu
-                </a>
+                @include('pages.admin.dashboard.partials.filter-chip', [
+                    'href' => route('admin.dashboard', ['status' => 'Submitted', 'recommendation' => 'Indikasi']),
+                    'label' => 'Indikasi Menunggu',
+                    'active' => $filters['status'] === 'Submitted' && $filters['recommendation'] === 'Indikasi',
+                    'activeClass' => 'bg-error text-white',
+                    'inactiveClass' => 'bg-error-container text-on-error-container hover:bg-red-100',
+                ])
+
+                @include('pages.admin.dashboard.partials.filter-chip', [
+                    'href' => route('admin.dashboard', ['scope' => 'all']),
+                    'label' => 'Semua Pengajuan',
+                    'active' => $filters['scope'] === 'all' && $filters['status'] === '' && $filters['priority'] === '' && $filters['recommendation'] === '' && $filters['disagreement'] === '',
+                    'activeClass' => 'bg-slate-900 text-white',
+                    'inactiveClass' => 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+                ])
+
+                @include('pages.admin.dashboard.partials.filter-chip', [
+                    'href' => route('admin.dashboard', ['disagreement' => 'true']),
+                    'label' => 'Hanya Disagreement',
+                    'active' => $filters['disagreement'] === 'true',
+                    'activeClass' => 'bg-yellow-600 text-white',
+                    'inactiveClass' => 'bg-secondary-container text-on-secondary-container hover:bg-yellow-100',
+                ])
+
+                @include('pages.admin.dashboard.partials.filter-chip', [
+                    'href' => route('admin.dashboard', ['priority' => 'high']),
+                    'label' => 'Prioritas Tinggi',
+                    'active' => $filters['priority'] === 'high',
+                    'activeClass' => 'bg-primary text-white',
+                    'inactiveClass' => 'bg-primary-container text-on-primary-container hover:bg-blue-100',
+                ])
+
+                @include('pages.admin.dashboard.partials.filter-chip', [
+                    'href' => route('admin.dashboard', ['status' => 'Submitted']),
+                    'label' => 'Semua Menunggu',
+                    'active' => $filters['status'] === 'Submitted' && $filters['priority'] === '' && $filters['recommendation'] === '' && $filters['disagreement'] === '',
+                    'activeClass' => 'bg-slate-900 text-white',
+                    'inactiveClass' => 'bg-slate-100 text-slate-700 hover:bg-slate-200',
+                ])
             </div>
 
             <div class="overflow-x-auto">
@@ -503,101 +346,12 @@
                     </thead>
                     <tbody class="divide-y divide-slate-50">
                         @forelse ($applications as $application)
-                            @php
-                                $student = $application->student;
-                                $snapshot = $application->modelSnapshot;
-                                $studentName = $student?->name ?? $application->applicant_name ?? 'Nama belum tersedia';
-                                $studentEmail = $student?->email ?? $application->applicant_email ?? 'Email belum tersedia';
-                                $studentInitials = collect(preg_split('/\s+/', trim($studentName)) ?: [])
-                                    ->filter()
-                                    ->map(fn ($part) => strtoupper(mb_substr($part, 0, 1)))
-                                    ->take(2)
-                                    ->implode('');
-                                $statusClass = $statusBadgeClasses[$application->status] ?? 'bg-slate-100 text-slate-600 border border-slate-200';
-                                $statusLabel = $statusDisplayLabels[$application->status] ?? $application->status;
-                                $priority = $snapshot?->review_priority ?? 'normal';
-                                $priorityDisplay = $priorityMeta[$priority] ?? $priorityMeta['normal'];
-                                $recommendationBadge = match ($snapshot?->final_recommendation) {
-                                    'Indikasi' => 'bg-error-container text-on-error-container border border-red-200',
-                                    'Layak' => 'bg-emerald-50 text-emerald-700 border border-emerald-200',
-                                    default => 'bg-slate-100 text-slate-600 border border-slate-200',
-                                };
-                                $pdfUrl = $application->submitted_pdf_path
-                                    ? \Illuminate\Support\Facades\Storage::disk('public')->url($application->submitted_pdf_path)
-                                    : $application->source_document_link;
-                                $documentLabel = $application->submitted_pdf_path ? 'PDF' : 'Berkas';
-                            @endphp
-
-                            <tr class="transition-colors {{ $snapshot?->final_recommendation === 'Indikasi' && $application->status === 'Submitted' ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-slate-50/50' }}">
-                                <td class="px-6 py-5">
-                                    <div class="flex items-center gap-3">
-                                        <div class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-xs font-bold text-blue-700">
-                                            {{ $studentInitials !== '' ? $studentInitials : 'MH' }}
-                                        </div>
-                                        <div>
-                                            <p class="text-sm font-bold text-on-surface">{{ $studentName }}</p>
-                                            <p class="text-[11px] font-medium text-slate-400">{{ $studentEmail }}</p>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-5">
-                                    <p class="text-sm font-medium text-on-surface">{{ $application->faculty ?? 'Fakultas belum tersedia' }}</p>
-                                    <p class="text-[11px] text-slate-400">{{ $application->study_program ?? 'Program studi belum tersedia' }}</p>
-                                    <p class="mt-1 text-[11px] text-slate-400">Dibuat {{ $application->created_at?->format('d/m/Y H:i') ?? '-' }}</p>
-                                </td>
-                                <td class="px-6 py-5">
-                                    <span class="rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-tight {{ $statusClass }}">
-                                        {{ $statusLabel }}
-                                    </span>
-                                </td>
-                                <td class="px-6 py-5">
-                                    <div class="flex items-center gap-2">
-                                        <div class="h-2 w-2 rounded-full {{ $priorityDisplay['dot'] }}"></div>
-                                        <span class="text-xs {{ $priorityDisplay['text'] }}">{{ $priorityDisplay['label'] }}</span>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-5">
-                                    <p>
-                                        <span class="rounded-full px-3 py-1 text-[11px] font-black uppercase tracking-[0.14em] {{ $recommendationBadge }}">
-                                            {{ $snapshot?->final_recommendation ?? 'Belum diproses model' }}
-                                        </span>
-                                    </p>
-                                    <p class="text-[11px] text-slate-400">
-                                        @if ($snapshot?->model_ready)
-                                            CatBoost {{ $snapshot->catboost_label ?? '-' }} · NB {{ $snapshot->naive_bayes_label ?? '-' }}
-                                        @else
-                                            Belum ada snapshot model
-                                        @endif
-                                    </p>
-                                    @if ($snapshot?->disagreement_flag)
-                                        <p class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Disagreement model</p>
-                                    @endif
-                                </td>
-                                <td class="px-6 py-5">
-                                    <div class="flex flex-wrap justify-end gap-2">
-                                        <a
-                                            href="{{ route('admin.applications.show', $application) }}"
-                                            class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                                        >
-                                            Tinjau
-                                        </a>
-
-                                        @if ($pdfUrl)
-                                            <a
-                                                href="{{ $pdfUrl }}"
-                                                target="_blank"
-                                                class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:bg-slate-50"
-                                            >
-                                                {{ $documentLabel }}
-                                            </a>
-                                        @endif
-
-                                        <span class="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
-                                            {{ $application->status === 'Submitted' ? 'Review Detail' : 'Selesai' }}
-                                        </span>
-                                    </div>
-                                </td>
-                            </tr>
+                            @include('pages.admin.dashboard.partials.application-row', [
+                                'application' => $application,
+                                'statusBadgeClasses' => $statusBadgeClasses,
+                                'statusDisplayLabels' => $statusDisplayLabels,
+                                'priorityMeta' => $priorityMeta,
+                            ])
                         @empty
                             <tr>
                                 <td colspan="6" class="px-6 py-16 text-center">
@@ -650,26 +404,6 @@
         </section>
     </div>
 
-    <footer class="mt-auto w-full border-t border-slate-100 bg-white py-8">
-        <div class="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-8 md:flex-row">
-            <div class="text-left">
-                <p class="mb-1 font-bold text-slate-900">Sistem Manajemen KIP-K</p>
-                <p class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400">
-                    © {{ now()->year }} Universitas Airlangga. Dashboard admin KIP-K.
-                </p>
-            </div>
-            <div class="flex gap-6">
-                <a class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400 transition-all duration-300 hover:text-blue-500 hover:underline" href="{{ url('/api/admin/stats') }}" target="_blank">
-                    API Statistik
-                </a>
-                <a class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400 transition-all duration-300 hover:text-blue-500 hover:underline" href="{{ url('/api/admin/applications') }}" target="_blank">
-                    API Pengajuan
-                </a>
-                <a class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-400 transition-all duration-300 hover:text-blue-500 hover:underline" href="{{ url('/api/admin/parameters/schema-versions') }}" target="_blank">
-                    API Skema
-                </a>
-            </div>
-        </div>
-    </footer>
+    <x-admin.footer />
 </main>
 @endsection

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\ApplicationFeatureEncoding;
 use App\Models\SpkTrainingData;
 use App\Models\StudentApplication;
+use Illuminate\Validation\ValidationException;
 
 class TrainingDataSyncService
 {
@@ -25,13 +26,14 @@ class TrainingDataSyncService
     }
 
     /**
-     * @return array{processed:int, synced:int, skipped:int}
+     * @return array{processed:int, synced:int, skipped:int, skipped_applications:list<array{application_id:int, applicant_name:?string, reason:string}>}
      */
     public function syncFinalizedApplications(?int $finalizedByUserId = null, bool $forceResync = false): array
     {
         $processed = 0;
         $synced = 0;
         $skipped = 0;
+        $skippedApplications = [];
 
         $applications = StudentApplication::query()
             ->whereIn('status', ['Verified', 'Rejected'])
@@ -41,8 +43,20 @@ class TrainingDataSyncService
         foreach ($applications as $application) {
             $processed++;
 
-            $encoding = $application->currentEncoding()->first()
-                ?? $this->encodingService->syncFromApplication($application, $finalizedByUserId);
+            try {
+                $encoding = $application->currentEncoding()->first()
+                    ?? $this->encodingService->syncFromApplication($application, $finalizedByUserId);
+            } catch (ValidationException $validationException) {
+                $skipped++;
+                $skippedApplications[] = [
+                    'application_id' => $application->id,
+                    'applicant_name' => $application->applicant_name,
+                    'reason' => collect($validationException->errors())
+                        ->flatten()
+                        ->implode(' '),
+                ];
+                continue;
+            }
 
             if (! $forceResync && SpkTrainingData::query()->where('source_encoding_id', $encoding->id)->exists()) {
                 $skipped++;
@@ -57,6 +71,7 @@ class TrainingDataSyncService
             'processed' => $processed,
             'synced' => $synced,
             'skipped' => $skipped,
+            'skipped_applications' => $skippedApplications,
         ];
     }
 

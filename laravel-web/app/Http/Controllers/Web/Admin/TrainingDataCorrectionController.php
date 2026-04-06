@@ -35,6 +35,7 @@ class TrainingDataCorrectionController extends Controller
             'trainingRow' => $detail['training_row'],
             'legend' => $detail['legend'],
             'fieldOptions' => $detail['field_options'],
+            'page' => $detail['view_payload'],
         ]);
     }
 

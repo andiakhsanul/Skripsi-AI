@@ -448,6 +448,76 @@ class SaasV1FlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_sync_finalized_training_while_skipping_invalid_raw_rows(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Applicant Valid',
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 800000,
+            'penghasilan_ibu_rupiah' => 200000,
+            'penghasilan_gabungan_rupiah' => 1000000,
+            'jumlah_tanggungan_raw' => 4,
+            'anak_ke_raw' => 2,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'Sewa',
+            'daya_listrik_text' => '900',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+            'admin_decided_by' => $admin->id,
+            'admin_decided_at' => now(),
+        ]);
+
+        StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Applicant Invalid',
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 800000,
+            'penghasilan_ibu_rupiah' => null,
+            'penghasilan_gabungan_rupiah' => 800000,
+            'jumlah_tanggungan_raw' => 4,
+            'anak_ke_raw' => 2,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'Menumpang',
+            'daya_listrik_text' => '900',
+            'status' => 'Rejected',
+            'admin_decision' => 'Rejected',
+            'admin_decided_by' => $admin->id,
+            'admin_decided_at' => now(),
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->postJson('/api/admin/training/sync-finalized');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('status', 'success')
+            ->assertJsonPath('data.processed', 2)
+            ->assertJsonPath('data.synced', 1)
+            ->assertJsonPath('data.skipped', 1)
+            ->assertJsonCount(1, 'data.skipped_applications');
+
+        $this->assertDatabaseCount('spk_training_data', 1);
+        $this->assertDatabaseHas('spk_training_data', [
+            'label' => 'Layak',
+        ]);
+    }
+
     public function test_student_dashboard_page_renders_history_and_summary_cards(): void
     {
         Storage::fake('public');
@@ -1136,8 +1206,66 @@ class SaasV1FlowTest extends TestCase
         $response
             ->assertOk()
             ->assertSee('Retrain Model')
-            ->assertSee('Sinkronkan Data Training')
-            ->assertSee('Mulai Retrain via Flask');
+            ->assertSee('Sinkronkan Data Latih')
+            ->assertSee('Mulai Latih Ulang');
+    }
+
+    public function test_admin_retrain_page_shows_evaluation_metrics_for_active_model(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        ModelVersion::query()->create([
+            'version_name' => 'ready-schema-v1-metrics',
+            'schema_version' => 1,
+            'status' => 'ready',
+            'is_current' => true,
+            'training_table' => 'spk_training_data',
+            'primary_model' => 'catboost',
+            'secondary_model' => 'categorical_nb',
+            'rows_used' => 97,
+            'train_rows' => 78,
+            'validation_rows' => 19,
+            'validation_strategy' => 'holdout_19_rows_stratified',
+            'catboost_validation_accuracy' => 0.7368,
+            'naive_bayes_validation_accuracy' => 0.6316,
+            'catboost_metrics' => [
+                'evaluation_dataset' => 'validation',
+                'threshold' => 0.0827,
+                'accuracy' => 0.7368,
+                'balanced_accuracy' => 0.8125,
+                'precision_indikasi' => 0.5714,
+                'recall_indikasi' => 0.8,
+                'f1_indikasi' => 0.6667,
+                'fbeta_indikasi' => 0.8,
+                'confusion_matrix' => ['tn' => 10, 'fp' => 3, 'fn' => 1, 'tp' => 5],
+            ],
+            'naive_bayes_metrics' => [
+                'evaluation_dataset' => 'validation',
+                'threshold' => 0.1,
+                'accuracy' => 0.6316,
+                'balanced_accuracy' => 0.7083,
+                'precision_indikasi' => 0.4444,
+                'recall_indikasi' => 0.8,
+                'f1_indikasi' => 0.5714,
+                'fbeta_indikasi' => 0.6897,
+                'confusion_matrix' => ['tn' => 8, 'fp' => 5, 'fn' => 1, 'tp' => 5],
+            ],
+            'trained_at' => now(),
+            'activated_at' => now(),
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->get(route('admin.models.retrain'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Precision Indikasi')
+            ->assertSee('Recall Indikasi')
+            ->assertSee('F1 Indikasi')
+            ->assertSee('Balanced Accuracy');
     }
 
     public function test_admin_can_sync_training_and_trigger_retrain_from_web_page(): void
@@ -1372,7 +1500,7 @@ class SaasV1FlowTest extends TestCase
             ->assertOk()
             ->assertSee('Detail Pengajuan')
             ->assertSee('Salsa Maharani')
-            ->assertSee('Analisis AI Predictive')
+            ->assertSee('Analisis Rekomendasi Sistem')
             ->assertSee('Data Mentah Mahasiswa')
             ->assertSee('Informasi Pengajuan')
             ->assertDontSee('Hasil Encoding Fitur');
@@ -1704,6 +1832,188 @@ class SaasV1FlowTest extends TestCase
             'label' => 'Indikasi',
             'label_class' => 1,
             'admin_corrected' => true,
+        ]);
+    }
+
+    public function test_admin_can_open_house_status_review_page(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Nadia Prameswari',
+            'study_program' => 'Teknik Informatika',
+            'faculty' => 'Fakultas Vokasi',
+            'source_reference_number' => 'A-001',
+            'source_row_number' => 2,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 1200000,
+            'penghasilan_ibu_rupiah' => 400000,
+            'penghasilan_gabungan_rupiah' => 1600000,
+            'jumlah_tanggungan_raw' => 4,
+            'anak_ke_raw' => 2,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => null,
+            'daya_listrik_text' => '900',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->get(route('admin.applications.house-review'));
+
+        $response
+            ->assertOk()
+            ->assertSee('Perbaikan Status Rumah')
+            ->assertSee('Nadia Prameswari')
+            ->assertSee('Belum diisi');
+    }
+
+    public function test_admin_can_update_house_status_without_populating_training_data(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $application = StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Bagus Prasetyo',
+            'source_reference_number' => 'A-010',
+            'source_row_number' => 10,
+            'kip' => 1,
+            'pkh' => 1,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 900000,
+            'penghasilan_ibu_rupiah' => 0,
+            'penghasilan_gabungan_rupiah' => 900000,
+            'jumlah_tanggungan_raw' => 5,
+            'anak_ke_raw' => 3,
+            'status_orangtua_text' => 'Lengkap',
+            'status_rumah_text' => null,
+            'daya_listrik_text' => '450 VA',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+            'admin_decided_by' => $admin->id,
+            'admin_decided_at' => now(),
+        ]);
+
+        $encoding = ApplicationFeatureEncoding::query()->create([
+            'application_id' => $application->id,
+            'schema_version' => 1,
+            'encoding_version' => 1,
+            'is_current' => true,
+            'kip' => 1,
+            'pkh' => 1,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'encoded_at' => now(),
+        ]);
+
+        ApplicationModelSnapshot::query()->create([
+            'application_id' => $application->id,
+            'encoding_id' => $encoding->id,
+            'schema_version' => 1,
+            'kip' => 1,
+            'pkh' => 1,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'model_ready' => true,
+            'catboost_label' => 'Layak',
+            'catboost_confidence' => 0.8,
+            'naive_bayes_label' => 'Layak',
+            'naive_bayes_confidence' => 0.7,
+            'disagreement_flag' => false,
+            'final_recommendation' => 'Layak',
+            'review_priority' => 'normal',
+            'snapshotted_at' => now(),
+        ]);
+
+        SpkTrainingData::query()->create([
+            'source_application_id' => $application->id,
+            'source_encoding_id' => $encoding->id,
+            'schema_version' => 1,
+            'encoding_version' => 1,
+            'kip' => 1,
+            'pkh' => 1,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 2,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'label' => 'Layak',
+            'label_class' => 0,
+            'decision_status' => 'Verified',
+            'finalized_by_user_id' => $admin->id,
+            'finalized_at' => now(),
+            'is_active' => true,
+            'admin_corrected' => false,
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->put(route('admin.applications.house-review.update', $application), [
+                'status_rumah_text' => 'Milik sendiri',
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.applications.house-review'))
+            ->assertSessionHas('admin_notice');
+
+        $this->assertDatabaseHas('student_applications', [
+            'id' => $application->id,
+            'status_rumah_text' => 'Milik sendiri',
+        ]);
+
+        $this->assertDatabaseMissing('application_feature_encodings', [
+            'id' => $encoding->id,
+        ]);
+
+        $this->assertDatabaseMissing('application_model_snapshots', [
+            'application_id' => $application->id,
+        ]);
+
+        $this->assertDatabaseMissing('spk_training_data', [
+            'source_application_id' => $application->id,
+        ]);
+
+        $this->assertDatabaseHas('application_status_logs', [
+            'application_id' => $application->id,
+            'action' => 'updated_house_status',
         ]);
     }
 }

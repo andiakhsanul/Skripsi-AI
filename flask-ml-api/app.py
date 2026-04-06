@@ -10,7 +10,15 @@ from catboost import CatBoostClassifier
 from flask import Flask, jsonify, request
 from psycopg2 import sql
 from psycopg2.extras import Json, RealDictCursor
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import (
+    accuracy_score,
+    balanced_accuracy_score,
+    confusion_matrix,
+    f1_score,
+    fbeta_score,
+    precision_score,
+    recall_score,
+)
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import CategoricalNB
 
@@ -48,6 +56,8 @@ MODEL_VERSIONS_TABLE = os.getenv("MODEL_VERSIONS_TABLE", "model_versions")
 FLASK_INTERNAL_TOKEN = os.getenv("FLASK_INTERNAL_TOKEN", "spk_internal_dev_token")
 
 MODEL_REGISTRY = {"catboost": None, "naive_bayes": None, "metadata": None}
+DEFAULT_POSITIVE_THRESHOLD = float(os.getenv("DEFAULT_POSITIVE_THRESHOLD", "0.5"))
+POSITIVE_F_BETA = float(os.getenv("POSITIVE_F_BETA", "2.0"))
 
 
 def db_config() -> dict:
@@ -103,6 +113,10 @@ def serialize_datetime(value) -> Optional[str]:
 
 def current_model_metadata() -> dict:
     metadata = MODEL_REGISTRY.get("metadata") or {}
+    catboost_artifact = MODEL_REGISTRY.get("catboost")
+    _, catboost_threshold = extract_model_payload(MODEL_REGISTRY.get("catboost"))
+    _, naive_bayes_threshold = extract_model_payload(MODEL_REGISTRY.get("naive_bayes"))
+    artifact_positive_weight = catboost_artifact.get("positive_class_weight") if isinstance(catboost_artifact, dict) else None
 
     return {
         "model_version_id": metadata.get("id"),
@@ -111,6 +125,9 @@ def current_model_metadata() -> dict:
         "model_schema_version": metadata.get("schema_version"),
         "model_is_current": bool(metadata.get("is_current", False)),
         "model_activated_at": serialize_datetime(metadata.get("activated_at")),
+        "catboost_threshold": metadata.get("catboost_threshold", catboost_threshold),
+        "naive_bayes_threshold": metadata.get("naive_bayes_threshold", naive_bayes_threshold),
+        "positive_class_weight": metadata.get("positive_class_weight", artifact_positive_weight),
     }
 
 
@@ -221,16 +238,23 @@ def load_models_from_version_record(metadata: Optional[dict], persist_canonical:
     if not catboost_path.exists() or not naive_bayes_path.exists():
         return False
 
-    catboost_model = joblib.load(catboost_path)
-    naive_bayes_model = joblib.load(naive_bayes_path)
+    catboost_artifact = joblib.load(catboost_path)
+    naive_bayes_artifact = joblib.load(naive_bayes_path)
 
     if persist_canonical:
-        joblib.dump(catboost_model, CATBOOST_MODEL_PATH)
-        joblib.dump(naive_bayes_model, NAIVE_BAYES_MODEL_PATH)
+        joblib.dump(catboost_artifact, CATBOOST_MODEL_PATH)
+        joblib.dump(naive_bayes_artifact, NAIVE_BAYES_MODEL_PATH)
 
-    MODEL_REGISTRY["catboost"] = catboost_model
-    MODEL_REGISTRY["naive_bayes"] = naive_bayes_model
-    MODEL_REGISTRY["metadata"] = metadata
+    _, catboost_threshold = extract_model_payload(catboost_artifact)
+    _, naive_bayes_threshold = extract_model_payload(naive_bayes_artifact)
+
+    MODEL_REGISTRY["catboost"] = catboost_artifact
+    MODEL_REGISTRY["naive_bayes"] = naive_bayes_artifact
+    MODEL_REGISTRY["metadata"] = {
+        **metadata,
+        "catboost_threshold": catboost_threshold,
+        "naive_bayes_threshold": naive_bayes_threshold,
+    }
 
     return True
 
@@ -300,9 +324,10 @@ def fetch_training_dataframe(schema_version: Optional[int] = None) -> pd.DataFra
         return pd.read_sql(query.as_string(conn), conn, params=params)
 
 
-def derive_label_and_confidence(probability_indikasi: float) -> tuple[str, float]:
+def derive_label_and_confidence(probability_indikasi: float, threshold: float = DEFAULT_POSITIVE_THRESHOLD) -> tuple[str, float]:
     bounded_probability = max(0.0, min(float(probability_indikasi), 1.0))
-    predicted_label = "Indikasi" if bounded_probability >= 0.5 else "Layak"
+    bounded_threshold = max(0.0, min(float(threshold), 1.0))
+    predicted_label = "Indikasi" if bounded_probability >= bounded_threshold else "Layak"
     confidence = bounded_probability if predicted_label == "Indikasi" else 1.0 - bounded_probability
     return predicted_label, round(confidence, 4)
 
@@ -320,6 +345,120 @@ def probability_for_class(model, features: pd.DataFrame, target_class: int = 1) 
     return float(probabilities[1])
 
 
+def extract_model_payload(artifact):
+    if isinstance(artifact, dict):
+        return artifact.get("model"), float(artifact.get("indikasi_threshold", DEFAULT_POSITIVE_THRESHOLD))
+
+    return artifact, DEFAULT_POSITIVE_THRESHOLD
+
+
+def create_model_artifact(model, indikasi_threshold: float, extra_metadata: Optional[dict] = None) -> dict:
+    payload = {
+        "model": model,
+        "indikasi_threshold": round(float(indikasi_threshold), 4),
+    }
+    if extra_metadata:
+        payload.update(extra_metadata)
+
+    return payload
+
+
+def calculate_positive_class_weight(target: pd.Series) -> float:
+    class_counts = target.value_counts()
+    negative_count = int(class_counts.get(0, 0))
+    positive_count = int(class_counts.get(1, 0))
+
+    if positive_count == 0 or negative_count == 0:
+        return 1.0
+
+    return max(1.0, round(negative_count / positive_count, 4))
+
+
+def select_optimal_indikasi_threshold(y_true: pd.Series, probabilities, beta: float = POSITIVE_F_BETA) -> dict:
+    default_metrics = {
+        "threshold": DEFAULT_POSITIVE_THRESHOLD,
+        "fbeta": 0.0,
+        "balanced_accuracy": 0.0,
+        "positive_recall": 0.0,
+        "positive_precision": 0.0,
+    }
+
+    if y_true is None or len(y_true) == 0:
+        return default_metrics
+
+    y_true_values = [int(value) for value in list(y_true)]
+    candidate_thresholds = {DEFAULT_POSITIVE_THRESHOLD}
+    candidate_thresholds.update(round(index / 100, 2) for index in range(5, 96, 5))
+    candidate_thresholds.update(round(float(probability), 4) for probability in probabilities)
+
+    best = None
+
+    for threshold in sorted(candidate_thresholds):
+        predictions = [1 if float(probability) >= threshold else 0 for probability in probabilities]
+
+        positive_true = sum(1 for actual in y_true_values if actual == 1)
+        true_positive = sum(1 for actual, predicted in zip(y_true_values, predictions) if actual == 1 and predicted == 1)
+        predicted_positive = sum(predictions)
+
+        positive_recall = (true_positive / positive_true) if positive_true else 0.0
+        positive_precision = (true_positive / predicted_positive) if predicted_positive else 0.0
+        fbeta = float(fbeta_score(y_true_values, predictions, beta=beta, zero_division=0))
+        balanced_accuracy = float(balanced_accuracy_score(y_true_values, predictions))
+
+        candidate = {
+            "threshold": round(float(threshold), 4),
+            "fbeta": round(fbeta, 4),
+            "balanced_accuracy": round(balanced_accuracy, 4),
+            "positive_recall": round(positive_recall, 4),
+            "positive_precision": round(positive_precision, 4),
+        }
+
+        if best is None:
+            best = candidate
+            continue
+
+        current_rank = (
+            candidate["fbeta"],
+            candidate["positive_recall"],
+            candidate["balanced_accuracy"],
+            -candidate["threshold"],
+        )
+        best_rank = (
+            best["fbeta"],
+            best["positive_recall"],
+            best["balanced_accuracy"],
+            -best["threshold"],
+        )
+
+        if current_rank > best_rank:
+            best = candidate
+
+    return best or default_metrics
+
+
+def build_evaluation_metrics(y_true: pd.Series, probabilities, threshold: float, evaluation_dataset: str) -> dict:
+    y_true_values = [int(value) for value in list(y_true)]
+    predicted_values = [1 if float(probability) >= threshold else 0 for probability in probabilities]
+    tn, fp, fn, tp = confusion_matrix(y_true_values, predicted_values, labels=[0, 1]).ravel()
+
+    return {
+        "evaluation_dataset": evaluation_dataset,
+        "threshold": round(float(threshold), 4),
+        "accuracy": round(float(accuracy_score(y_true_values, predicted_values)), 4),
+        "balanced_accuracy": round(float(balanced_accuracy_score(y_true_values, predicted_values)), 4),
+        "precision_indikasi": round(float(precision_score(y_true_values, predicted_values, zero_division=0)), 4),
+        "recall_indikasi": round(float(recall_score(y_true_values, predicted_values, zero_division=0)), 4),
+        "f1_indikasi": round(float(f1_score(y_true_values, predicted_values, zero_division=0)), 4),
+        "fbeta_indikasi": round(float(fbeta_score(y_true_values, predicted_values, beta=POSITIVE_F_BETA, zero_division=0)), 4),
+        "confusion_matrix": {
+            "tn": int(tn),
+            "fp": int(fp),
+            "fn": int(fn),
+            "tp": int(tp),
+        },
+    }
+
+
 def transform_features_for_naive_bayes(features: pd.DataFrame) -> pd.DataFrame:
     transformed = features.copy().astype(int)
     transformed.loc[:, ORDINAL_FEATURES] = transformed[ORDINAL_FEATURES] - 1
@@ -328,8 +467,10 @@ def transform_features_for_naive_bayes(features: pd.DataFrame) -> pd.DataFrame:
 
 def infer_with_dual_model(features: pd.DataFrame) -> dict:
     ensure_latest_models_loaded()
-    catboost_model = MODEL_REGISTRY["catboost"]
-    nb_model = MODEL_REGISTRY["naive_bayes"]
+    catboost_artifact = MODEL_REGISTRY["catboost"]
+    nb_artifact = MODEL_REGISTRY["naive_bayes"]
+    catboost_model, catboost_threshold = extract_model_payload(catboost_artifact)
+    nb_model, naive_bayes_threshold = extract_model_payload(nb_artifact)
     model_ready = catboost_model is not None and nb_model is not None
 
     if model_ready:
@@ -337,11 +478,13 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
         nb_features = transform_features_for_naive_bayes(features)
         nb_probability = probability_for_class(nb_model, nb_features, target_class=1)
 
-        pred_cb, confidence_cb = derive_label_and_confidence(cb_probability)
-        pred_nb, confidence_nb = derive_label_and_confidence(nb_probability)
+        pred_cb, confidence_cb = derive_label_and_confidence(cb_probability, catboost_threshold)
+        pred_nb, confidence_nb = derive_label_and_confidence(nb_probability, naive_bayes_threshold)
     else:
         pred_cb, confidence_cb = "Indikasi", 0.5
         pred_nb, confidence_nb = "Indikasi", 0.5
+        catboost_threshold = DEFAULT_POSITIVE_THRESHOLD
+        naive_bayes_threshold = DEFAULT_POSITIVE_THRESHOLD
 
     disagreement_flag = pred_cb != pred_nb
     final_recommendation = pred_cb
@@ -351,6 +494,8 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
     model_results = {
         "catboost": {"label": pred_cb, "confidence": confidence_cb},
         "naive_bayes": {"label": pred_nb, "confidence": confidence_nb},
+        "catboost_threshold": round(float(catboost_threshold), 4),
+        "naive_bayes_threshold": round(float(naive_bayes_threshold), 4),
         "disagreement_flag": disagreement_flag,
         "final_recommendation": final_recommendation,
         "review_priority": review_priority,
@@ -364,6 +509,8 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
         "naive_bayes_confidence": confidence_nb,
         "catboost_result": pred_cb,
         "naive_bayes_result": pred_nb,
+        "catboost_threshold": round(float(catboost_threshold), 4),
+        "naive_bayes_threshold": round(float(naive_bayes_threshold), 4),
         "final_recommendation": final_recommendation,
         "disagreement_flag": disagreement_flag,
         "review_priority": review_priority,
@@ -435,6 +582,8 @@ def persist_model_version_record(payload: dict) -> dict:
             catboost_validation_accuracy,
             naive_bayes_train_accuracy,
             naive_bayes_validation_accuracy,
+            catboost_metrics,
+            naive_bayes_metrics,
             note,
             error_message,
             trained_at,
@@ -442,7 +591,7 @@ def persist_model_version_record(payload: dict) -> dict:
             created_at,
             updated_at
         ) VALUES (
-            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
         )
         RETURNING id, version_name, schema_version, status, is_current, trained_at, activated_at
         """
@@ -472,6 +621,8 @@ def persist_model_version_record(payload: dict) -> dict:
         payload.get("catboost_validation_accuracy"),
         payload.get("naive_bayes_train_accuracy"),
         payload.get("naive_bayes_validation_accuracy"),
+        Json(payload.get("catboost_metrics")) if payload.get("catboost_metrics") is not None else None,
+        Json(payload.get("naive_bayes_metrics")) if payload.get("naive_bayes_metrics") is not None else None,
         payload.get("note"),
         payload.get("error_message"),
         payload.get("trained_at"),
@@ -608,6 +759,8 @@ def train_and_save_models(
     nb_x_train = transform_features_for_naive_bayes(x_train)
     nb_x_valid = transform_features_for_naive_bayes(x_valid) if x_valid is not None else None
 
+    positive_class_weight = calculate_positive_class_weight(y_train)
+
     catboost_model = CatBoostClassifier(
         iterations=150,
         depth=5,
@@ -615,19 +768,78 @@ def train_and_save_models(
         verbose=False,
         random_seed=42,
         eval_metric="Accuracy",
+        class_weights=[1.0, positive_class_weight],
     )
     catboost_model.fit(x_train, y_train, cat_features=FEATURE_COLUMNS)
     cb_train_accuracy = float(accuracy_score(y_train, catboost_model.predict(x_train)))
     cb_valid_accuracy = None
+    cb_threshold_metrics = {
+        "threshold": DEFAULT_POSITIVE_THRESHOLD,
+        "fbeta": 0.0,
+        "balanced_accuracy": 0.0,
+        "positive_recall": 0.0,
+        "positive_precision": 0.0,
+    }
     if x_valid is not None and y_valid is not None:
         cb_valid_accuracy = float(accuracy_score(y_valid, catboost_model.predict(x_valid)))
+        cb_valid_probabilities = [
+            probability_for_class(catboost_model, x_valid.iloc[[index]], target_class=1)
+            for index in range(len(x_valid))
+        ]
+        cb_threshold_metrics = select_optimal_indikasi_threshold(y_valid, cb_valid_probabilities)
+        cb_evaluation_metrics = build_evaluation_metrics(
+            y_valid,
+            cb_valid_probabilities,
+            cb_threshold_metrics["threshold"],
+            "validation",
+        )
+    else:
+        cb_train_probabilities = [
+            probability_for_class(catboost_model, x_train.iloc[[index]], target_class=1)
+            for index in range(len(x_train))
+        ]
+        cb_evaluation_metrics = build_evaluation_metrics(
+            y_train,
+            cb_train_probabilities,
+            cb_threshold_metrics["threshold"],
+            "training",
+        )
 
-    naive_bayes_model = CategoricalNB()
+    naive_bayes_model = CategoricalNB(fit_prior=False)
     naive_bayes_model.fit(nb_x_train, y_train)
     nb_train_accuracy = float(accuracy_score(y_train, naive_bayes_model.predict(nb_x_train)))
     nb_valid_accuracy = None
+    nb_threshold_metrics = {
+        "threshold": DEFAULT_POSITIVE_THRESHOLD,
+        "fbeta": 0.0,
+        "balanced_accuracy": 0.0,
+        "positive_recall": 0.0,
+        "positive_precision": 0.0,
+    }
     if nb_x_valid is not None and y_valid is not None:
         nb_valid_accuracy = float(accuracy_score(y_valid, naive_bayes_model.predict(nb_x_valid)))
+        nb_valid_probabilities = [
+            probability_for_class(naive_bayes_model, nb_x_valid.iloc[[index]], target_class=1)
+            for index in range(len(nb_x_valid))
+        ]
+        nb_threshold_metrics = select_optimal_indikasi_threshold(y_valid, nb_valid_probabilities)
+        nb_evaluation_metrics = build_evaluation_metrics(
+            y_valid,
+            nb_valid_probabilities,
+            nb_threshold_metrics["threshold"],
+            "validation",
+        )
+    else:
+        nb_train_probabilities = [
+            probability_for_class(naive_bayes_model, nb_x_train.iloc[[index]], target_class=1)
+            for index in range(len(nb_x_train))
+        ]
+        nb_evaluation_metrics = build_evaluation_metrics(
+            y_train,
+            nb_train_probabilities,
+            nb_threshold_metrics["threshold"],
+            "training",
+        )
 
     ensure_model_directory()
     trained_at = datetime.now(timezone.utc)
@@ -635,8 +847,20 @@ def train_and_save_models(
     catboost_versioned_path = CATBOOST_MODEL_PATH.parent / f"catboost_{version_name}.joblib"
     naive_bayes_versioned_path = NAIVE_BAYES_MODEL_PATH.parent / f"naive_bayes_{version_name}.joblib"
 
-    joblib.dump(catboost_model, catboost_versioned_path)
-    joblib.dump(naive_bayes_model, naive_bayes_versioned_path)
+    catboost_artifact = create_model_artifact(
+        catboost_model,
+        cb_threshold_metrics["threshold"],
+        {
+            "positive_class_weight": positive_class_weight,
+        },
+    )
+    naive_bayes_artifact = create_model_artifact(
+        naive_bayes_model,
+        nb_threshold_metrics["threshold"],
+    )
+
+    joblib.dump(catboost_artifact, catboost_versioned_path)
+    joblib.dump(naive_bayes_artifact, naive_bayes_versioned_path)
 
     class_distribution = {
         str(key): int(value)
@@ -646,6 +870,11 @@ def train_and_save_models(
     note = (
         "CatBoost adalah model primer. "
         "Categorical Naive Bayes digunakan sebagai pembanding untuk deteksi disagreement."
+    )
+    note += (
+        f" Threshold indikasi CatBoost={cb_threshold_metrics['threshold']:.4f}, "
+        f"Naive Bayes={nb_threshold_metrics['threshold']:.4f}. "
+        f"CatBoost class weight positif={positive_class_weight:.4f}."
     )
     if validation_strategy.startswith("train_only_fallback"):
         note += " Validation split belum dipakai karena dataset final masih terlalu kecil atau distribusi kelas belum aman."
@@ -673,23 +902,28 @@ def train_and_save_models(
             "catboost_validation_accuracy": rounded_or_none(cb_valid_accuracy),
             "naive_bayes_train_accuracy": rounded_or_none(nb_train_accuracy),
             "naive_bayes_validation_accuracy": rounded_or_none(nb_valid_accuracy),
+            "catboost_metrics": cb_evaluation_metrics,
+            "naive_bayes_metrics": nb_evaluation_metrics,
             "note": note,
             "trained_at": trained_at,
             "activated_at": trained_at,
         }
     )
 
-    joblib.dump(catboost_model, CATBOOST_MODEL_PATH)
-    joblib.dump(naive_bayes_model, NAIVE_BAYES_MODEL_PATH)
+    joblib.dump(catboost_artifact, CATBOOST_MODEL_PATH)
+    joblib.dump(naive_bayes_artifact, NAIVE_BAYES_MODEL_PATH)
 
     activated_record = mark_model_version_as_current(version_record["id"], activated_at=trained_at)
 
-    MODEL_REGISTRY["catboost"] = catboost_model
-    MODEL_REGISTRY["naive_bayes"] = naive_bayes_model
+    MODEL_REGISTRY["catboost"] = catboost_artifact
+    MODEL_REGISTRY["naive_bayes"] = naive_bayes_artifact
     MODEL_REGISTRY["metadata"] = {
         **activated_record,
         "catboost_artifact_path": relative_artifact_path(catboost_versioned_path),
         "naive_bayes_artifact_path": relative_artifact_path(naive_bayes_versioned_path),
+        "catboost_threshold": cb_threshold_metrics["threshold"],
+        "naive_bayes_threshold": nb_threshold_metrics["threshold"],
+        "positive_class_weight": positive_class_weight,
     }
 
     effective_cb_accuracy = cb_valid_accuracy if cb_valid_accuracy is not None else cb_train_accuracy
@@ -708,6 +942,13 @@ def train_and_save_models(
         "catboost_validation_accuracy": rounded_or_none(cb_valid_accuracy),
         "naive_bayes_training_accuracy": rounded_or_none(nb_train_accuracy),
         "naive_bayes_validation_accuracy": rounded_or_none(nb_valid_accuracy),
+        "catboost_threshold": cb_threshold_metrics["threshold"],
+        "naive_bayes_threshold": nb_threshold_metrics["threshold"],
+        "catboost_threshold_fbeta": cb_threshold_metrics["fbeta"],
+        "naive_bayes_threshold_fbeta": nb_threshold_metrics["fbeta"],
+        "positive_class_weight": positive_class_weight,
+        "catboost_metrics": cb_evaluation_metrics,
+        "naive_bayes_metrics": nb_evaluation_metrics,
         "catboost_accuracy": rounded_or_none(effective_cb_accuracy),
         "naive_bayes_accuracy": rounded_or_none(effective_nb_accuracy),
         "primary_model": "catboost",

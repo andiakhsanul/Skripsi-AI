@@ -1,11 +1,11 @@
 <?php
 
-use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
-use App\Http\Controllers\Admin\ModelController as AdminModelController;
-use App\Http\Controllers\Admin\ParameterSchemaController as AdminParameterSchemaController;
-use App\Http\Controllers\Admin\StatsController as AdminStatsController;
-use App\Http\Controllers\Legacy\SpkController;
-use App\Http\Controllers\Student\ApplicationController as StudentApplicationController;
+use App\Http\Controllers\Api\Admin\ApplicationController as AdminApplicationController;
+use App\Http\Controllers\Api\Admin\ModelController as AdminModelController;
+use App\Http\Controllers\Api\Admin\ParameterSchemaController as AdminParameterSchemaController;
+use App\Http\Controllers\Api\Admin\StatsController as AdminStatsController;
+use App\Http\Controllers\Api\Legacy\SpkController;
+use App\Http\Controllers\Api\Student\ApplicationController as StudentApplicationController;
 use Illuminate\Support\Facades\Route;
 
 /*

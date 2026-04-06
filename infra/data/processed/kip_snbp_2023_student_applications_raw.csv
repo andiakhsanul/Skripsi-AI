@@ -1,0 +1,501 @@
+schema_version,submission_source,student_user_id,applicant_name,applicant_email,study_program,faculty,source_reference_number,source_document_link,source_sheet_name,source_row_number,source_label_text,kip,pkh,kks,dtks,sktm,penghasilan_ayah_rupiah,penghasilan_ibu_rupiah,penghasilan_gabungan_rupiah,jumlah_tanggungan_raw,anak_ke_raw,status_orangtua_text,status_rumah_text,daya_listrik_text,status,admin_decision,admin_decision_note,manual_review_required,manual_house_review,cleaning_notes,raw_status_ayah,raw_status_ibu,raw_status_rumah_condition,raw_status_rumah_notes,raw_penghasilan_ayah_cell,raw_penghasilan_ibu_cell,raw_social_docs,label_detected_from_red_style
+1,offline_admin_import,,AGNESTI WULANSARI,,TEKNIK INFORMATIKA,Fakultas Vokasi,1,https://drive.google.com/open?id=1f1eFAAgudmdAp8tSr6Y-5e_3mj4JqHSb,Verif KIP SNBP 2023,2,layak,1,0,0,0,0,2000000,0,2000000,3,1,ayah=hidup; ibu=hidup,Sewa,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,bagus,sewa,2000000,0,KIP,0
+1,offline_admin_import,,Mutmainatul khasanah,,TEKNOLOGI HASIL PERIKANAN,Fakultas Perikanan dan Kelautan,3,https://drive.google.com/open?id=1X0qhRNYzNBssB7lJ5fjx9RoHHCSEinDw,Verif KIP SNBP 2023,3,layak,1,0,0,0,0,1000000,40000,1040000,6,2,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1000000,40000,KIP,0
+1,offline_admin_import,,DWI NUR FAUZIAH,,KEPERAWATAN,Fakultas Keperawatan,4,https://drive.google.com/open?id=1j_j5QAhI79cjbu7E2yvKAqg9YhDJsdjS,Verif KIP SNBP 2023,4,layak,1,0,0,0,0,1375000,0,1375000,4,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1.250.000-1.500.000,0,kip,0
+1,offline_admin_import,,FARADITA NUR AZIZAH,,MATEMATIKA,Fakultas Sains dan Teknologi,5,https://drive.google.com/open?id=11yoOcGkNbV8avRwYk-FbB8zwK7fq9En6,Verif KIP SNBP 2023,5,layak,1,0,0,0,0,3000000,0,3000000,5,3,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,3000000,0,KIP,0
+1,offline_admin_import,,Mukti Salim,,S1 AKUNTANSI,Fakultas Ekonomi dan Bisnis,6,https://drive.google.com/open?id=1dOHhpytyjR5PEjDmdnlQlon58lTifxb5,Verif KIP SNBP 2023,6,layak,1,0,0,0,0,1500000,30000,1530000,8,3,ayah=hidup; ibu=hidup,Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,menempati,1500000,30000,KIP,0
+1,offline_admin_import,,ILHAM MOHAMMAD ROSYIDIN FIRDAUS,,ILMU HUKUM,Fakultas Hukum,7,https://drive.google.com/open?id=1V9hFAVJjxdlV0zSTeQH6UH6x9GSaSPzr,Verif KIP SNBP 2023,7,layak,1,0,0,0,0,500000,1000000,1500000,7,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,500000,1000000,KIP,0
+1,offline_admin_import,,Ulfatus Amelia Triasari,,PERPAJAKAN,Fakultas Vokasi,8,https://drive.google.com/open?id=1vgKxD6XwKeNno5P94XURXAbDWSZe0o8B,Verif KIP SNBP 2023,8,layak,1,1,1,0,0,2000000,0,2000000,5,3,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,menempati,2000000,0,KIP/KKS/PKH,0
+1,offline_admin_import,,DHIMA YULI HERA ASSITA,,S1 KEPERAWATAN,Fakultas Keperawatan,9,https://drive.google.com/open?id=1TjMonqqWBL1KEY2TFjkHEOouOqsCNOBA,Verif KIP SNBP 2023,9,layak,1,0,0,0,0,0,700000,700000,3,1,ayah=wafat; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,wafat,hidup,tidak bagus,sendiri,0,700000,KIP,0
+1,offline_admin_import,,NAILUL FITRIANI,,REKAYASA NANOTEKNOLOGI,Fakultas Teknologi Maju dan Multidisiplin,10,https://drive.google.com/open?id=1oFHyRVfIMdCwdo9Ck7Bg3Q7dEWTpFZO8,Verif KIP SNBP 2023,10,layak,1,0,0,0,0,1000000,0,1000000,4,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1000000,0,KIP,0
+1,offline_admin_import,,Zalsa Al Firmansyah,,S-1 KEPERAWATAN,Fakultas Keperawatan,11,https://drive.google.com/open?id=1KN1RjcVSvqxu8nky0BFQnyyu3bDpl-Py,Verif KIP SNBP 2023,11,layak,1,0,0,0,0,0,1500000,1500000,3,2,ayah=wafat; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,wafat,hidup,tidak bagus,sendiri,0,1500000,KIP,0
+1,offline_admin_import,,NANDA EKA RAMADIAN,,KESEHATAN MASYARAKAT,Fakultas Kesehatan Masyarakat,12,https://drive.google.com/open?id=1XF-44-bfStTZGiU2Rc4S88H1YK9-CDkN,Verif KIP SNBP 2023,12,layak,1,0,0,0,0,1600000,0,1600000,4,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,bagus,sendiri,1600000,0,KIP,0
+1,offline_admin_import,,FITRI RAHMADANI,,ILMU INFORMASI DAN PERPUSTAKAAN,Fakultas Ilmu Sosial dan Ilmu Politik,13,https://drive.google.com/open?id=1i1VzM3pZLpAGlPxtP6SpXn4YC_f4Tk-A,Verif KIP SNBP 2023,13,layak,1,0,1,0,0,2250000,0,2250000,3,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,2.000.000-2.500.000,0,KIP/KKS,0
+1,offline_admin_import,,SUCI QAULAN MAYSURA,,MANAJEMEN PERKANTORAN DIGITAL,Fakultas Vokasi,14,https://drive.google.com/open?id=1_TWTOK5MFc7vcT44xSHUeySNbAmPXB6W,Verif KIP SNBP 2023,14,layak,1,0,0,0,0,1000000,0,1000000,7,3,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1000000,0,KIP,0
+1,offline_admin_import,,NURUL JENNA,,KEPERAWATAN,Fakultas Keperawatan,15,https://drive.google.com/open?id=1ltHXnBLh6PL1xWB-eRaUD7asSNmvhd8Z,Verif KIP SNBP 2023,15,layak,1,0,0,0,0,0,100000,100000,2,1,ayah=cerai; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,cerai,hidup,tidak bagus,sendiri,0,100000,KIP,0
+1,offline_admin_import,,Muhammad Yusuf Islam,,D3 PARAMEDIK VETERINER,Fakultas Vokasi,16,https://drive.google.com/open?id=1d-z35Tgyb4wTKyt3DNcNiTJJB0qV88Nb,Verif KIP SNBP 2023,16,layak,1,0,0,0,0,1500000,0,1500000,5,3,ayah=hidup; ibu=hidup,Milik sendiri,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1500000,0,KIP,0
+1,offline_admin_import,,Exsalia Eka Nevita,,TEKNOLOGI SAINS DATA,Fakultas Teknologi Maju dan Multidisiplin,17,https://drive.google.com/open?id=1GebIz_w4PNwBXZb3V22aP3Ykj6Y8vSQq,Verif KIP SNBP 2023,17,layak,1,0,0,0,0,1000000,0,1000000,4,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1000000,0,KIP,0
+1,offline_admin_import,,ANANG MUZAKI,,MANAJEMEN,Fakultas Ekonomi dan Bisnis,18,https://drive.google.com/open?id=14u2vzw4_kqp8Dpjm3ld5e1VcN7ISHinN,Verif KIP SNBP 2023,18,layak,1,0,0,0,0,3000000,0,3000000,5,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,bagus,sendiri,3000000,0,KIP,0
+1,offline_admin_import,,MIRA RUSYANTI,,TEKNIK INDUSTRI,Fakultas Teknologi Maju dan Multidisiplin,19,https://drive.google.com/open?id=1QCk0lPhIt-RaCj4O-KOtketicd6rkLGS,Verif KIP SNBP 2023,19,layak,1,0,0,0,0,1000000,0,1000000,3,2,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1000000,0,KIP,0
+1,offline_admin_import,,Devika Muliana,,FARMASI,Fakultas Farmasi,20,https://drive.google.com/open?id=1CyxCeSJKGO_0w7ow7io-SiVTixjebuBA,Verif KIP SNBP 2023,20,layak,1,0,0,0,0,1500000,500000,2000000,4,2,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,tidak bagus,sendiri,1500000,500000,KIP,0
+1,offline_admin_import,,NADHIFIA SHABRINA NUR RAHMA,,ILMU INFORMASI DAN PERPUSTAKAAN,Fakultas Ilmu Sosial dan Ilmu Politik,21,https://drive.google.com/open?id=1KqzTUhz4NCP5ZYDwRloS5tLLM7_FPXkB,Verif KIP SNBP 2023,21,layak,1,0,0,0,0,1500000,0,1500000,4,2,ayah=Hidup; ibu=Hidup,Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,Hidup,Hidup,tidak bagus,menumpang,1500000,0,KIP,0
+1,offline_admin_import,,RIHAN THESSALONIKA,,D3 KEPERAWATAN,Fakultas Vokasi,22,https://drive.google.com/open?id=1mRtR_lM8GjhIY-qVt7MBbti5VvECL2db,Verif KIP SNBP 2023,22,Layak,1,0,0,0,0,0,1000000,1000000,3,1,ayah=Wafat; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Wafat,Hidup,tidak bagus,"Ayah sudah wafat, ibu bekerja sebagai ART",-,1000000,KIP,0
+1,offline_admin_import,,FIRLY DAMAYANTI,,EKONOMI PEMBANGUNAN,Fakultas Ekonomi dan Bisnis,23,https://drive.google.com/open?id=1o9mtiSX30_uOAlbEvu6gxevzjhDv3Xgx,Verif KIP SNBP 2023,23,Layak,1,0,0,0,0,0,1000000,1000000,4,1,ayah=Hidup; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,tidak bagus,Ayah terdampak PHK masa pandemi,-,1000000,KIP,0
+1,offline_admin_import,,Diva Alifya Rifda Lestari,,PERPAJAKAN,Fakultas Vokasi,24,https://drive.google.com/open?id=1gnD_wouciVfCi2gjzd4ik0sYAupbmcbg,Verif KIP SNBP 2023,24,Layak,0,0,0,0,1,0,1000000,1000000,4,1,ayah=Wafat; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Wafat,Hidup,Tidak Bagus,PBB atas nama PT,-,1000000,SKTM,0
+1,offline_admin_import,,ARINA NISWATUL ASNA,,ILMU INFORMASI DAN PERPUSTAKAAN,Fakultas Ilmu Sosial dan Ilmu Politik,25,https://drive.google.com/open?id=1nPNFZsOHx7ANBcbzg1KMaS3-EJU0_UXF,Verif KIP SNBP 2023,25,Layak,0,0,0,0,1,2000000,0,2000000,5,3,ayah=Hidup; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Bagus,"Ibu sakit saraf mata, keluarga memiliki hutang 30 juta",2000000,0,SKTM,0
+1,offline_admin_import,,Adinda Brilliant Putri Orlis,,PERPUSTAKAAN,Fakultas Vokasi,26,https://drive.google.com/open?id=1g7LppoNmJhOw6GfghMWBC7uPIRn4ansj,Verif KIP SNBP 2023,26,Layak,1,0,0,0,0,0,1200000,1200000,5,1,ayah=Hidup; ibu=Hidup,,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,Ayah tidak bekerja karena sakit,0,1200000,KIP,0
+1,offline_admin_import,,Mohammad Fachrul Rafli,,MATEMATIKA,Fakultas Sains dan Teknologi,27,https://drive.google.com/open?id=1PZOF8tT1beyAuZdZACTfdvJSyF23-8ay,Verif KIP SNBP 2023,27,Layak,1,0,0,0,0,0,2000000,2000000,5,2,ayah=Hidup; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Bagus,Ayah tidak bekerja karena sakit,0,2000000,KIP,0
+1,offline_admin_import,,Ananda Putri Pramesthi,,KESELAMATAN DAN KESEHATAN KERJA,Fakultas Vokasi,28,https://drive.google.com/open?id=1JTG6lXUzLf_SAEEmLo3W-RGIFWQOD2zl,Verif KIP SNBP 2023,28,Indikasi,0,0,0,0,1,3022000,0,3022000,4,2,ayah=Hidup; ibu=Hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,Mencicil 800 rb/bulan u/ sepeda,3022000,0,SKTM,1
+1,offline_admin_import,,Fatahul Amin,,D3 MANAJEMEN PEMASARAN,Fakultas Vokasi,29,https://drive.google.com/open?id=141CHKw89wIHJJVwVlN23TVIhiMPGp-rX,Verif KIP SNBP 2023,29,Layak,0,0,0,0,1,0,0,0,4,1,ayah=Wafat; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Wafat,Hidup,Tidak Bagus,Biaya hidup dari bantuan,0,0,SKTM,0
+1,offline_admin_import,,VENESA FILDA AGNESIA,,BIOLOGI,Fakultas Sains dan Teknologi,30,https://drive.google.com/open?id=1HF0pVSOqwzwoHxfmKHpsRvO0OB1ZaXme,Verif KIP SNBP 2023,30,Layak,0,0,0,0,1,1800000,500000,2300000,5,1,ayah=Hidup; ibu=Hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,Hidup,Hidup,Tidak Bagus,Sewa tempat jualan bunga 1.500.000/tahun,1800000,500000,SKTM,0
+1,offline_admin_import,,ADINDA NISRINA LABIBA,,S1 AKUAKULTUR,Sekolah Ilmu Kesehatan dan Ilmu Alam (SIKIA),31,https://drive.google.com/open?id=1d4LcNpdjxQdvHLhjbrDwOfx4wn7Wvs1O,Verif KIP SNBP 2023,31,Layak,0,0,0,0,1,1000000,0,1000000,4,1,ayah=Hidup; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Bagus,Memiliki hutang 20 juta dengan angusran 700.000/bln,1000000,0,SKTM,0
+1,offline_admin_import,,BAGUS MAHENDRA PUTRA NUGRAHA,,KESELAMATAN DAN KESEHATAN KERJA,Fakultas Vokasi,32,https://drive.google.com/open?id=1EPHGG_HsCQeqzbYuYJqfMWBvzk8Q_Tnd,Verif KIP SNBP 2023,32,Layak,1,0,0,0,0,2500000,0,2500000,5,2,ayah=Hidup; ibu=Hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,Hidup,Hidup,Bagus,Rumah Milik sendiri,2500000,0,KIP,0
+1,offline_admin_import,,SASY OKTI KARIMA,,STATISTIKA,Fakultas Sains dan Teknologi,33,https://drive.google.com/open?id=1x21f1LUtiv3qZ4QnpRxPEULuMt5nx8hf,Verif KIP SNBP 2023,33,indikasi,0,0,0,0,1,5000000,0,5000000,4,1,ayah=Hidup; ibu=Hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Sederhana,Orang tua memiliki Toko bangunan dan karyawan. PBB tidak sesuai nama keluarga,5000000,0,SKTM,1
+1,offline_admin_import,,RIZKI RAMADHANTI,,S1 MATEMATIKA,Fakultas Sains dan Teknologi,34,https://drive.google.com/open?id=1KWWZFngjD9BhjGQvAFK6LCINUjOgbsJZ,Verif KIP SNBP 2023,34,Layak,0,0,0,0,1,0,1000000,1000000,3,2,ayah=Wafat; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Wafat,Hidup,Tidak Bagus,Penghasilan hanya dari ibu karena Ayah telah wafat,0,1000000,SKTM,0
+1,offline_admin_import,,JULEO MERDIANSYAH,,KIMIA,Fakultas Sains dan Teknologi,35,https://drive.google.com/open?id=1AWvdzLnV-glO6tGoUEyFfLL9sqcnsM09,Verif KIP SNBP 2023,35,Layak,0,0,0,0,1,1500000,0,1500000,5,3,ayah=Hidup; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Bagus,"Tinggal bersama famili, ortu masih hidup",1500000,0,SKTM,0
+1,offline_admin_import,,EKA NOVIA AI'ZATUL ULYA,,S1 MATEMATIKA,Fakultas Sains dan Teknologi,36,https://drive.google.com/open?id=1QTfTNp0BZ2AMYROjHd9GSDwQHLqTpvvS,Verif KIP SNBP 2023,36,Layak,1,0,0,0,0,2600000,0,2600000,4,1,ayah=Hidup; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,"Penerima PKH, KIS dan BPNT",2600000,0,KIP,0
+1,offline_admin_import,,Angger Joyo Neng Kusuma,,TEKNOLOGI HASIL PERIKANAN,Fakultas Perikanan dan Kelautan,37,https://drive.google.com/open?id=1IGp5wopwdUe66-DN_zN-E21BePlpOS_e,Verif KIP SNBP 2023,37,Indikasi,0,0,0,0,0,1500000,0,1500000,3,1,ayah=Hidup; ibu=Hidup,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,Tidak memiliki SKTM,1500000,0,-,1
+1,offline_admin_import,,Kartika Ayu Permata Sari,,DESTINASI PARIWISATA,Fakultas Vokasi,38,https://drive.google.com/open?id=1LAhLubrzrWGZjfU2xiscPLMRed5w839e,Verif KIP SNBP 2023,38,Layak,0,0,0,0,1,15000000,0,15000000,4,1,ayah=Hidup; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Bagus,Ayah bekerja berdasar pesanan,15000000,0,SKTM,0
+1,offline_admin_import,,NURUL MUALIFAH,,TEKNIK GIGI,Fakultas Vokasi,39,https://drive.google.com/open?id=1M0zIIu7AIhqBB9fTZrTlyygkPchVdyqR,Verif KIP SNBP 2023,39,Layak,1,0,0,0,0,1000000,0,1000000,4,2,ayah=Hidup; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,-,1000000,0,KIP,0
+1,offline_admin_import,,Amanda Fitri Ramadhani,,ADMINISTRASI PUBLIK,Fakultas Ilmu Sosial dan Ilmu Politik,40,https://drive.google.com/open?id=1_GG0Wbj_GnAJ6Zvu8iNuKy0Fys3Pzzan,Verif KIP SNBP 2023,40,Layak,1,0,0,0,0,1500000,0,1500000,4,1,ayah=Hidup; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,Ayah sebagai tukang kebersihan perumahan di Wiyung Surabaya,1500000,0,KIP,0
+1,offline_admin_import,,SABILA AMALIA RAMADHANI,,ILMU HUKUM,Fakultas Hukum,41,https://drive.google.com/open?id=1QmK5NlMrdmtm8tmL1pWoR-OnUv0YV2LM,Verif KIP SNBP 2023,41,Layak,0,0,0,0,1,1000000,0,1000000,4,1,ayah=Hidup; ibu=Hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,Tidak Bagus,Ayah terdampak PHK Pandemi dan sekarang serabutan,1000000,0,SKTM,0
+1,offline_admin_import,,XENIA CERRY NOVIA,,ADMINISTRASI PUBLIK,Fakultas Ilmu Sosial dan Ilmu Politik,42,https://drive.google.com/open?id=1rURdPvhzME37bLFuW_yjstFZwChzZNLF,Verif KIP SNBP 2023,42,Layak,0,0,0,0,1,1000000,0,1000000,2,2,ayah=hidup; ibu=meninggal,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,meninggal,"sederhana, bag belakang dinding kayu, milik sendiri","kakak sudah bekerja & berkeluarga, tanah menyewa di PJKA, belum melampirkan SK Pensiun",1000000,0,SKTM,0
+1,offline_admin_import,,Dhiya Qurrota Aini,,REKAYASA NANOTEKNOLOGI,Fakultas Teknologi Maju dan Multidisiplin,43,https://drive.google.com/open?id=1lLNRCejasVOsJ5wLEc8iQwscF1x7oA6N,Verif KIP SNBP 2023,43,Layak,0,0,0,0,1,1739100,4312000,6051100,3,1,ayah=meninggal; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,meninggal,hidup,"sederhana, dinding bata semua; milik sendiri","Ayah PNS Guru, sudah meninggal",1739100,4312000,SKTM,0
+1,offline_admin_import,,Mugi Utomo,,TEKNOLOGI SAINS DATA,Fakultas Teknologi Maju dan Multidisiplin,44,https://drive.google.com/open?id=1pmfKJOiOvPM8RGxzfiHXYRCsen018sOT,Verif KIP SNBP 2023,44,Layak,0,1,0,0,0,1200000,850000,2050000,5,3,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"sederhana, dinding bata, bagian belakang belum diplester; milik sendiri","Ayah buruh tani, tidak punya lahan sendiri. 2 anak sudah > 23 thn",1200000,850000,PKH,0
+1,offline_admin_import,,RATNA DEWI PRASTYO,,D3 KEPERAWATAN,Fakultas Vokasi,45,https://drive.google.com/open?id=1s0VfRQjCOY3q2AU-kqj1UuNfgyCl-TJ0,Verif KIP SNBP 2023,45,Indikasi,0,0,0,0,1,500000,1000000,1500000,3,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"bagus, 2 lantai, milik sendiri","Ayah buruh tani, tidak punya lahan sendiri.",500000,1000000,SKTM,1
+1,offline_admin_import,,DAMARA WISHELDA IZDIHAR,,MANAJEMEN PERKANTORAN DIGITAL,Fakultas Vokasi,46,https://drive.google.com/open?id=1ERzxNOIesVhPdROQkMl4c9U-3csaDdOn,Verif KIP SNBP 2023,46,Layak,0,0,0,0,1,2000000,0,2000000,4,2,ayah=hidup; ibu=hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,kondisi standar perumahan,"Penghasilan ayah rata2 1,5jt",2000000,0,SKTM,0
+1,offline_admin_import,,RIMANDA DWI PRABANINGRUM,,ADMINISTRASI PUBLIK,Fakultas Ilmu Sosial dan Ilmu Politik,47,https://drive.google.com/open?id=1--Sb5uPIYz4lkdB21HDCM2ulTh3UbX8I,Verif KIP SNBP 2023,47,Layak,1,0,0,0,0,0,500000,500000,5,2,ayah=meninggal; ibu=hidup,,2200,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,meninggal,hidup,"tinggal di rumah nenek,",,0,500000,KIP Sekolah,0
+1,offline_admin_import,,Alma Maghfirananda,,ILMU HUKUM,Fakultas Hukum,48,https://drive.google.com/open?id=1SEpZrLw4gYpKyWas_qoju5WQHaVHuHYy,Verif KIP SNBP 2023,48,Layak,0,0,0,0,1,2000000,0,2000000,3,1,ayah=hidup; ibu=hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,"Mengontrak, bagus","Pekerjaan ayah serabutan : sopir, tukang pijat, pengrajin kayu, tukang",2000000,0,SKTM,0
+1,offline_admin_import,,YOHANA CALISTA PRATIWI,,S1 KESEHATAN MASYARAKAT (SIKIA BANYUWANGI),Sekolah Ilmu Kesehatan dan Ilmu Alam (SIKIA),49,https://drive.google.com/open?id=1UvGqop-FiztpCkUlQSwcj7Hz-sqRC0l4,Verif KIP SNBP 2023,49,Layak,0,0,0,0,1,1500000,0,1500000,3,1,ayah=hidup; ibu=hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,menyewa tanah di PT KAI,"Ada usaha depo air minum, ada 2 tenaga pembantu; ayah juga bekerja sbg ojek motor di Papua",1500000,0,SKTM,0
+1,offline_admin_import,,VARISKA DWI WAHYUNI,,D4 DESTINASI PARIWISATA,Fakultas Vokasi,50,https://drive.google.com/open?id=1YPldE8fQeke46JaEkO-vfx-7qOIRzsaK,Verif KIP SNBP 2023,50,Layak,0,0,0,0,1,2500000,0,2500000,4,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"kontrak, sederhana","Usaha tambal ban di depan rumah, kakak kuliah juga mendapat KIP",2500000,0,SKTM,0
+1,offline_admin_import,,SAHYA RAINA PUTRI YULIANTO,,S1 KEDOKTERAN HEWAN,Fakultas Kedokteran Hewan,51,https://drive.google.com/open?id=1gWO1dC_dx5OQ-NlwX8KGA2ti1gD0hlLt,Verif KIP SNBP 2023,51,Layak,0,0,0,0,0,0,1000000,1000000,3,2,ayah=meninggal; ibu=hidup,Sewa / Menumpang,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,meninggal,hidup,"menempati rumah kakek, standar perumahan","ayah sudah meninggal, pekerjaan ibu tergantung kondisi kesehatan ibu, kakak sedang berkuliah di PENS",0,1000000,Ket dari RT,0
+1,offline_admin_import,,RISMA DEVI KUSUMASTUTI,,PERPAJAKAN,Fakultas Vokasi,52,https://drive.google.com/open?id=1-DRHZsEw6A9N8L0XHR4hUJQMOrSBblr7,Verif KIP SNBP 2023,52,Layak,1,0,0,0,0,1500000,700000,2200000,4,2,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, sederhana, jadi satu dg tempat usaha",usaha pembibitan Ikan hias : koi & oskar; aset mesin jahit : 4,1500000,700000,KIP Sekolah,0
+1,offline_admin_import,,FARELL MARSHAL ASOKA,,MANAJEMEN PERHOTELAN,Fakultas Vokasi,53,https://drive.google.com/open?id=1YNm18iQxWmGFAQ3zw1SznaPT0vZZRRU_,Verif KIP SNBP 2023,53,Layak,0,0,0,0,1,300000,200000,500000,4,3,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, sederhana, standar perumahan","ayah bekerja sbg tukang bersih2, ibu sbg tukang pijat panggilan, 2 kakak sdh bekerja (tidak tetap)",300000,200000,SKTM,0
+1,offline_admin_import,,DEBY VICTORIA,,STATISTIKA,Fakultas Sains dan Teknologi,54,https://drive.google.com/open?id=1BZUVZpFdNbXWpXf536jSuFZjZR-pTkWc,Verif KIP SNBP 2023,54,LAYAK,0,0,1,0,0,1500000,0,1500000,3,1,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,"ayah bekerja sbg tukang servis motor, sopir pengganti",1500000,0,KKS,0
+1,offline_admin_import,,TRIA AGUSTIN,,SOSIOLOGI,Fakultas Ilmu Sosial dan Ilmu Politik,55,https://drive.google.com/open?id=1PBwCT_7HVaS0K7C2j94dNRWQ0WrTDWZI,Verif KIP SNBP 2023,55,LAYAK,1,0,1,0,0,0,500000,500000,3,1,ayah=meninggal; ibu=hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,meninggal,hidup,"menempati rumah kakek, sederhana",ibu membuka warung jajanan di rumah,0,500000,"KIP Sekolah, KKS",0
+1,offline_admin_import,,Mochamad hazby novansyah,,AKUAKULTUR,Sekolah Ilmu Kesehatan dan Ilmu Alam (SIKIA),56,https://drive.google.com/open?id=1SXsnzoHpPhjUDtbdimbbmpmxiC2qFy8Z,Verif KIP SNBP 2023,56,Layak,0,0,0,0,1,0,0,0,3,3,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,"org tua tidak bekerja, hanya mengandalkan bantuan anak ke-1 dan saudara. tinggal 2 anak yg dibiayai",0,0,SKTM,0
+1,offline_admin_import,,ELSA YUHADINA PUTRI MELATI,,TEKNOLOGI RADIOLOGI PENCITRAAN,Fakultas Vokasi,57,https://drive.google.com/open?id=1D-nNOumOgjXVr55DOm60iEkLJr0ncrSS,Verif KIP SNBP 2023,57,Layak,1,1,1,0,0,300000,0,300000,5,1,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,"ayah bekerja hanya jika ada panggilan dg honor harian, ibu berjualan sayur di teras rumah",300000,0,"KKS, PKH, KIP Sekolah",0
+1,offline_admin_import,,Alfina Nor Damayanti,,ILMU HUKUM,Fakultas Hukum,58,https://drive.google.com/open?id=1Yi3_YNmroeSuxFzD7OyQqweXTBL3JFoh,Verif KIP SNBP 2023,58,Layak,0,0,0,0,1,1000000,0,1000000,3,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,menempati,"punya sawah sendiri, 3x panen/thn; kakak sdh bekerja",1000000,0,SKTM,0
+1,offline_admin_import,,DWI PUTRI ADINDA AMALIA,,KESEHATAN MASYARAKAT SIKIA BANYUWANGI,Sekolah Ilmu Kesehatan dan Ilmu Alam (SIKIA),59,https://drive.google.com/open?id=1oY796TNKDrJ6y7hlEODaHUpPhmlCUjDG,Verif KIP SNBP 2023,59,Layak,0,0,0,0,1,1500000,0,1500000,3,1,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, namun dibangun di atas tanah warisan (2 rumah); daya listrik dibagi 2",kakak pisah KK (?) kuliah di Poltekkes,1500000,0,SKTM,0
+1,offline_admin_import,,ZELLINE DEIVASYA RACHMAN,,PERBANKAN DAN KEUANGAN,Fakultas Vokasi,60,https://drive.google.com/open?id=1qL9Ho89nXctcUv_HAnfSu4JomtU_hJdW,Verif KIP SNBP 2023,60,Layak,0,0,0,0,1,0,2000000,2000000,3,2,ayah=hidup; ibu=hidup,Milik sendiri,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,biaya hidup ditanggung kakak,0,2000000,SKTM,0
+1,offline_admin_import,,MUHAMMAD FATHUR RIONI,,S1 TEKNIK INDUSTRI,Fakultas Teknologi Maju dan Multidisiplin,61,https://drive.google.com/open?id=1XX1Zbn7kfgJJf1MYDLvhl1yEKWDNcB6G,Verif KIP SNBP 2023,61,Layak,0,0,0,0,1,1000000,0,1000000,4,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,,1000000,0,SKTM,0
+1,offline_admin_import,,DELLA GITA PRATIWI,,PSIKOLOGI,Fakultas Psikologi,62,https://drive.google.com/open?id=1DHwtP6iqiY8dRngRFQcNi4q2bVnn8jub,Verif KIP SNBP 2023,62,Layak,1,0,0,0,0,750000,0,750000,4,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"menempati rumah kakek, bag belakang dinding kayu","ibu kadang bekerja sbg ART, kakak di-PHK skrg merintis ternak lele",750000,0,KIP Sekolah,0
+1,offline_admin_import,,Silvia Yuni Nur Azizah,,S1 KEPERAWATAN,Fakultas Keperawatan,63,https://drive.google.com/open?id=1ryg5BkozX054G9K8Tjk089Mnh17BCHWf,Verif KIP SNBP 2023,63,Layak,0,0,0,0,1,0,1000000,1000000,4,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"menempati (?), dinding bata tidak diplester","kakak kuliah di IANU Tuban, ayah tidak membiayai (?)",0,1000000,SKTM,0
+1,offline_admin_import,,SEFANIA WENNY EKA INRIANI,,ILMU INFORMASI DAN PERPUSTAKAAN,Fakultas Ilmu Sosial dan Ilmu Politik,64,https://drive.google.com/open?id=1RNWtRsIsdXNMEluWzXRuzKoOwOk5sSwV,Verif KIP SNBP 2023,64,Layak,0,0,0,0,1,0,1500000,1500000,4,1,ayah=hidup; ibu=hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"kontrak, sederhana",ayah tidak bekerja karena sakit (cuci darah) : ditanggung KIS; ibu sbg honorer di poli mata RS Dharma Husada Ngoro,0,1500000,SKTM,0
+1,offline_admin_import,,Resty Amanda Putri,,MANAJEMEN PERKANTORAN DIGITAL,Fakultas Vokasi,65,https://drive.google.com/open?id=1OQZWYkzO7j1swQlnt5FCeHq_jpJRlz3y,Verif KIP SNBP 2023,65,Layak,1,0,1,0,0,1100000,100000,1200000,4,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,,1100000,100000,"KIP Sekolah, KKS",0
+1,offline_admin_import,,RIZKY DWI LESTARI,,KEDOKTERAN HEWAN,Fakultas Kedokteran Hewan,66,https://drive.google.com/open?id=1Iv_cwaHIgvAZWGeZd-QhTXZ8R-muVhGS,Verif KIP SNBP 2023,66,Layak,0,0,0,0,1,1917000,0,1917000,3,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,ayah hanya bekerja 2 minggu/bulan,1917000,0,SKTM,0
+1,offline_admin_import,,QONITA HAFIDA,,ADMINISTRASI PUBLIK,Fakultas Ilmu Sosial dan Ilmu Politik,67,https://drive.google.com/open?id=1L7rFkCLzztUsB5bm4W2Gg8tsx9MHbg3U,Verif KIP SNBP 2023,67,LAYAK,0,0,0,0,1,0,500000,500000,4,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"menempati, sebagian dinding belum diplester",ayah tidak bekerja krn kecelakaan kerja; usaha jahit berdasarkan pesanan; kakak juga akan kuliah di tahun yg sama,0,500000,SKTM,0
+1,offline_admin_import,,IBNU SADIDAN FIL IMAN,,S1 KEDOKTERAN HEWAN (SIKIA BANYUWANGI),Sekolah Ilmu Kesehatan dan Ilmu Alam (SIKIA),68,https://drive.google.com/open?id=1sW3ZIHULKEsmZ5vEAly5Xt29gAAoxKYh,Verif KIP SNBP 2023,68,Layak,0,0,0,0,1,0,4751000,4751000,5,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, bagus",kakak kuliah di PTS,0,4751000,SKTM,0
+1,offline_admin_import,,RIZKA SUSILO APRILIANI,,AKUNTANSI,Fakultas Ekonomi dan Bisnis,70,https://drive.google.com/open?id=1X3HE05H3-w7_CptHzSi9eU6jk8G7rL4g,Verif KIP SNBP 2023,69,Layak,1,0,0,0,0,0,500000,500000,6,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,menempati rumah kakek,"ayah di-PHK pd saat pandemi, ibu berjualan jajanan di depan rumah",0,500000,KIP Sekolah,0
+1,offline_admin_import,,Yuni Hartri Ningtiyas,,PSIKOLOGI,Fakultas Psikologi,71,https://drive.google.com/open?id=1rHDqM2dLhdppk4vBJhMMYWyr0PEPiTQ7,Verif KIP SNBP 2023,70,Indikasi,0,0,1,0,0,0,4300000,4300000,3,1,ayah=hidup; ibu=hidup,Milik sendiri,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, sederhana",ibu bekerja sbg CS di Terminal Petikemas Sby,0,4300000,KKS,1
+1,offline_admin_import,,CHOSNALIA CHOTIJAH,,EKONOMI ISLAM,Fakultas Ekonomi dan Bisnis,72,https://drive.google.com/open?id=19cbhzBjWxnJNm86vxCx13UWrL_BgzGio,Verif KIP SNBP 2023,71,Layak,0,0,0,0,0,4000000,0,4000000,8,1,ayah=hidup; ibu=hidup,Milik sendiri,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,0,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung,hidup,hidup,"milik sendiri,",ayah bekerja sbg security di Ramayana BGJ & driver Grabbike,4000000,0,SKKM Dinsos,0
+1,offline_admin_import,,IRMA YULI NOVIANTI,,S1 AKUAKULTUR,Fakultas Perikanan dan Kelautan,73,https://drive.google.com/open?id=1L6RTIeCmSyxcgMZWvk70w9RLu8UYnpuJ,Verif KIP SNBP 2023,72,Layak,1,0,0,0,0,500000,0,500000,2,1,ayah=hidup; ibu=hidup,Sewa / Menumpang,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"menempati rumah kakek, bangunan semi permanen","org tua sudah bercerai, dibiayai kakek (penggembala kambing): dibayar dg sistem bagi hasil",500000,0,KIP Sekolah,0
+1,offline_admin_import,,Devina Alfiyanti,,EKONOMI ISLAM,Fakultas Ekonomi dan Bisnis,74,https://drive.google.com/open?id=1VB5q6A3dZ7bWk2lp8HplsZav5NE40JJt,Verif KIP SNBP 2023,73,Layak,1,0,0,0,0,2000000,0,2000000,5,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, sederhana","Ayah menyewa tempat u/berjualan, membiayai 2 anak",2000000,0,KIP Sekolah,0
+1,offline_admin_import,,Aulia Husnah,,AKUNTANSI,Fakultas Vokasi,75,https://drive.google.com/open?id=1N7SlB7vkg9w4ymIHKy6Qr5R1RZyMvEA0,Verif KIP SNBP 2023,74,Layak,0,0,0,0,0,1000000,0,1000000,4,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,milik sendiri,,1000000,0,TIDAK ADA,0
+1,offline_admin_import,,AHMAT RIZAL FAJRIANSYAH,,K3 (KESEHATAN DAN KESELAMATAN KERJA),Fakultas Vokasi,76,https://drive.google.com/open?id=17IHXEdcM-kMtp-w0KsIHl1iiWn-qOdfP,Verif KIP SNBP 2023,75,Layak,0,0,0,0,1,2000000,900000,2900000,4,1,ayah=hidup; ibu=hidup,Milik sendiri,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,"milik sendiri, bag belakang semi permanen","ayah juga bekerja sbg buruh lepas PG Jatiroto, ibu membuka toko kelontong",2000000,900000,SKTM,0
+1,offline_admin_import,,Dwi Fadil Nanda Septian,,ILMU HUBUNGAN INTERNASIONAL,Fakultas Ilmu Sosial dan Ilmu Politik,77,https://drive.google.com/open?id=1qbcKCKFq2Ki2iwMowJM9t2bNE6gACvPc,Verif KIP SNBP 2023,76,Layak,0,0,0,0,0,3000000,0,3000000,4,2,ayah=hidup; ibu=hidup,Sewa / Menumpang,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,hidup,hidup,kontrak,,3000000,0,TIDAK ADA,0
+1,offline_admin_import,,INTAN ZAHROTUNNISA,,TEKNOLOGI HASIL PERIKANAN,Fakultas Perikanan dan Kelautan,78,https://drive.google.com/open?id=1ZDNsDzCzxWo_SjDBZDa_Be8rRr9aGEKd,Verif KIP SNBP 2023,77,Layak,1,1,1,0,0,2000000,0,2000000,6,4,ayah=hIDUP; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hIDUP,Hidup,rsss sempit,MEMPUNYAI PKH KKS KIS,2000000,0,PKH KIP KKS,0
+1,offline_admin_import,,Dea Regita Pasharani,,S1 PSIKOLOGI,Fakultas Psikologi,79,https://drive.google.com/open?id=1UxSBazxvaNnoKBqEb2Dc4d7LVucN0CTq,Verif KIP SNBP 2023,78,Indikasi,0,0,0,0,1,2000000,0,2000000,4,2,ayah=Hidup; ibu=Hidup,Sewa / Menumpang,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,0,0,,Hidup,Hidup,Rumah RSS menumpang,SKTM,2000000,0,SKTM,1
+1,offline_admin_import,,Anugrah Yulis Pradana,,AKUAKULTUR,Fakultas Perikanan dan Kelautan,80,https://drive.google.com/open?id=1AjCIFeihv2e3GapZSi-7qoCLDFylIe7U,Verif KIP SNBP 2023,79,Layak,1,0,1,0,0,500000,500000,1000000,5,2,ayah=Hidup; ibu=Hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,RSS Pedesaan,KKS KPS KIP SEKOLAH,500000,500000,KKS KPS KIP SEKOLAH,0
+1,offline_admin_import,,FARIDA AINUR SALAM,,AKUNTANSI,Fakultas Ekonomi dan Bisnis,81,https://drive.google.com/open?id=1LHc_dIAPmElMTcxyaHTsskK2TL5BCpiU,Verif KIP SNBP 2023,80,Indikasi,0,0,0,0,0,2275000,0,2275000,5,1,ayah=Hidup; ibu=Hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,RSS,SUKET RT RW KERJAAN SATPAM,2275000,0,SUKET RT RW,1
+1,offline_admin_import,,Raudhah Nisrina Qurrota Aini,,BAHASA DAN SASTRA INDONESIA,Fakultas Ilmu Budaya,82,https://drive.google.com/open?id=1s2zqmDOP36_sjCTnJJ0kYyeRm-LkIPC-,Verif KIP SNBP 2023,81,LAYAK,0,0,1,0,0,1000000,1000000,2000000,4,2,ayah=Hidup; ibu=Hidup,,1300,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,Hidup,Hidup,RSS kecil,layak serabutan,1000000,1000000,KKS,0
+1,offline_admin_import,,Nur Elisa Novembita,,KESEHATAN MASAYARAKAT,Fakultas Kesehatan Masyarakat,83,https://drive.google.com/open?id=1vclWK_WwFTCXmzcwGWeQ-NLBlbFUgdZ4,Verif KIP SNBP 2023,82,Indikasi,0,0,0,0,1,2300000,0,2300000,4,2,ayah=hidup; ibu=hidup,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,rss DESA,suket penghasilan seharusnya dikelaurkan oleh perusahaan,2300000,0,sktm,1
+1,offline_admin_import,,SONY WIJAYA NURCHOLIS,,MANAJEMEN PERKANTORAN DIGITAL,Fakultas Vokasi,84,https://drive.google.com/open?id=1qTvtFbPJ3NxttRiBRpodomoqRya_xHHC,Verif KIP SNBP 2023,83,Layak,0,0,0,0,1,0,500000,500000,5,1,ayah=wafat; ibu=hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,wafat,hidup,rumah RSS,orang tua wafat tanggungan anak 4,0,500000,SKTM,0
+1,offline_admin_import,,LAILATUR ROHMAH,,EKONOMI ISLAM,Fakultas Ekonomi dan Bisnis,85,https://drive.google.com/open?id=1v3HPzzIWgTSNk7ouXeGJaqPsTOBHzwse,Verif KIP SNBP 2023,84,Layak,1,0,0,0,0,1000000,500000,1500000,6,2,ayah=hidup; ibu=hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RUMAH rss,TANGGUNGAN 4 ANAK PUNYA KIP SEKOLAH,1000000,500000,KIP SEKOLAH,0
+1,offline_admin_import,,Aisyah Ferryani,,D3 AKUNTANSI,Fakultas Vokasi,86,https://drive.google.com/open?id=1B_bYHmWiMwk_WGWtn89aESrABvrEoFEJ,Verif KIP SNBP 2023,85,Indikasi,0,0,0,0,0,2000000,0,2000000,5,1,ayah=hidup; ibu=hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,Rumah RSS kumuh,tidak punya surat miskin dan SKTM,2000000,0,-,1
+1,offline_admin_import,,MUHAMMAD THOFA SAPUTRA,,TEKNIK ELEKTRO,Fakultas Teknologi Maju dan Multidisiplin,87,https://drive.google.com/open?id=1XtoiG4cfN4f4zE9ppcYEfLeLB7AV_MDl,Verif KIP SNBP 2023,86,indikasi,0,0,0,0,1,1500000,,1500000,4,1,ayah=hidup; ibu=hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual,hidup,hidup,Rumah RSSS,SKTM Dinas jakarta,1500000,tidak jelas,SKTM dinas jakarta,1
+1,offline_admin_import,,ERIKA DARUL MAULIDTYA KARTIKA RAHAYU,,TEKNIK GIGI,Fakultas Vokasi,88,https://drive.google.com/open?id=1NObsgHcpdDOtgqA_o0Bq2HVyZGLIeDuy,Verif KIP SNBP 2023,87,Indikasi,0,0,0,0,1,400000,1000000,1400000,4,1,ayah=hidup; ibu=hidup,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,Rumah RSS (indikai bagus),"SKTM ,. pekerjaan ibu diluarkota tidak jelas",400000,1000000,SKTM,1
+1,offline_admin_import,,SAHDA NABILAH ALODIA SEPTIANA,,REKAYASA NANOTEKNOLOGI,Fakultas Teknologi Maju dan Multidisiplin,89,https://drive.google.com/open?id=1KKQ3EdMwjqhHRmDCo0TlUhoXp0bPTSHi,Verif KIP SNBP 2023,88,Indikasi,0,0,0,0,1,1500000,0,1500000,5,3,ayah=hidup; ibu=hidup,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,rsss ASLI,"SKTM , ADA INDIKASI PUNYA SAWAH BESAR DAN RUMAH BUKAN MILKNYA",1500000,0,SKTM,1
+1,offline_admin_import,,MIFTAKUL JANAH,,TEKNIK ELEKTRO,Fakultas Teknologi Maju dan Multidisiplin,90,https://drive.google.com/open?id=1-YG2YRcJf18tu5w6JECGV_oLbYI9iTWY,Verif KIP SNBP 2023,89,Indikasi,0,0,0,0,1,1500000,0,1500000,4,4,ayah=hidup; ibu=hidup,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,rsss ASLI KAYU,"SKTM , ADA INDIKASI PUNYA SAWAH BESAR DAN RUMAH BUKAN MILKNYA",1500000,0,SKTM,1
+1,offline_admin_import,,AHMAD FAIZUL BADY,,EKONOMI ISLAM,Fakultas Ekonomi dan Bisnis,91,https://drive.google.com/open?id=1YcxCQRjSFYN72Io_U9js_3XzT9BJ0P46,Verif KIP SNBP 2023,90,Indikasi,0,0,0,0,1,500000,0,500000,4,2,ayah=hidup; ibu=hidup,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RSSS KAYU,"SKTM, INDIKASI KERJAAN IBU TIDAK JELAS  PENGHASILANNYA,",500000,0,SKTM,1
+1,offline_admin_import,,KINTAN KHUNTI ASMORO,,KEPERAWATAN,Fakultas Vokasi,92,https://drive.google.com/open?id=1iYGdqnjfy55pmjSUB0mYPVZrwGJb8iIt,Verif KIP SNBP 2023,91,Layak,1,0,1,0,0,0,1000000,1000000,4,2,ayah=cerai; ibu=hidup,,450,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,cerai,hidup,rsss,KKS kIP SEKOLAH pisah cerai,0,1000000,KKS KIP SEKOLAH,0
+1,offline_admin_import,,Dzihni Talidah Suni,,PENGOBATAN TRADISIONAL,Fakultas Vokasi,93,https://drive.google.com/open?id=1CqVD4aZ9KLxLl9c2G4hLSvmjAVjg5yNR,Verif KIP SNBP 2023,92,Indikasi,0,0,0,0,1,0,3000000,3000000,5,1,ayah=MENINGGAL DUNIA; ibu=hidup,,1300,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,MENINGGAL DUNIA,hidup,RSSS,SKTM AYAH MENINGGAL DUNIA,,3000000,SKTM,1
+1,offline_admin_import,,VANI DESTIYANA ARIYANTI,,FARMASI,Fakultas Farmasi,94,https://drive.google.com/open?id=14nSGkvq_kzzohFcpXMwn3ua83KofYkEC,Verif KIP SNBP 2023,93,Indikasi,0,0,0,0,1,3000000,0,3000000,6,1,ayah=hidup; ibu=hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RSS KECIL,"SKTM , KERJAAN AYAH TIDAK JELAS",3000000,0,SKTM,1
+1,offline_admin_import,,Budi Cahyono,,MANAJEMEN PERKANTORAN DIGITAL,Fakultas Vokasi,95,https://drive.google.com/open?id=1-nW5CDVDqtbklk3k2ifT9i-GdKPLY_ca,Verif KIP SNBP 2023,94,Indikasi,0,0,0,0,1,,,,2,1,ayah=hidup; ibu=hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,penghasilan_ayah_perlu_cek_manual | penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual,hidup,hidup,,SKTM KERJAN NDAK JELAS,,,SKTM,1
+1,offline_admin_import,,MARETA CAHYA AZAHRA,,S1 KEPERAWATAN,Fakultas Keperawatan,96,https://drive.google.com/open?id=1ore_OfkIJQvemQg65TQAZCW0DfyTpMD3,Verif KIP SNBP 2023,95,Indikasi,0,0,0,0,1,2500000,500000,3000000,4,2,ayah=hidup; ibu=hidup,,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RSS,SKTM INDIKASI SAWAH BEASR,2500000,500000,SKTM,1
+1,offline_admin_import,,Niken Ayu Silfa Alya Putri,,AKUNTANSI,Fakultas Ekonomi dan Bisnis,97,https://drive.google.com/open?id=1DLzlhJ-BYx9jB-fJECeEvoJ0u42DbaPV,Verif KIP SNBP 2023,96,Layak,1,0,0,0,0,2000000,0,2000000,4,1,ayah=hidup; ibu=hidup,,900,Verified,Verified,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RSSS,KIP SEKOLAH,2000000,0,KIP SEKOLAH,0
+1,offline_admin_import,,Nurlena Al Baiti,,S1 EKONOMI PEMBANGUNAN,Fakultas Ekonomi dan Bisnis,98,https://drive.google.com/open?id=1BYD6Dr-N6F6stGmArteNPYVgBvZncFeP,Verif KIP SNBP 2023,97,Indikasi,0,0,0,0,1,1000000,0,1000000,4,2,ayah=hidup; ibu=WAFAT,,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,WAFAT,RSS LUMAYAN BAGUS,SKTM,1000000,0,SKTM,1
+1,offline_admin_import,,CITRA GALIH HAYUNDA PURI,,GIZI,Fakultas Kesehatan Masyarakat,99,https://drive.google.com/open?id=12eboJwUx189kg5KpjgHe5wJZ11FJ_1rt,Verif KIP SNBP 2023,98,Indikasi,0,0,0,0,1,1000000,0,1000000,3,1,ayah=hidup; ibu=hidup,Milik sendiri,450,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RSS,SKTM pekerjaannya tidak diperjelas,1000000,0,SKTM,1
+1,offline_admin_import,,SYARLA MARCELINA LAURENT,,STUDI KEJEPANGAN,Fakultas Ilmu Budaya,100,https://drive.google.com/open?id=1HSnp1IJr8IVhyCEMEtQdz0kX7a7gRn62,Verif KIP SNBP 2023,99,Indikasi,0,0,0,0,1,1500000,0,1500000,4,1,ayah=hidup; ibu=hidup,Menumpang,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,rss PERMANEN,SKTM,1500000,0,SKTM,1
+1,offline_admin_import,,Zawilla Defitrianti Bahtiar,,MANAJEMEN,Fakultas Ekonomi dan Bisnis,101,https://drive.google.com/open?id=1Kefh6AkLrKh2kV0n7b7H172hvB1H5jA0,Verif KIP SNBP 2023,100,Indikasi,0,0,0,0,1,2000000,0,2000000,7,2,ayah=hidup; ibu=hidup,Milik sendiri,900,Rejected,Rejected,Dibersihkan dari Verifikasi KIP SNBP 2023.xlsx sebelum import ke student_applications,1,1,status_rumah_perlu_isi_manual,hidup,hidup,RSS,SKTM,2000000,0,SKTM,1
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Legacy;
+namespace App\Http\Controllers\Api\Legacy;
 
 use App\Http\Controllers\Controller;
 use App\Services\MlGatewayService;

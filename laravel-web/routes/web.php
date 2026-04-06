@@ -4,6 +4,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Web\Admin\ApplicationReviewController as AdminApplicationReviewController;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Web\Admin\HouseStatusReviewController as AdminHouseStatusReviewController;
 use App\Http\Controllers\Web\Admin\ModelRetrainController as AdminModelRetrainController;
 use App\Http\Controllers\Web\Admin\TrainingDataCorrectionController as AdminTrainingDataCorrectionController;
 use App\Http\Controllers\Web\DashboardRedirectController;
@@ -42,6 +43,8 @@ Route::middleware('auth')->group(function (): void {
 
     Route::middleware('role.admin')->prefix('admin')->group(function (): void {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/applications/house-review', [AdminHouseStatusReviewController::class, 'index'])->name('admin.applications.house-review');
+        Route::put('/applications/{application}/house-review', [AdminHouseStatusReviewController::class, 'update'])->name('admin.applications.house-review.update');
         Route::post('/applications/run-predictions', [AdminApplicationReviewController::class, 'runPredictions'])->name('admin.applications.run-predictions');
         Route::get('/applications/{application}', [AdminApplicationReviewController::class, 'show'])->name('admin.applications.show');
         Route::post('/applications/{application}/refresh-prediction', [AdminApplicationReviewController::class, 'refreshPrediction'])->name('admin.applications.refresh-prediction');

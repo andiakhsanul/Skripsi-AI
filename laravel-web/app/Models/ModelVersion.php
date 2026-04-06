@@ -33,6 +33,8 @@ class ModelVersion extends Model
         'catboost_validation_accuracy',
         'naive_bayes_train_accuracy',
         'naive_bayes_validation_accuracy',
+        'catboost_metrics',
+        'naive_bayes_metrics',
         'note',
         'error_message',
         'trained_at',
@@ -54,6 +56,8 @@ class ModelVersion extends Model
             'catboost_validation_accuracy' => 'float',
             'naive_bayes_train_accuracy' => 'float',
             'naive_bayes_validation_accuracy' => 'float',
+            'catboost_metrics' => 'array',
+            'naive_bayes_metrics' => 'array',
             'trained_at' => 'datetime',
             'activated_at' => 'datetime',
         ];

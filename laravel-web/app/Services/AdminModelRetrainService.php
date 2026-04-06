@@ -54,12 +54,77 @@ class AdminModelRetrainService
             'applications_without_snapshot' => $applicationsWithoutSnapshot,
             'label_distribution' => $this->labelDistribution(),
             'active_model' => $activeModel,
+            'active_model_evaluation' => $this->buildEvaluationPayload($activeModel),
             'latest_ready_model' => $latestReadyModel,
+            'latest_ready_model_evaluation' => $this->buildEvaluationPayload($latestReadyModel),
             'latest_attempt' => $latestAttempt,
             'recent_model_versions' => $this->recentModelVersions(),
+            'recent_model_versions_view' => $this->buildRecentVersionsPayload($this->recentModelVersions()),
+            'system_notes' => $this->systemNotes(
+                $activeModel,
+                $latestAttempt,
+                $finalizedApplications,
+                $trainingRows,
+                $applicationsWithoutSnapshot,
+            ),
             'model_status' => [
                 'ready' => $activeModel !== null,
                 'label' => $activeModel !== null ? 'SIAP' : 'BELUM SIAP',
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    public function viewPayload(array $payload): array
+    {
+        $modelStatus = $payload['model_status'];
+
+        return [
+            'status_tone_classes' => $modelStatus['ready']
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-yellow-200 bg-yellow-50 text-yellow-700',
+            'status_dot_classes' => $modelStatus['ready'] ? 'bg-emerald-500' : 'bg-yellow-500',
+            'note_tone_classes' => [
+                'success' => ['dot' => 'bg-emerald-500', 'pill' => 'bg-emerald-50 text-emerald-700'],
+                'warning' => ['dot' => 'bg-yellow-500', 'pill' => 'bg-yellow-50 text-yellow-700'],
+                'info' => ['dot' => 'bg-primary', 'pill' => 'bg-primary/10 text-primary'],
+            ],
+            'cards' => [
+                [
+                    'label' => 'Pengajuan Final',
+                    'value' => number_format($payload['finalized_applications']),
+                    'hint' => 'Sudah diputuskan admin.',
+                    'border' => 'border-primary',
+                    'icon_wrap' => 'bg-primary/10 text-primary',
+                    'icon' => 'fact_check',
+                ],
+                [
+                    'label' => 'Data Siap Dilatih',
+                    'value' => number_format($payload['training_rows']),
+                    'hint' => 'Siap dipakai pada pelatihan berikutnya.',
+                    'border' => 'border-emerald-500',
+                    'icon_wrap' => 'bg-emerald-50 text-emerald-600',
+                    'icon' => 'database',
+                ],
+                [
+                    'label' => 'Belum Tersalin',
+                    'value' => number_format($payload['training_gap']),
+                    'hint' => 'Masih perlu disinkronkan.',
+                    'border' => 'border-yellow-500',
+                    'icon_wrap' => 'bg-yellow-50 text-yellow-700',
+                    'icon' => 'sync_problem',
+                ],
+                [
+                    'label' => 'Hasil Rekomendasi',
+                    'value' => number_format($payload['prediction_snapshots']),
+                    'hint' => 'Pengajuan yang sudah punya rekomendasi sistem.',
+                    'border' => 'border-slate-800',
+                    'icon_wrap' => 'bg-slate-100 text-slate-700',
+                    'icon' => 'analytics',
+                ],
             ],
         ];
     }
@@ -172,5 +237,121 @@ class AdminModelRetrainService
             ->with('triggeredBy:id,name,email')
             ->orderByRaw('COALESCE(trained_at, created_at) DESC, id DESC')
             ->first();
+    }
+
+    /**
+     * @return array<int, array<string, string>>
+     */
+    private function systemNotes(
+        ?ModelVersion $activeModel,
+        ?ModelVersion $latestAttempt,
+        int $finalizedApplications,
+        int $trainingRows,
+        int $applicationsWithoutSnapshot,
+    ): array {
+        $notes = [];
+
+        if ($activeModel) {
+            $notes[] = [
+                'tone' => 'success',
+                'message' => "Versi {$activeModel->version_name} sedang dipakai untuk rekomendasi terbaru.",
+                'actor' => $activeModel->triggeredBy?->name ?? $activeModel->triggered_by_email ?? 'Sistem',
+                'time' => optional($activeModel->activated_at ?? $activeModel->trained_at)->format('d M Y H:i') ?? '-',
+            ];
+        }
+
+        if ($finalizedApplications > $trainingRows) {
+            $notes[] = [
+                'tone' => 'warning',
+                'message' => ($finalizedApplications - $trainingRows).' pengajuan final belum tersalin ke data latih.',
+                'actor' => 'Monitoring',
+                'time' => now()->format('d M Y H:i'),
+            ];
+        }
+
+        if ($applicationsWithoutSnapshot > 0) {
+            $notes[] = [
+                'tone' => 'info',
+                'message' => $applicationsWithoutSnapshot.' pengajuan belum memiliki rekomendasi sistem terbaru.',
+                'actor' => 'Review',
+                'time' => now()->format('d M Y H:i'),
+            ];
+        }
+
+        if ($latestAttempt) {
+            $notes[] = [
+                'tone' => $latestAttempt->status === 'failed' ? 'warning' : 'success',
+                'message' => $latestAttempt->status === 'failed'
+                    ? ($latestAttempt->error_message ?: 'Percobaan pelatihan terakhir belum berhasil.')
+                    : "Pelatihan {$latestAttempt->version_name} selesai dijalankan.",
+                'actor' => $latestAttempt->triggeredBy?->name ?? $latestAttempt->triggered_by_email ?? 'Sistem',
+                'time' => optional($latestAttempt->trained_at ?? $latestAttempt->created_at)->format('d M Y H:i') ?? '-',
+            ];
+        }
+
+        return array_slice($notes, 0, 4);
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function buildEvaluationPayload(?ModelVersion $modelVersion): ?array
+    {
+        if (! $modelVersion) {
+            return null;
+        }
+
+        return [
+            'catboost' => $this->formatModelMetrics('CatBoost', $modelVersion->catboost_metrics),
+            'naive_bayes' => $this->formatModelMetrics('Naive Bayes', $modelVersion->naive_bayes_metrics),
+        ];
+    }
+
+    /**
+     * @param Collection<int, ModelVersion> $versions
+     * @return array<int, array<string, mixed>>
+     */
+    private function buildRecentVersionsPayload(Collection $versions): array
+    {
+        return $versions
+            ->map(function (ModelVersion $version): array {
+                return [
+                    'version' => $version,
+                    'catboost' => $this->formatModelMetrics('CatBoost', $version->catboost_metrics),
+                    'naive_bayes' => $this->formatModelMetrics('Naive Bayes', $version->naive_bayes_metrics),
+                ];
+            })
+            ->all();
+    }
+
+    /**
+     * @param array<string, mixed>|null $metrics
+     * @return array<string, mixed>|null
+     */
+    private function formatModelMetrics(string $label, ?array $metrics): ?array
+    {
+        if (! $metrics) {
+            return null;
+        }
+
+        $confusion = $metrics['confusion_matrix'] ?? [];
+
+        return [
+            'label' => $label,
+            'evaluation_dataset' => $metrics['evaluation_dataset'] ?? 'validation',
+            'threshold' => $metrics['threshold'] ?? null,
+            'accuracy' => $metrics['accuracy'] ?? null,
+            'balanced_accuracy' => $metrics['balanced_accuracy'] ?? null,
+            'precision_indikasi' => $metrics['precision_indikasi'] ?? null,
+            'recall_indikasi' => $metrics['recall_indikasi'] ?? null,
+            'f1_indikasi' => $metrics['f1_indikasi'] ?? null,
+            'fbeta_indikasi' => $metrics['fbeta_indikasi'] ?? null,
+            'confusion_matrix' => [
+                'tn' => $confusion['tn'] ?? 0,
+                'fp' => $confusion['fp'] ?? 0,
+                'fn' => $confusion['fn'] ?? 0,
+                'tp' => $confusion['tp'] ?? 0,
+            ],
+        ];
     }
 }

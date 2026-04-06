@@ -8,7 +8,7 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Artisan::command('applications:import-kip-snbp {csv=../infra/data/processed/kip_snbp_2023_ml_dataset.csv} {--refresh}', function (): void {
+Artisan::command('applications:import-kip-snbp {csv=../infra/data/processed/kip_snbp_2023_student_applications_raw.csv} {--refresh}', function (): void {
     $csvArgument = (string) $this->argument('csv');
     $csvPath = str_starts_with($csvArgument, '/')
         ? $csvArgument
@@ -29,4 +29,4 @@ Artisan::command('applications:import-kip-snbp {csv=../infra/data/processed/kip_
             $result['total_processed'],
         ]]
     );
-})->purpose('Import processed KIP SNBP CSV into student_applications as offline rows');
+})->purpose('Import cleaned raw KIP SNBP applicant CSV into student_applications as offline rows');

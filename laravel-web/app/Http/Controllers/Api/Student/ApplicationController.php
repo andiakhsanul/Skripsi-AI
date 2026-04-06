@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Student;
+namespace App\Http\Controllers\Api\Student;
 
 use App\Http\Requests\Student\StoreStudentApplicationRequest;
 use App\Http\Controllers\Controller;

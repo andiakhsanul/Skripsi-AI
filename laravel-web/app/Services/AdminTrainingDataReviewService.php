@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\SpkTrainingData;
 use App\Models\StudentApplication;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AdminTrainingDataReviewService
@@ -36,6 +37,114 @@ class AdminTrainingDataReviewService
             'training_row' => $trainingRow,
             'legend' => $this->legend(),
             'field_options' => $this->fieldOptions(),
+            'view_payload' => $this->viewPayload($application, $trainingRow, $this->legend()),
+        ];
+    }
+
+    /**
+     * @param array<string, string> $legend
+     * @return array<string, mixed>
+     */
+    public function viewPayload(StudentApplication $application, SpkTrainingData $trainingRow, array $legend): array
+    {
+        $snapshot = $application->modelSnapshot;
+        $student = $application->student;
+        $displayName = $student?->name ?? $application->applicant_name ?? 'Mahasiswa';
+        $displayMeta = collect([
+            $application->faculty,
+            $application->study_program,
+            $student?->email ?? $application->applicant_email,
+        ])->filter()->implode(' • ');
+        $documentUrl = $application->submitted_pdf_path
+            ? Storage::disk('public')->url($application->submitted_pdf_path)
+            : $application->source_document_link;
+
+        return [
+            'display_name' => $displayName,
+            'display_meta' => $displayMeta,
+            'document_url' => $documentUrl,
+            'score' => [
+                'current' => round(((float) ($snapshot?->catboost_confidence ?? 0)) * 100, 1),
+                'label' => $trainingRow->label === 'Layak' ? 'LAYAK' : 'INDIKASI',
+                'tone' => $trainingRow->label === 'Layak'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'bg-error text-white shadow-lg shadow-error/20',
+            ],
+            'training_status' => [
+                'classes' => $trainingRow->admin_corrected
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-yellow-200 bg-yellow-50 text-yellow-700',
+                'icon' => $trainingRow->admin_corrected ? 'verified' : 'priority_high',
+            ],
+            'training_field_groups' => [
+                [
+                    'title' => 'Dokumen & Bantuan Sosial',
+                    'type' => 'binary',
+                    'fields' => [
+                        'kip' => 'Kepemilikan KIP',
+                        'pkh' => 'Kepemilikan PKH',
+                        'kks' => 'Kepemilikan KKS',
+                        'dtks' => 'Terdata DTKS',
+                        'sktm' => 'SKTM',
+                    ],
+                ],
+                [
+                    'title' => 'Ekonomi Keluarga',
+                    'type' => 'income',
+                    'fields' => [
+                        'penghasilan_ayah' => 'Penghasilan Ayah',
+                        'penghasilan_ibu' => 'Penghasilan Ibu',
+                        'penghasilan_gabungan' => 'Penghasilan Gabungan',
+                    ],
+                ],
+                [
+                    'title' => 'Beban Keluarga',
+                    'type' => 'mixed',
+                    'fields' => [
+                        'jumlah_tanggungan' => ['label' => 'Jumlah Tanggungan', 'options' => 'dependents'],
+                        'anak_ke' => ['label' => 'Anak Ke-', 'options' => 'child'],
+                    ],
+                ],
+                [
+                    'title' => 'Standar Hidup',
+                    'type' => 'mixed',
+                    'fields' => [
+                        'status_orangtua' => ['label' => 'Status Orang Tua', 'options' => 'parent'],
+                        'status_rumah' => ['label' => 'Status Rumah', 'options' => 'house'],
+                        'daya_listrik' => ['label' => 'Daya Listrik', 'options' => 'power'],
+                    ],
+                ],
+            ],
+            'legend_cards' => [
+                ['title' => 'Biner', 'description' => $legend['binary'] ?? ''],
+                ['title' => 'Ordinal', 'description' => $legend['ordinal'] ?? ''],
+                ['title' => 'Penghasilan', 'description' => $legend['income'] ?? ''],
+                ['title' => 'Tanggungan', 'description' => $legend['dependents'] ?? ''],
+                ['title' => 'Status Ortu', 'description' => $legend['parent'] ?? ''],
+                ['title' => 'Daya Listrik', 'description' => $legend['power'] ?? ''],
+            ],
+            'context_notes' => [
+                [
+                    'title' => 'Dokumen Pendukung',
+                    'description' => $documentUrl
+                        ? 'Buka dokumen pendukung untuk memastikan hasil encoding sesuai berkas yang diserahkan mahasiswa.'
+                        : 'Belum ada tautan dokumen pendukung yang dapat ditinjau dari pengajuan ini.',
+                    'cta' => $documentUrl ? 'Lihat Dokumen Lengkap' : null,
+                    'href' => $documentUrl,
+                    'icon' => 'description',
+                    'icon_wrap' => 'bg-primary-container text-primary',
+                ],
+                [
+                    'title' => 'Konteks Rekomendasi Model',
+                    'description' => $snapshot
+                        ? 'CatBoost '.$snapshot->catboost_label.' dan Naive Bayes '.$snapshot->naive_bayes_label.'. Gunakan ini sebagai pembanding, bukan keputusan akhir.'
+                        : 'Snapshot rekomendasi belum tersedia. Bangun rekomendasi sistem bila admin perlu membandingkan hasil model.',
+                    'cta' => null,
+                    'href' => null,
+                    'icon' => 'psychology',
+                    'icon_wrap' => 'bg-secondary-fixed text-on-secondary-fixed',
+                ],
+            ],
         ];
     }
 

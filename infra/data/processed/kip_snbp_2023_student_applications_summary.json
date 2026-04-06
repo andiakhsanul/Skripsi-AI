@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-04-06T09:46:49Z",
+  "source_csv": "infra/data/processed/kip_snbp_2023_student_applications_raw.csv",
+  "source_workflow": "manual_cleaning_before_import",
+  "csv_total_lines": 501,
+  "csv_nonempty_rows": 99,
+  "student_applications_imported": 99,
+  "status_breakdown": {
+    "Verified": 77,
+    "Rejected": 22
+  },
+  "status_rumah": {
+    "pending_manual_review": 42,
+    "filled": 57
+  },
+  "model_tables": {
+    "application_feature_encodings": 0,
+    "application_model_snapshots": 0,
+    "spk_training_data": 0
+  },
+  "notes": [
+    "CSV aktif saat ini hanya memiliki 99 baris non-kosong yang siap diimpor.",
+    "Status rumah masih sengaja dibiarkan kosong pada 42 baris untuk dilengkapi lewat halaman admin web.",
+    "Belum ada data yang dimasukkan ke encoding, snapshot model, atau training data."
+  ]
+}

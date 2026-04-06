@@ -17,9 +17,12 @@ class ModelRetrainController extends Controller
 
     public function index(Request $request): View
     {
+        $payload = $this->adminModelRetrainService->dashboardPayload();
+
         return view('pages.admin.models.retrain', [
             'admin' => $request->user(),
-            'payload' => $this->adminModelRetrainService->dashboardPayload(),
+            'payload' => $payload,
+            'page' => $this->adminModelRetrainService->viewPayload($payload),
         ]);
     }
 

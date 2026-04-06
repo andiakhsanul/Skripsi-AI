@@ -44,10 +44,12 @@ class DashboardController extends Controller
 
         $applications = $this->adminDashboardService->paginateApplications($viewFilters, 10);
         $applications->appends($viewFilters);
+        $summary = $this->adminDashboardService->summary();
 
         return view('pages.admin.dashboard', [
             'admin' => $request->user(),
-            'summary' => $this->adminDashboardService->summary(),
+            'summary' => $summary,
+            'page' => $this->adminDashboardService->viewPayload($summary),
             'applications' => $applications,
             'filters' => $viewFilters,
             'defaultFocusApplied' => $defaultFocusApplied,

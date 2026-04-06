@@ -124,4 +124,15 @@ class StudentApplication extends Model
             && $this->admin_decided_by === null
             && $this->admin_decided_at === null;
     }
+
+    public function isOfflineImport(): bool
+    {
+        return $this->submission_source === 'offline_admin_import';
+    }
+
+    public function needsHouseStatusReview(): bool
+    {
+        return $this->isOfflineImport()
+            && blank($this->status_rumah_text);
+    }
 }

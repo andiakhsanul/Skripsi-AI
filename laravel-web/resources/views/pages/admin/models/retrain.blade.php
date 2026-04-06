@@ -4,112 +4,40 @@
 @section('description', 'Halaman admin untuk sinkronisasi data training dan retrain model machine learning KIP-K UNAIR')
 
 @php
-    $adminName = $admin->name ?? 'Admin';
-    $adminInitials = collect(preg_split('/\s+/', trim($adminName)) ?: [])
-        ->filter()
-        ->map(fn ($part) => strtoupper(mb_substr($part, 0, 1)))
-        ->take(2)
-        ->implode('');
-
     $notice = session('admin_notice');
     $activeSchema = $payload['active_schema'];
     $modelStatus = $payload['model_status'];
     $activeModel = $payload['active_model'];
+    $activeModelEvaluation = $payload['active_model_evaluation'];
     $latestReadyModel = $payload['latest_ready_model'];
+    $latestReadyModelEvaluation = $payload['latest_ready_model_evaluation'];
     $latestAttempt = $payload['latest_attempt'];
     $recentVersions = $payload['recent_model_versions'];
-
-    $cards = [
-        [
-            'label' => 'Data Final Admin',
-            'value' => number_format($payload['finalized_applications']),
-            'hint' => 'Pengajuan yang sudah berstatus Verified atau Rejected.',
-            'border' => 'border-primary',
-            'icon_wrap' => 'bg-primary/10 text-primary',
-            'icon' => 'fact_check',
-        ],
-        [
-            'label' => 'Data Training Aktif',
-            'value' => number_format($payload['training_rows']),
-            'hint' => 'Baris canonical di spk_training_data yang siap dipakai retrain.',
-            'border' => 'border-emerald-500',
-            'icon_wrap' => 'bg-emerald-50 text-emerald-600',
-            'icon' => 'database',
-        ],
-        [
-            'label' => 'Gap Sinkronisasi',
-            'value' => number_format($payload['training_gap']),
-            'hint' => 'Data final yang belum disalin ke tabel training.',
-            'border' => 'border-yellow-500',
-            'icon_wrap' => 'bg-yellow-50 text-yellow-700',
-            'icon' => 'sync_problem',
-        ],
-        [
-            'label' => 'Snapshot Prediksi',
-            'value' => number_format($payload['prediction_snapshots']),
-            'hint' => 'Jumlah pengajuan yang sudah punya hasil CatBoost dan Naive Bayes.',
-            'border' => 'border-slate-800',
-            'icon_wrap' => 'bg-slate-100 text-slate-700',
-            'icon' => 'analytics',
-        ],
-    ];
+    $recentVersionsView = $payload['recent_model_versions_view'];
+    $systemNotes = $payload['system_notes'];
+    $statusToneClasses = $page['status_tone_classes'];
+    $statusDotClasses = $page['status_dot_classes'];
+    $noteToneClasses = $page['note_tone_classes'];
+    $cards = $page['cards'];
 @endphp
 
 @section('content')
 <main class="min-h-screen bg-background">
-    <aside class="fixed left-0 top-0 hidden h-screen w-64 flex-col border-r border-slate-100 bg-slate-50 md:flex">
-        <div class="p-6">
-            <p class="text-lg font-black uppercase tracking-[0.2em] text-blue-900">KIP-K UNAIR</p>
-        </div>
-
-        <nav class="flex flex-1 flex-col gap-2 p-4">
-            <a
-                href="{{ route('admin.dashboard') }}"
-                class="flex items-center gap-3 rounded-md px-4 py-3 font-semibold text-slate-500 transition-transform duration-200 hover:-translate-y-0.5 hover:bg-white"
-            >
-                <span class="material-symbols-outlined">dashboard_customize</span>
-                <span class="text-sm">Dasbor Admin</span>
-            </a>
-
-            <a
-                href="{{ route('admin.models.retrain') }}"
-                class="flex items-center gap-3 rounded-md border-t-2 border-yellow-500 bg-white px-4 py-3 font-semibold text-blue-700 shadow-sm transition-transform duration-200 hover:-translate-y-0.5"
-            >
-                <span class="material-symbols-outlined">model_training</span>
-                <span class="text-sm">Retrain Model</span>
-            </a>
-        </nav>
-
-        <div class="border-t border-slate-100 bg-slate-100/50 p-4">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button
-                    type="submit"
-                    class="flex w-full items-center gap-3 px-4 py-3 text-left font-semibold text-slate-500 transition-colors hover:text-error"
-                >
-                    <span class="material-symbols-outlined">logout</span>
-                    <span class="text-sm">Keluar</span>
-                </button>
-            </form>
-        </div>
-    </aside>
+    @include('pages.admin.partials.sidebar', ['active' => 'retrain'])
 
     <div class="md:ml-64">
-        <header class="sticky top-0 z-30 flex h-20 items-center justify-between border-b border-slate-100 bg-white/80 px-6 backdrop-blur-md md:px-10">
-            <div>
-                <h1 class="text-2xl font-extrabold tracking-tight text-on-surface">Retrain Model</h1>
-                <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">CatBoost dan Naive Bayes dikendalikan oleh Flask ML API</p>
-            </div>
-
-            <div class="flex items-center gap-4">
-                <div class="rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] {{ $modelStatus['ready'] ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-yellow-200 bg-yellow-50 text-yellow-700' }}">
-                    Status Model: {{ $modelStatus['label'] }}
+        <x-admin.topbar
+            :admin="$admin"
+            title="Retrain Model"
+            subtitle="Pusat pelatihan ulang dan aktivasi versi model"
+        >
+            <x-slot:meta>
+                <div class="flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-black uppercase tracking-[0.18em] {{ $statusToneClasses }}">
+                    <span class="h-2.5 w-2.5 rounded-full {{ $statusDotClasses }}"></span>
+                    Status: {{ $modelStatus['label'] }}
                 </div>
-                <div class="flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary/10 bg-primary-container font-bold text-primary shadow-sm">
-                    {{ $adminInitials !== '' ? $adminInitials : 'AD' }}
-                </div>
-            </div>
-        </header>
+            </x-slot:meta>
+        </x-admin.topbar>
 
         <div class="mx-auto max-w-7xl space-y-8 p-6 md:p-10">
             @if ($notice)
@@ -120,32 +48,36 @@
             @endif
 
             <section class="grid grid-cols-1 gap-6 lg:grid-cols-12">
-                <div class="relative overflow-hidden rounded-3xl bg-primary px-8 py-10 text-white shadow-2xl lg:col-span-7">
-                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_42%),linear-gradient(135deg,rgba(255,255,255,0.08),transparent)]"></div>
+                <div class="relative min-h-[420px] overflow-hidden rounded-3xl bg-primary px-8 py-10 text-white shadow-2xl lg:col-span-7 lg:px-10">
+                    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_38%),linear-gradient(145deg,rgba(255,255,255,0.06),transparent_55%)]"></div>
+                    <div class="absolute -right-20 top-8 h-56 w-56 rounded-full bg-white/10 blur-3xl"></div>
+                    <div class="absolute -bottom-16 left-12 h-40 w-40 rounded-full bg-secondary/20 blur-3xl"></div>
                     <div class="relative z-10">
-                        <span class="mb-4 block text-sm font-black uppercase tracking-[0.24em] text-secondary-container">Mesin Seleksi Akademik</span>
-                        <h2 class="max-w-2xl text-4xl font-black tracking-tight">Laravel mengelola kontrol admin, Flask menjalankan retrain model.</h2>
+                        <span class="mb-4 block text-sm font-black uppercase tracking-[0.24em] text-secondary-container">Panel Pelatihan Ulang</span>
+                        <h2 class="max-w-2xl text-4xl font-black tracking-tight leading-tight">Optimalkan rekomendasi KIP-K dari keputusan final yang benar-benar sudah disetujui admin.</h2>
                         <p class="mt-5 max-w-2xl text-sm font-medium leading-7 text-blue-100/90">
-                            Data offline yang sudah final dari admin dipindahkan dulu ke <span class="font-bold text-white">spk_training_data</span>,
-                            lalu Laravel hanya mengirim trigger internal ke Flask. Service Flask yang melatih CatBoost dan Naive Bayes,
-                            menyimpan file model, dan mencatat histori versi model.
+                            Halaman ini dipakai setelah admin selesai meninjau pengajuan.
+                            Sistem akan mengambil data yang sudah benar-benar disetujui, menyiapkan data latih,
+                            lalu menjalankan pelatihan ulang agar rekomendasi berikutnya lebih akurat.
                         </p>
 
-                        <div class="mt-8 grid gap-4 md:grid-cols-3">
-                            <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
-                                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Skema Aktif</p>
-                                <p class="mt-2 text-2xl font-black">{{ $activeSchema?->version ? 'v'.$activeSchema->version : 'v1 default' }}</p>
-                                <p class="mt-1 text-xs text-blue-100/80">{{ $activeSchema?->source_file_name ?? 'Belum ada file schema khusus' }}</p>
+                        <div class="mt-10 grid gap-5 border-t border-white/20 pt-8 md:grid-cols-2 xl:grid-cols-3">
+                            <div>
+                                <h3 class="text-lg font-bold">CatBoost</h3>
+                                <p class="mt-2 text-sm leading-6 text-blue-100/85">
+                                    Menjadi rekomendasi utama yang dilihat admin ketika sistem menandai pengajuan sebagai Layak atau Indikasi.
+                                </p>
                             </div>
-                            <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
-                                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Distribusi Label</p>
-                                <p class="mt-2 text-sm font-semibold">Layak: {{ number_format($payload['label_distribution']['layak']) }}</p>
-                                <p class="mt-1 text-sm font-semibold">Indikasi: {{ number_format($payload['label_distribution']['indikasi']) }}</p>
+                            <div>
+                                <h3 class="text-lg font-bold">Naive Bayes</h3>
+                                <p class="mt-2 text-sm leading-6 text-blue-100/85">
+                                    Menjadi pembanding untuk membantu admin mengenali kasus yang hasil modelnya tidak selaras.
+                                </p>
                             </div>
-                            <div class="rounded-2xl border border-white/10 bg-white/10 p-4">
-                                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Versi Siap Terakhir</p>
+                            <div class="rounded-2xl border border-white/10 bg-white/10 p-4 md:col-span-2 xl:col-span-1">
+                                <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-100">Versi Aktif</p>
                                 <p class="mt-2 text-sm font-bold">{{ $activeModel?->version_name ?? 'Belum ada model aktif' }}</p>
-                                <p class="mt-1 text-xs text-blue-100/80">{{ optional($activeModel?->activated_at ?? $activeModel?->trained_at)->format('d M Y H:i') ?? 'Menunggu retrain pertama' }}</p>
+                                <p class="mt-1 text-xs text-blue-100/80">{{ optional($activeModel?->activated_at ?? $activeModel?->trained_at)->format('d M Y H:i') ?? 'Menunggu pelatihan pertama' }}</p>
                             </div>
                         </div>
                     </div>
@@ -159,14 +91,28 @@
                             </div>
                             <div>
                                 <p class="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">Kontrol Retrain</p>
-                                <h3 class="text-xl font-extrabold text-on-surface">Siapkan dataset, lalu latih model</h3>
+                                <h3 class="text-xl font-extrabold text-on-surface">Siapkan data, lalu mulai pelatihan</h3>
                             </div>
                         </div>
 
                         <div class="space-y-4">
                             <div class="rounded-2xl bg-surface-container p-4">
-                                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Sebelum Retrain</p>
-                                <p class="mt-2 text-sm font-semibold text-on-surface">Pastikan data final admin sudah tersalin ke tabel training. Jika masih ada gap, jalankan sinkronisasi dahulu.</p>
+                                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Sebelum Mulai</p>
+                                <p class="mt-2 text-sm font-semibold text-on-surface">Pastikan pengajuan final admin sudah tersalin ke data latih. Jika masih ada selisih, jalankan sinkronisasi terlebih dahulu.</p>
+                            </div>
+
+                            <div class="rounded-2xl border border-outline-variant bg-surface-container-low p-4">
+                                <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Snapshot Data Aktif</p>
+                                <div class="mt-3 flex items-start justify-between gap-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="material-symbols-outlined rounded-2xl bg-white p-2 text-primary shadow-sm">database</span>
+                                        <div>
+                                            <p class="text-sm font-bold text-on-surface">{{ $activeSchema?->source_file_name ?? 'Dataset aktif dari sistem' }}</p>
+                                            <p class="mt-1 text-[11px] text-slate-500">Aturan v{{ $activeSchema?->version ?? 1 }} · {{ number_format($payload['training_rows']) }} data siap dilatih</p>
+                                        </div>
+                                    </div>
+                                    <span class="material-symbols-outlined text-slate-400">folder_open</span>
+                                </div>
                             </div>
 
                             <div class="grid gap-3 sm:grid-cols-2">
@@ -177,7 +123,7 @@
                                         class="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-4 text-sm font-black text-white transition hover:bg-slate-800"
                                     >
                                         <span class="material-symbols-outlined text-lg">sync</span>
-                                        Sinkronkan Data Training
+                                        Sinkronkan Data Latih
                                     </button>
                                 </form>
 
@@ -188,7 +134,7 @@
                                         class="flex w-full items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-4 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-blue-700"
                                     >
                                         <span class="material-symbols-outlined text-lg">rocket_launch</span>
-                                        Mulai Retrain via Flask
+                                        Mulai Latih Ulang
                                     </button>
                                 </form>
                             </div>
@@ -203,11 +149,11 @@
                                 <p class="mt-2 text-2xl font-black text-on-surface">{{ number_format($payload['finalized_applications']) }}</p>
                             </div>
                             <div class="rounded-2xl bg-surface-container p-4">
-                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Belum Punya Snapshot Prediksi</p>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Belum Punya Rekomendasi</p>
                                 <p class="mt-2 text-2xl font-black text-on-surface">{{ number_format($payload['applications_without_snapshot']) }}</p>
                             </div>
                             <div class="rounded-2xl bg-surface-container p-4">
-                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Koreksi Training</p>
+                                <p class="text-xs font-bold uppercase tracking-[0.18em] text-slate-400">Koreksi Data Latih</p>
                                 <p class="mt-2 text-2xl font-black text-on-surface">{{ number_format($payload['training_corrections']) }}</p>
                             </div>
                         </div>
@@ -217,17 +163,85 @@
 
             <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 @foreach ($cards as $card)
-                    <div class="rounded-2xl border-t-4 {{ $card['border'] }} bg-white p-6 shadow-lg">
-                        <div class="mb-4 flex items-center justify-between">
-                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl {{ $card['icon_wrap'] }}">
-                                <span class="material-symbols-outlined">{{ $card['icon'] }}</span>
-                            </div>
-                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">{{ $card['label'] }}</span>
-                        </div>
-                        <p class="text-3xl font-black text-on-surface">{{ $card['value'] }}</p>
-                        <p class="mt-2 text-sm font-medium text-slate-500">{{ $card['hint'] }}</p>
-                    </div>
+                    @include('pages.admin.dashboard.partials.stat-card', [
+                        'label' => $card['label'],
+                        'value' => $card['value'],
+                        'hint' => $card['hint'],
+                        'hintClass' => 'text-slate-500',
+                        'border' => $card['border'],
+                        'iconWrap' => $card['icon_wrap'],
+                        'icon' => $card['icon'],
+                    ])
                 @endforeach
+            </section>
+
+            <section class="overflow-hidden rounded-3xl bg-white shadow-lg">
+                <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-on-surface-variant">history</span>
+                        <h3 class="font-bold text-lg">Catatan Sistem Terakhir</h3>
+                    </div>
+                    <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Monitor Internal</span>
+                </div>
+                <div class="divide-y divide-slate-50">
+                    @forelse ($systemNotes as $note)
+                        @php
+                            $tone = $noteToneClasses[$note['tone']] ?? $noteToneClasses['info'];
+                        @endphp
+                        <div class="flex items-center gap-6 px-8 py-4 transition-colors hover:bg-surface-container-low">
+                            <span class="w-24 text-[10px] font-bold text-on-surface-variant">{{ $note['time'] }}</span>
+                            <div class="h-2.5 w-2.5 rounded-full {{ $tone['dot'] }}"></div>
+                            <div class="flex-1">
+                                <p class="text-sm font-medium text-on-surface">{{ $note['message'] }}</p>
+                            </div>
+                            <span class="rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] {{ $tone['pill'] }}">
+                                {{ $note['actor'] }}
+                            </span>
+                        </div>
+                    @empty
+                        <div class="px-8 py-12 text-center">
+                            <p class="text-sm font-semibold text-slate-500">Belum ada catatan sistem. Jalankan sinkronisasi atau pelatihan pertama untuk memulai log.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </section>
+
+            <section class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                <div class="rounded-3xl bg-white p-6 shadow-lg">
+                    <div class="mb-4">
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Evaluasi Model Aktif</p>
+                        <h3 class="mt-1 text-xl font-extrabold text-on-surface">Metrik retrain terbaru</h3>
+                    </div>
+
+                    @if ($activeModelEvaluation)
+                        <div class="space-y-4">
+                            @include('pages.admin.models.partials.evaluation-card', ['metrics' => $activeModelEvaluation['catboost']])
+                            @include('pages.admin.models.partials.evaluation-card', ['metrics' => $activeModelEvaluation['naive_bayes']])
+                        </div>
+                    @else
+                        <div class="rounded-2xl bg-yellow-50 p-5 text-yellow-800">
+                            <p class="text-sm font-semibold">Belum ada metrik evaluasi tersimpan. Jalankan retrain terbaru untuk melihat kualitas model secara lebih lengkap.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <div class="rounded-3xl bg-white p-6 shadow-lg">
+                    <div class="mb-4">
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Evaluasi Versi Cadangan</p>
+                        <h3 class="mt-1 text-xl font-extrabold text-on-surface">Perbandingan model siap terbaru</h3>
+                    </div>
+
+                    @if ($latestReadyModelEvaluation)
+                        <div class="space-y-4">
+                            @include('pages.admin.models.partials.evaluation-card', ['metrics' => $latestReadyModelEvaluation['catboost']])
+                            @include('pages.admin.models.partials.evaluation-card', ['metrics' => $latestReadyModelEvaluation['naive_bayes']])
+                        </div>
+                    @else
+                        <div class="rounded-2xl bg-surface-container p-5">
+                            <p class="text-sm font-medium text-slate-600">Versi cadangan belum memiliki metrik evaluasi terstruktur.</p>
+                        </div>
+                    @endif
+                </div>
             </section>
 
             <section class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_420px]">
@@ -235,7 +249,7 @@
                     <div class="flex items-center justify-between border-b border-slate-100 px-8 py-5">
                         <div>
                             <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Histori Retrain</p>
-                            <h3 class="mt-1 text-xl font-extrabold text-on-surface">Histori versi model</h3>
+                            <h3 class="mt-1 text-xl font-extrabold text-on-surface">Riwayat pelatihan model</h3>
                         </div>
                     </div>
 
@@ -245,13 +259,16 @@
                                 <tr class="bg-slate-50/70">
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Versi</th>
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Status</th>
-                                    <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Akurasi</th>
+                                    <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Hasil Uji</th>
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Waktu</th>
                                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400 text-right">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-50">
-                                @forelse ($recentVersions as $modelVersion)
+                                @forelse ($recentVersionsView as $versionView)
+                                    @php
+                                        $modelVersion = $versionView['version'];
+                                    @endphp
                                     <tr class="hover:bg-slate-50/60">
                                         <td class="px-8 py-5">
                                             <div class="flex flex-wrap items-center gap-2">
@@ -260,7 +277,7 @@
                                                     <span class="rounded-full bg-primary-container px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-on-primary-container">Aktif</span>
                                                 @endif
                                             </div>
-                                            <p class="mt-1 text-[11px] text-slate-400">Skema v{{ $modelVersion->schema_version }} · {{ $modelVersion->rows_used ?? 0 }} baris</p>
+                                            <p class="mt-1 text-[11px] text-slate-400">{{ $modelVersion->rows_used ?? 0 }} data dipakai · aturan v{{ $modelVersion->schema_version }}</p>
                                         </td>
                                         <td class="px-8 py-5">
                                             <span class="rounded-full px-3 py-1 text-[11px] font-black uppercase {{ $modelVersion->status === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-error-container text-on-error-container' }}">
@@ -270,6 +287,9 @@
                                         <td class="px-8 py-5">
                                             <p class="text-sm font-semibold text-on-surface">CatBoost {{ $modelVersion->catboost_validation_accuracy ?? $modelVersion->catboost_train_accuracy ?? '-' }}</p>
                                             <p class="mt-1 text-[11px] text-slate-400">Naive Bayes {{ $modelVersion->naive_bayes_validation_accuracy ?? $modelVersion->naive_bayes_train_accuracy ?? '-' }}</p>
+                                            @if ($versionView['catboost'])
+                                                <p class="mt-2 text-[11px] text-slate-400">Precision Indikasi {{ number_format((float) ($versionView['catboost']['precision_indikasi'] ?? 0), 4) }} · Recall {{ number_format((float) ($versionView['catboost']['recall_indikasi'] ?? 0), 4) }}</p>
+                                            @endif
                                         </td>
                                         <td class="px-8 py-5">
                                             <p class="text-sm font-semibold text-on-surface">{{ optional($modelVersion->trained_at)->format('d/m/Y H:i') ?? '-' }}</p>
@@ -284,10 +304,10 @@
                                                         type="submit"
                                                         class="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-slate-700 transition hover:bg-slate-50"
                                                     >
-                                                        <span class="material-symbols-outlined text-sm">restore</span>
-                                                        Jadikan Aktif
-                                                    </button>
-                                                </form>
+                                                    <span class="material-symbols-outlined text-sm">restore</span>
+                                                    Aktifkan
+                                                </button>
+                                            </form>
                                             @elseif ($modelVersion->is_current)
                                                 <span class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-black uppercase tracking-[0.14em] text-white">
                                                     <span class="material-symbols-outlined text-sm">verified</span>
@@ -303,7 +323,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="5" class="px-8 py-14 text-center">
-                                            <p class="text-sm font-semibold text-slate-500">Belum ada histori retrain. Jalankan sinkronisasi training lalu retrain pertama.</p>
+                                            <p class="text-sm font-semibold text-slate-500">Belum ada riwayat pelatihan. Sinkronkan data latih lalu jalankan pelatihan pertama.</p>
                                         </td>
                                     </tr>
                                 @endforelse
@@ -314,46 +334,59 @@
 
                 <div class="space-y-6">
                     <div class="rounded-3xl bg-white p-6 shadow-lg">
-                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Model Aktif</p>
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Versi Aktif</p>
                         @if ($activeModel)
                             <div class="mt-4 rounded-2xl bg-surface-container p-5">
                                 <div class="flex items-center justify-between gap-3">
                                     <p class="text-sm font-black text-on-surface">{{ $activeModel->version_name }}</p>
                                     <span class="rounded-full bg-primary-container px-3 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-on-primary-container">Aktif</span>
                                 </div>
-                                <p class="mt-2 text-sm font-medium text-slate-500">CatBoost adalah model primer. Naive Bayes digunakan sebagai pembanding disagreement.</p>
+                                <p class="mt-2 text-sm font-medium text-slate-500">Versi ini dipakai untuk menghasilkan rekomendasi terbaru pada pengajuan mahasiswa.</p>
                                 <div class="mt-4 space-y-2 text-sm">
                                     <p class="font-semibold text-on-surface">CatBoost: {{ $activeModel->catboost_validation_accuracy ?? $activeModel->catboost_train_accuracy ?? '-' }}</p>
                                     <p class="font-semibold text-on-surface">Naive Bayes: {{ $activeModel->naive_bayes_validation_accuracy ?? $activeModel->naive_bayes_train_accuracy ?? '-' }}</p>
-                                    <p class="font-semibold text-on-surface">Diaktifkan: {{ optional($activeModel->activated_at ?? $activeModel->trained_at)->format('d M Y H:i') ?? '-' }}</p>
+                                    @if ($activeModelEvaluation && $activeModelEvaluation['catboost'])
+                                        <p class="font-semibold text-on-surface">Recall Indikasi: {{ number_format((float) ($activeModelEvaluation['catboost']['recall_indikasi'] ?? 0), 4) }}</p>
+                                    @endif
+                                    <p class="font-semibold text-on-surface">Mulai dipakai: {{ optional($activeModel->activated_at ?? $activeModel->trained_at)->format('d M Y H:i') ?? '-' }}</p>
                                 </div>
                             </div>
                         @else
                             <div class="mt-4 rounded-2xl bg-yellow-50 p-5 text-yellow-800">
-                                <p class="text-sm font-semibold">Belum ada model siap. Setelah data training aktif tersedia, jalankan retrain pertama melalui tombol di atas.</p>
+                                <p class="text-sm font-semibold">Belum ada versi siap. Setelah data latih tersedia, jalankan pelatihan pertama dari tombol di atas.</p>
                             </div>
                         @endif
                     </div>
 
                     <div class="rounded-3xl bg-white p-6 shadow-lg">
-                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Versi Siap Terbaru</p>
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Versi Cadangan Terbaru</p>
                         <div class="mt-4 rounded-2xl bg-surface-container p-5">
                             <p class="text-sm font-black text-on-surface">{{ $latestReadyModel?->version_name ?? 'Belum ada model siap' }}</p>
-                            <p class="mt-2 text-sm font-medium text-slate-500">Versi siap terbaru belum tentu menjadi model aktif jika admin melakukan rollback ke versi sebelumnya.</p>
+                            <p class="mt-2 text-sm font-medium text-slate-500">Versi ini bisa diaktifkan jika admin ingin kembali memakai hasil pelatihan yang sebelumnya.</p>
                         </div>
                     </div>
 
                     <div class="rounded-3xl bg-white p-6 shadow-lg">
-                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Percobaan Terakhir</p>
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Ringkasan Aturan</p>
+                        <div class="mt-4 rounded-2xl bg-surface-container p-5">
+                            <p class="text-sm font-black text-on-surface">Aturan v{{ $activeSchema?->version ?? 1 }}</p>
+                            <p class="mt-2 text-sm font-medium text-slate-500">Sistem menggunakan versi aturan ini untuk membentuk data latih aktif sebelum pelatihan dijalankan.</p>
+                        </div>
+                    </div>
+
+                    <div class="rounded-3xl bg-white p-6 shadow-lg">
+                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Status Proses Terakhir</p>
                         <div class="mt-4 rounded-2xl {{ $latestAttempt && $latestAttempt->status === 'failed' ? 'bg-error-container text-on-error-container' : 'bg-surface-container text-on-surface' }} p-5">
                             <p class="text-sm font-black">{{ $latestAttempt?->version_name ?? 'Belum ada percobaan retrain' }}</p>
                             <p class="mt-2 text-sm font-medium">
-                                {{ $latestAttempt?->error_message ?? $latestAttempt?->note ?? 'Riwayat retrain akan muncul di sini setelah proses pertama dijalankan.' }}
+                                {{ $latestAttempt?->error_message ?? $latestAttempt?->note ?? 'Riwayat proses pelatihan akan muncul di sini setelah pelatihan pertama dijalankan.' }}
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
+
+            <x-admin.footer />
         </div>
     </div>
 </main>

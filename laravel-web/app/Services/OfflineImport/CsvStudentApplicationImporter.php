@@ -30,40 +30,53 @@ class CsvStudentApplicationImporter
             throw new RuntimeException('CSV kosong atau header tidak terbaca.');
         }
 
-        $schemaVersion = (int) (ParameterSchemaVersion::query()->max('version') ?? 1);
         $importedAt = now();
-        $sourceSheetName = 'Verif KIP SNBP 2023';
         $inserted = 0;
         $updated = 0;
         $deletedExisting = 0;
         $applicationIds = [];
+        $sourceSheetName = null;
+        $existingRowsRefreshed = false;
 
         DB::beginTransaction();
 
         try {
-            if ($refreshExisting) {
-                $deletedExisting = $this->deleteExistingOfflineRows($sourceSheetName);
-            }
-
             while (($row = fgetcsv($handle)) !== false) {
+                if (! $this->rowHasContent($row)) {
+                    continue;
+                }
+
                 $data = array_combine($header, $row);
                 if ($data === false) {
                     continue;
                 }
 
-                $decision = ($data['label'] ?? '') === 'Layak' ? 'Verified' : 'Rejected';
-                $fatherIncome = $this->parseNullableInt($data['penghasilan_ayah_raw'] ?? null);
-                $motherIncome = $this->parseNullableInt($data['penghasilan_ibu_raw'] ?? null);
+                $sourceSheetName ??= $this->parseNullableString($data['source_sheet_name'] ?? null) ?? 'Verif KIP SNBP 2023';
+
+                if ($refreshExisting && ! $existingRowsRefreshed) {
+                    $deletedExisting = $this->deleteExistingOfflineRows($sourceSheetName);
+                    $existingRowsRefreshed = true;
+                }
+
+                $sourceRowNumber = $this->parseNullableInt($data['source_row_number'] ?? null) ?? 0;
+
+                $schemaVersion = $this->resolveSchemaVersion($data['schema_version'] ?? null);
+                $decision = $this->resolveDecisionStatus(
+                    $data['status'] ?? null,
+                    $data['admin_decision'] ?? null,
+                );
+                $fatherIncome = $this->parseNullableInt($data['penghasilan_ayah_rupiah'] ?? null);
+                $motherIncome = $this->parseNullableInt($data['penghasilan_ibu_rupiah'] ?? null);
                 $combinedIncome = $this->resolveCombinedIncome(
                     $fatherIncome,
                     $motherIncome,
-                    $this->parseNullableInt($data['penghasilan_gabungan_raw'] ?? null),
+                    $this->parseNullableInt($data['penghasilan_gabungan_rupiah'] ?? null),
                 );
 
                 $application = StudentApplication::query()->firstOrNew([
-                    'submission_source' => 'offline_admin_import',
+                    'submission_source' => $this->parseNullableString($data['submission_source'] ?? null) ?? 'offline_admin_import',
                     'source_sheet_name' => $sourceSheetName,
-                    'source_row_number' => (int) ($data['row_number'] ?? 0),
+                    'source_row_number' => $sourceRowNumber,
                 ]);
 
                 $wasExisting = $application->exists;
@@ -72,37 +85,38 @@ class CsvStudentApplicationImporter
                 $application->forceFill([
                     'student_user_id' => null,
                     'schema_version' => $schemaVersion,
-                    'submission_source' => 'offline_admin_import',
-                    'applicant_name' => $data['nama_mahasiswa'] ?: null,
-                    'applicant_email' => null,
-                    'study_program' => $data['prodi'] ?: null,
-                    'faculty' => $data['fakultas'] ?: null,
-                    'source_reference_number' => $data['no_urut_web'] ?: null,
-                    'source_document_link' => $data['berkas_link'] ?: null,
+                    'submission_source' => $this->parseNullableString($data['submission_source'] ?? null) ?? 'offline_admin_import',
+                    'applicant_name' => $this->parseNullableString($data['applicant_name'] ?? null),
+                    'applicant_email' => $this->parseNullableString($data['applicant_email'] ?? null),
+                    'study_program' => $this->parseNullableString($data['study_program'] ?? null),
+                    'faculty' => $this->parseNullableString($data['faculty'] ?? null),
+                    'source_reference_number' => $this->parseNullableString($data['source_reference_number'] ?? null),
+                    'source_document_link' => $this->parseNullableString($data['source_document_link'] ?? null),
                     'source_sheet_name' => $sourceSheetName,
-                    'source_row_number' => (int) ($data['row_number'] ?? 0),
-                    'source_label_text' => $data['raw_kesimpulan'] ?: null,
+                    'source_row_number' => $sourceRowNumber,
+                    'source_label_text' => $this->parseNullableString($data['source_label_text'] ?? null),
                     'imported_at' => $importedAt,
-                    'kip' => (int) $data['kip'],
-                    'pkh' => (int) $data['pkh'],
-                    'kks' => (int) $data['kks'],
-                    'dtks' => (int) $data['dtks'],
-                    'sktm' => (int) $data['sktm'],
+                    'kip' => $this->parseBinaryValue($data['kip'] ?? null, 'kip'),
+                    'pkh' => $this->parseBinaryValue($data['pkh'] ?? null, 'pkh'),
+                    'kks' => $this->parseBinaryValue($data['kks'] ?? null, 'kks'),
+                    'dtks' => $this->parseBinaryValue($data['dtks'] ?? null, 'dtks'),
+                    'sktm' => $this->parseBinaryValue($data['sktm'] ?? null, 'sktm'),
                     'penghasilan_gabungan_rupiah' => $combinedIncome,
                     'penghasilan_ayah_rupiah' => $fatherIncome,
                     'penghasilan_ibu_rupiah' => $motherIncome,
                     'jumlah_tanggungan_raw' => $this->parseNullableInt($data['jumlah_tanggungan_raw'] ?? null),
                     'anak_ke_raw' => $this->parseNullableInt($data['anak_ke_raw'] ?? null),
-                    'status_orangtua_text' => $this->parseNullableString($data['status_orangtua_raw'] ?? null),
-                    'status_rumah_text' => $this->parseNullableString($data['status_rumah_raw'] ?? null),
-                    'daya_listrik_text' => $this->parseNullableString($data['daya_listrik_raw'] ?? null),
+                    'status_orangtua_text' => $this->parseNullableString($data['status_orangtua_text'] ?? null),
+                    'status_rumah_text' => $this->parseNullableString($data['status_rumah_text'] ?? null),
+                    'daya_listrik_text' => $this->parseNullableString($data['daya_listrik_text'] ?? null),
                     'submitted_pdf_path' => null,
                     'submitted_pdf_original_name' => null,
                     'submitted_pdf_uploaded_at' => null,
                     'status' => $decision,
                     'admin_decision' => $decision,
                     'admin_decided_by' => null,
-                    'admin_decision_note' => 'Imported from Verifikasi KIP SNBP 2023.xlsx',
+                    'admin_decision_note' => $this->parseNullableString($data['admin_decision_note'] ?? null)
+                        ?? 'Imported from Verifikasi KIP SNBP 2023.xlsx',
                     'admin_decided_at' => $importedAt,
                 ]);
                 $application->save();
@@ -113,20 +127,21 @@ class CsvStudentApplicationImporter
                     'from_status' => $wasExisting ? $previousStatus : null,
                     'to_status' => $decision,
                     'action' => $wasExisting ? 'reimported_offline' : 'imported_offline',
-                    'note' => 'Imported from processed KIP SNBP CSV dataset.',
+                    'note' => 'Imported from cleaned student applicant CSV dataset.',
                     'metadata' => [
-                        'label' => $data['label'] ?? null,
-                        'label_class' => isset($data['label_class']) ? (int) $data['label_class'] : null,
-                        'source_document_link' => $data['berkas_link'] ?? null,
+                        'source_document_link' => $data['source_document_link'] ?? null,
                         'penghasilan_gabungan_rupiah' => $combinedIncome,
                         'penghasilan_ayah_rupiah' => $fatherIncome,
                         'penghasilan_ibu_rupiah' => $motherIncome,
                         'jumlah_tanggungan_raw' => $this->parseNullableInt($data['jumlah_tanggungan_raw'] ?? null),
                         'anak_ke_raw' => $this->parseNullableInt($data['anak_ke_raw'] ?? null),
-                        'status_orangtua_text' => $this->parseNullableString($data['status_orangtua_raw'] ?? null),
-                        'status_rumah_text' => $this->parseNullableString($data['status_rumah_raw'] ?? null),
-                        'daya_listrik_text' => $this->parseNullableString($data['daya_listrik_raw'] ?? null),
-                        'raw_kesimpulan' => $data['raw_kesimpulan'] ?? null,
+                        'status_orangtua_text' => $this->parseNullableString($data['status_orangtua_text'] ?? null),
+                        'status_rumah_text' => $this->parseNullableString($data['status_rumah_text'] ?? null),
+                        'daya_listrik_text' => $this->parseNullableString($data['daya_listrik_text'] ?? null),
+                        'source_label_text' => $data['source_label_text'] ?? null,
+                        'manual_review_required' => $this->parseNullableInt($data['manual_review_required'] ?? null),
+                        'manual_house_review' => $this->parseNullableInt($data['manual_house_review'] ?? null),
+                        'cleaning_notes' => $this->parseNullableString($data['cleaning_notes'] ?? null),
                     ],
                 ]);
 
@@ -163,17 +178,59 @@ class CsvStudentApplicationImporter
             ->where('submission_source', 'offline_admin_import')
             ->where('source_sheet_name', $sourceSheetName);
 
-        $applicationIds = $query->pluck('id');
+        return $query->delete();
+    }
 
-        if ($applicationIds->isEmpty()) {
-            return 0;
+    private function resolveSchemaVersion(mixed $value): int
+    {
+        $parsedValue = $this->parseNullableInt($value);
+
+        if ($parsedValue !== null && $parsedValue >= 1) {
+            return $parsedValue;
         }
 
-        DB::table('spk_training_data')
-            ->whereIn('source_application_id', $applicationIds->all())
-            ->delete();
+        return (int) (ParameterSchemaVersion::query()->max('version') ?? 1);
+    }
 
-        return $query->delete();
+    private function resolveDecisionStatus(mixed $status, mixed $adminDecision): string
+    {
+        $candidates = [
+            $this->parseNullableString($adminDecision),
+            $this->parseNullableString($status),
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (in_array($candidate, ['Submitted', 'Verified', 'Rejected'], true)) {
+                return $candidate;
+            }
+        }
+
+        return 'Submitted';
+    }
+
+    private function parseBinaryValue(mixed $value, string $field): int
+    {
+        $parsedValue = $this->parseNullableInt($value);
+
+        if ($parsedValue === null || ! in_array($parsedValue, [0, 1], true)) {
+            throw new RuntimeException("Kolom {$field} wajib bernilai 0 atau 1.");
+        }
+
+        return $parsedValue;
+    }
+
+    /**
+     * @param array<int, mixed> $row
+     */
+    private function rowHasContent(array $row): bool
+    {
+        foreach ($row as $value) {
+            if (trim((string) $value) !== '') {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function parseNullableInt(mixed $value): ?int
