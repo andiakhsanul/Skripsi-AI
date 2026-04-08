@@ -1,0 +1,26 @@
+{
+  "generated_at": "2026-04-07T05:30:46.875526+00:00",
+  "source_file": "/Users/andiakhsanul/Downloads/Verifikasi KIP SNBP 2023.xlsx",
+  "existing_csv_preserved": "infra/data/processed/kip_snbp_2023_student_applications_raw.csv",
+  "target_sheet": "Verif KIP SNBP 2023",
+  "total_rows_from_excel": 500,
+  "rows_still_needing_manual_review": 317,
+  "rows_with_house_status_filled": 197,
+  "rows_with_house_status_pending": 303,
+  "status_counts": {
+    "Verified": 279,
+    "Rejected": 221
+  },
+  "cleaning_note_counts": {
+    "status_rumah_perlu_isi_manual": 303,
+    "kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung": 11,
+    "penghasilan_ibu_perlu_cek_manual": 12,
+    "penghasilan_ayah_perlu_cek_manual": 23,
+    "anak_ke_perlu_cek_manual": 4,
+    "jumlah_tanggungan_perlu_cek_manual": 1,
+    "status_orangtua_perlu_cek_manual": 1,
+    "daya_listrik_perlu_cek_manual": 1
+  },
+  "preserved_house_corrections": 57,
+  "assumption": "Excel asli diregenerate penuh, lalu nilai non-kosong dari CSV lama dipertahankan di atas row yang sama berdasarkan source_row_number. File lama tidak ditimpa."
+}

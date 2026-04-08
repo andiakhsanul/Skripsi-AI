@@ -20,13 +20,14 @@ Artisan::command('applications:import-kip-snbp {csv=../infra/data/processed/kip_
 
     $this->info('Import student_applications selesai.');
     $this->table(
-        ['schema_version', 'deleted_existing', 'inserted', 'updated', 'total_processed'],
+        ['schema_version', 'deleted_existing', 'inserted', 'updated', 'total_processed', 'preserved_house_status'],
         [[
             $result['schema_version'],
             $result['deleted_existing'],
             $result['inserted'],
             $result['updated'],
             $result['total_processed'],
+            $result['preserved_house_status'] ?? 0,
         ]]
     );
 })->purpose('Import cleaned raw KIP SNBP applicant CSV into student_applications as offline rows');

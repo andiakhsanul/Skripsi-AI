@@ -37,6 +37,8 @@ class CsvStudentApplicationImporter
         $applicationIds = [];
         $sourceSheetName = null;
         $existingRowsRefreshed = false;
+        $preservedHouseStatusByRow = [];
+        $preservedHouseStatusCount = 0;
 
         DB::beginTransaction();
 
@@ -54,6 +56,7 @@ class CsvStudentApplicationImporter
                 $sourceSheetName ??= $this->parseNullableString($data['source_sheet_name'] ?? null) ?? 'Verif KIP SNBP 2023';
 
                 if ($refreshExisting && ! $existingRowsRefreshed) {
+                    $preservedHouseStatusByRow = $this->loadExistingHouseStatusByRow($sourceSheetName);
                     $deletedExisting = $this->deleteExistingOfflineRows($sourceSheetName);
                     $existingRowsRefreshed = true;
                 }
@@ -81,6 +84,16 @@ class CsvStudentApplicationImporter
 
                 $wasExisting = $application->exists;
                 $previousStatus = $application->status;
+                $incomingHouseStatus = $this->parseNullableString($data['status_rumah_text'] ?? null);
+                $resolvedHouseStatus = $this->resolveHouseStatusText(
+                    $incomingHouseStatus,
+                    $application->status_rumah_text,
+                    $preservedHouseStatusByRow[$sourceRowNumber] ?? null,
+                );
+
+                if ($resolvedHouseStatus !== $incomingHouseStatus) {
+                    $preservedHouseStatusCount++;
+                }
 
                 $application->forceFill([
                     'student_user_id' => null,
@@ -107,7 +120,7 @@ class CsvStudentApplicationImporter
                     'jumlah_tanggungan_raw' => $this->parseNullableInt($data['jumlah_tanggungan_raw'] ?? null),
                     'anak_ke_raw' => $this->parseNullableInt($data['anak_ke_raw'] ?? null),
                     'status_orangtua_text' => $this->parseNullableString($data['status_orangtua_text'] ?? null),
-                    'status_rumah_text' => $this->parseNullableString($data['status_rumah_text'] ?? null),
+                    'status_rumah_text' => $resolvedHouseStatus,
                     'daya_listrik_text' => $this->parseNullableString($data['daya_listrik_text'] ?? null),
                     'submitted_pdf_path' => null,
                     'submitted_pdf_original_name' => null,
@@ -136,7 +149,9 @@ class CsvStudentApplicationImporter
                         'jumlah_tanggungan_raw' => $this->parseNullableInt($data['jumlah_tanggungan_raw'] ?? null),
                         'anak_ke_raw' => $this->parseNullableInt($data['anak_ke_raw'] ?? null),
                         'status_orangtua_text' => $this->parseNullableString($data['status_orangtua_text'] ?? null),
-                        'status_rumah_text' => $this->parseNullableString($data['status_rumah_text'] ?? null),
+                        'status_rumah_text' => $resolvedHouseStatus,
+                        'source_status_rumah_text' => $incomingHouseStatus,
+                        'preserved_existing_house_status' => $resolvedHouseStatus !== $incomingHouseStatus,
                         'daya_listrik_text' => $this->parseNullableString($data['daya_listrik_text'] ?? null),
                         'source_label_text' => $data['source_label_text'] ?? null,
                         'manual_review_required' => $this->parseNullableInt($data['manual_review_required'] ?? null),
@@ -168,8 +183,23 @@ class CsvStudentApplicationImporter
             'inserted' => $inserted,
             'updated' => $updated,
             'total_processed' => $inserted + $updated,
+            'preserved_house_status' => $preservedHouseStatusCount,
             'application_ids' => $applicationIds,
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function loadExistingHouseStatusByRow(string $sourceSheetName): array
+    {
+        return StudentApplication::query()
+            ->where('submission_source', 'offline_admin_import')
+            ->where('source_sheet_name', $sourceSheetName)
+            ->whereNotNull('status_rumah_text')
+            ->where('status_rumah_text', '!=', '')
+            ->pluck('status_rumah_text', 'source_row_number')
+            ->all();
     }
 
     private function deleteExistingOfflineRows(string $sourceSheetName): int
@@ -256,6 +286,23 @@ class CsvStudentApplicationImporter
         $stringValue = trim((string) $value);
 
         return $stringValue === '' ? null : $stringValue;
+    }
+
+    private function resolveHouseStatusText(
+        ?string $incomingHouseStatus,
+        ?string $existingHouseStatus,
+        ?string $preservedHouseStatus,
+    ): ?string {
+        if ($incomingHouseStatus !== null) {
+            return $incomingHouseStatus;
+        }
+
+        $currentHouseStatus = $this->parseNullableString($existingHouseStatus);
+        if ($currentHouseStatus !== null) {
+            return $currentHouseStatus;
+        }
+
+        return $this->parseNullableString($preservedHouseStatus);
     }
 
     private function resolveCombinedIncome(?int $fatherIncome, ?int $motherIncome, ?int $fallbackCombined): ?int

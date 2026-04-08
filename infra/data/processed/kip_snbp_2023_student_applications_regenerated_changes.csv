@@ -1,0 +1,402 @@
+source_row_number,applicant_name,change_type,changed_fields,manual_review_required,cleaning_notes
+101,Adinda Octavia Setiowati,new_from_excel,,1,status_rumah_perlu_isi_manual
+102,Sheila Rahmatika,new_from_excel,,1,status_rumah_perlu_isi_manual
+103,WISNU ABI SETIAWAN,new_from_excel,,1,status_rumah_perlu_isi_manual
+104,AFICA NISA LESTARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+105,ADDYA AISYAH,new_from_excel,,0,
+106,Ayu Abbellia Winanti,new_from_excel,,1,status_rumah_perlu_isi_manual
+107,HENDRI FUAT ALFIAN,new_from_excel,,1,status_rumah_perlu_isi_manual
+108,DEWI RAHMAWATI LAILATUL M.,new_from_excel,,1,status_rumah_perlu_isi_manual
+109,MUHAMMAD IRFANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+110,ALFANANDA ARDIANSYAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+111,DELLA AVIDA SARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+112,Luk Luil Maknun,new_from_excel,,1,status_rumah_perlu_isi_manual
+113,MAYANG PRATIWI,new_from_excel,,1,status_rumah_perlu_isi_manual
+114,Maureen Syafina Naurah Pradisa,new_from_excel,,1,status_rumah_perlu_isi_manual
+115,SITI JUBAIDA,new_from_excel,,1,anak_ke_perlu_cek_manual | status_rumah_perlu_isi_manual
+116,Aurellia Nydia Damayanti,new_from_excel,,1,anak_ke_perlu_cek_manual | status_rumah_perlu_isi_manual
+117,Siti Nadhyatul Hanum,new_from_excel,,1,status_rumah_perlu_isi_manual
+118,Rizkiana Puspita Melisa Wulandari,new_from_excel,,1,status_rumah_perlu_isi_manual
+119,RISNA WAHYU NUR AZIZAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+120,M. Mubasyir Mundzir,new_from_excel,,1,status_rumah_perlu_isi_manual
+121,FINDI LESTARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+122,ILHAN MANZIZ,new_from_excel,,1,status_rumah_perlu_isi_manual
+123,NILAM CAHAYA WULAN,new_from_excel,,1,status_rumah_perlu_isi_manual
+124,RIZKA ANNISA VIRA AMALIA,new_from_excel,,1,status_rumah_perlu_isi_manual
+125,BERLIANA WICAKSONO PUTRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+126,SYALAISAH SALSABILLAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+127,RAHIL DWI ANDINI,new_from_excel,,1,status_rumah_perlu_isi_manual
+128,KRISTIANDI DONGAN SIJABAT,new_from_excel,,1,status_rumah_perlu_isi_manual
+129,Meliana Aurely Adrian,new_from_excel,,1,status_rumah_perlu_isi_manual
+130,Khairunnisa,new_from_excel,,1,status_rumah_perlu_isi_manual
+131,AINI INDAH CHUMAIROH,new_from_excel,,1,status_rumah_perlu_isi_manual
+132,AMELIA PERTIWI,new_from_excel,,1,status_rumah_perlu_isi_manual
+133,SUCI ADELIA RATNASARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+134,DAYU SUKMA PRAMESTIA,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+135,CINDY KURNIA TANTRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+136,INDIRA ZULFA FITRIANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+137,CHANDRA ARYA GATRA,new_from_excel,,1,status_rumah_perlu_isi_manual
+138,YESA ARLITA,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+139,MUHAMMAD DZAKIR RAFLI,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+140,BANGGA YUGO SANTOSO,new_from_excel,,1,status_rumah_perlu_isi_manual
+141,ADINDA SEPTIANI PUTRI,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+142,MUMVARIDA ISNAINI SALAMAH,new_from_excel,,0,
+143,EISYA YUCHA NUR ALFIDAH,new_from_excel,,0,
+144,THEOFILUS CHRISTIVANO TEWUH,new_from_excel,,0,
+145,DIAN RAHMAWATI,new_from_excel,,0,
+146,ANGGITA PRAWINASARI,new_from_excel,,0,
+147,AHMAD SOLEH,new_from_excel,,0,
+148,NOVITA DWI RACHMADHANI,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+149,Lingghia Putri Atma Negara,new_from_excel,,0,
+150,AVINA FIHAYATI,new_from_excel,,0,
+151,MUHAMMAD ANDRE RIZALDI,new_from_excel,,0,
+152,FANIA ERNANDA SIGIT,new_from_excel,,0,
+153,ADINDA MUTIARA AULIA PUTRI,new_from_excel,,0,
+154,Tasya Alika Aulia Putri,new_from_excel,,0,
+155,ADHEK YEVIRA NAFATA,new_from_excel,,0,
+156,RYAN RAGILDA KHUSNA,new_from_excel,,0,
+157,MOHAMMAD ADIF ALBARADO,new_from_excel,,0,
+158,MARTHA AYU SENTOSA,new_from_excel,,0,
+159,AGUSTIN NUR AINIAH,new_from_excel,,0,
+160,GIANTITA EKA AMARANGGANA,new_from_excel,,0,
+161,Alikasya Paramadina Putri Sosa,new_from_excel,,0,
+162,NINGDRA AINUS SA'ADAH,new_from_excel,,0,
+163,HESTI PRIHADINI,new_from_excel,,0,
+164,Risa Aisyatun Umroh,new_from_excel,,0,
+165,ADINDA PUTRI,new_from_excel,,0,
+166,SILVIA DAMAYANTI,new_from_excel,,0,
+167,DESIKA DWI AYU ROHMAWATI,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+168,NIA EKA SAFITRI,new_from_excel,,0,
+169,RHESA NOVITA DWI HASTUTI,new_from_excel,,0,
+170,EMILIA CHALISTHA PUTRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+171,Indra Wiradana,new_from_excel,,1,status_rumah_perlu_isi_manual
+172,LINTANG DIAN CAHYANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+173,FLANELLA AURA ANDROMEDHA,new_from_excel,,1,status_rumah_perlu_isi_manual
+174,Putri Diah Puspitasari,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+175,RADA AMANDA DEVINA FITRIANA,new_from_excel,,1,status_rumah_perlu_isi_manual
+176,Adisty Rizkia Sari,new_from_excel,,1,status_rumah_perlu_isi_manual
+177,NIDA'UL FITHROH,new_from_excel,,1,status_rumah_perlu_isi_manual
+178,Ayuni Syazana,new_from_excel,,1,status_rumah_perlu_isi_manual
+179,TANIA INMARETA,new_from_excel,,1,status_rumah_perlu_isi_manual
+180,LATIVA ASFIRA ZAIN,new_from_excel,,1,status_rumah_perlu_isi_manual
+181,NOVY ZUMROTUS SAIDAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+182,Shalum Salsabila Navisa,new_from_excel,,1,status_rumah_perlu_isi_manual
+183,MUHAMMAD GARDA RAMADHAN,new_from_excel,,1,status_rumah_perlu_isi_manual
+184,FITRIA DIAN PERMATA SARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+185,TANTRI CAHYATI,new_from_excel,,1,status_rumah_perlu_isi_manual
+186,FATMA HIDAYATUL KHUSNA,new_from_excel,,1,status_rumah_perlu_isi_manual
+187,ALFI FAUZIYAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+188,HERLIANEKA PRATIWI,new_from_excel,,1,status_rumah_perlu_isi_manual
+189,ASRI CAHYA NINGRUM,new_from_excel,,1,status_rumah_perlu_isi_manual
+190,ULWIYATUN NIHAYAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+191,VALERINA NINDA DEA PUSPITA,new_from_excel,,1,status_rumah_perlu_isi_manual
+192,DELFIA AYU ANGGRAENI,new_from_excel,,1,status_rumah_perlu_isi_manual
+193,RODHATUL ASSITA,new_from_excel,,1,status_rumah_perlu_isi_manual
+194,CINDY NANDINA SALSABILLAH IRAWANTI,new_from_excel,,1,status_rumah_perlu_isi_manual
+195,MUYASSAROH,new_from_excel,,1,status_rumah_perlu_isi_manual
+196,Fany Natalia Hariyono,new_from_excel,,1,status_rumah_perlu_isi_manual
+197,NAJWA ARTIKA SARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+198,NABILA VABILATUL KHOSNA,new_from_excel,,1,status_rumah_perlu_isi_manual
+199,Bilqis Desty Wiyanty,new_from_excel,,1,status_rumah_perlu_isi_manual
+200,DZURIYYATUL HILDAYAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+201,BAGAS PAMUNGKAS,new_from_excel,,1,status_rumah_perlu_isi_manual
+202,FEBRINA NUR FADHILA,new_from_excel,,1,status_rumah_perlu_isi_manual
+203,SINDY MONA ELISTA,new_from_excel,,1,status_rumah_perlu_isi_manual
+204,ADISTA RAHMA DEWANTI,new_from_excel,,1,status_rumah_perlu_isi_manual
+205,Muhamad Maulana,new_from_excel,,1,status_rumah_perlu_isi_manual
+206,Carakacatya Setra Setranya Vibag Yoga,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+207,SISWI HIGA DINATA,new_from_excel,,1,status_rumah_perlu_isi_manual
+208,NUR DWI AGUSTINA,new_from_excel,,1,status_rumah_perlu_isi_manual
+209,Novita Sintiya Sari,new_from_excel,,1,status_rumah_perlu_isi_manual
+210,Arfianti Fadilah Putri,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+211,Ditta Lailatus Saputri,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+212,Dimas Hafizuddin Ilham,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+213,CALISTA EKA PUTRI ANASTANTIA,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+214,Dian Ajeng Daimah,new_from_excel,,1,status_rumah_perlu_isi_manual
+215,Nanda Rahmad Al-fikri,new_from_excel,,1,status_rumah_perlu_isi_manual
+216,GRACIA ARADEA SEPTIANTARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+217,SHAKILA ILMA SYAHIDA,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+218,ADAM SUTAN HAKIM,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+219,SABITHA HELMI,new_from_excel,,1,status_rumah_perlu_isi_manual
+220,KHOLIFATUR ROSYIDAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+221,DANI ADI PUTRA,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+222,INDIRA SALSAVINA AZZAHRA,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+223,VANISAH NADATUL FITRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+224,LILIK NUR KHUMAIDAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+225,ZULKIFLI IQBAL YAKIN,new_from_excel,,1,status_rumah_perlu_isi_manual
+226,GAIS MAULA ZAHRANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+227,Meva Wulandari,new_from_excel,,0,
+228,IFTINAH HAIBAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+229,AHMAD ISHAM MAULANA,new_from_excel,,0,
+230,HERNITA WAHYU LESTARI,new_from_excel,,0,
+231,ADINDA DWI WAHYU CAHYANTO PUTRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+232,M.ARYA HABIB AL HARIRI,new_from_excel,,1,anak_ke_perlu_cek_manual | status_rumah_perlu_isi_manual
+233,Gilang Rachman Danny,new_from_excel,,1,status_rumah_perlu_isi_manual
+234,ZAIDAN RIFAT HAFIZ,new_from_excel,,1,status_rumah_perlu_isi_manual
+235,Risma Nafida Artika Sari,new_from_excel,,1,status_rumah_perlu_isi_manual
+236,ALWINDA SABELLA,new_from_excel,,0,
+237,ELVETTA VIVIA ADRIYANTI,new_from_excel,,1,status_rumah_perlu_isi_manual
+238,SELVIA DWI FAJRINA,new_from_excel,,1,status_rumah_perlu_isi_manual
+239,Hanum Aslihatun Nisa,new_from_excel,,1,status_rumah_perlu_isi_manual
+240,JEROBEAM ASTEN,new_from_excel,,1,status_rumah_perlu_isi_manual
+241,CITRA TRI ARSI,new_from_excel,,1,status_rumah_perlu_isi_manual
+242,SHENDY TRIA AMELYANA,new_from_excel,,1,status_rumah_perlu_isi_manual
+243,PURNAMA WATI,new_from_excel,,1,status_rumah_perlu_isi_manual
+244,NOURIYAH VALENTINA,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+245,DAVIN FIRMANSHA,new_from_excel,,0,
+246,Shinta Arisiyo,new_from_excel,,1,status_rumah_perlu_isi_manual
+247,Dwi Mustika Putri,new_from_excel,,1,status_rumah_perlu_isi_manual
+248,DHIKA RISKI WAHYUDA,new_from_excel,,1,status_rumah_perlu_isi_manual
+249,Cindy Elok Mayleni Putri,new_from_excel,,1,status_rumah_perlu_isi_manual
+250,NADILA AMELIA,new_from_excel,,1,status_rumah_perlu_isi_manual
+251,Maria Carlita Tihung Leo,new_from_excel,,1,status_rumah_perlu_isi_manual
+252,ACHMAD BACHTIAR SULTHON HUDA,new_from_excel,,1,status_rumah_perlu_isi_manual
+253,NESYA DWI CAHYANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+254,Siska Julina Zendrato,new_from_excel,,1,status_rumah_perlu_isi_manual
+255,Bungasia Fairuz Khairani,new_from_excel,,1,status_rumah_perlu_isi_manual
+256,Devita Dewi Christanti,new_from_excel,,1,status_rumah_perlu_isi_manual
+257,Yopylatul Mahmudah,new_from_excel,,1,status_rumah_perlu_isi_manual
+258,MEIRAHMAWATI DWI RISDINDA PUTRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+259,Patricia Angel Kosasih,new_from_excel,,1,status_rumah_perlu_isi_manual
+260,ZELA YUSIANA,new_from_excel,,1,status_rumah_perlu_isi_manual
+261,ELSA NUR FADHILA LESTARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+262,SHELYNA RISKA AMANATULLAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+263,TIARA KHOIRUNNISA MAHARANI,new_from_excel,,0,
+264,Siti Usrotun Nur Hanifah,new_from_excel,,0,
+265,Diana Puspita RIni,new_from_excel,,1,status_rumah_perlu_isi_manual
+266,JANUARTA AYU VIRA,new_from_excel,,1,status_rumah_perlu_isi_manual
+267,Angela Britania Permatasari,new_from_excel,,1,status_rumah_perlu_isi_manual
+268,Nathanael Indra Raharjo Paseran,new_from_excel,,0,
+269,VICHA DEWI SETIA NINGRUM,new_from_excel,,0,
+270,AMELIA WULANDARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+271,Syaira Fathina Delima Pashadyn,new_from_excel,,0,
+272,Irma Mulazimatul Hidayah,new_from_excel,,1,status_rumah_perlu_isi_manual
+273,Gadis Dea Puspitasari,new_from_excel,,1,status_rumah_perlu_isi_manual
+274,Evania Salma Rahmatika,new_from_excel,,1,status_rumah_perlu_isi_manual
+275,Atikah Dwi Putri,new_from_excel,,1,status_rumah_perlu_isi_manual
+276,Nur Ainun Naima,new_from_excel,,1,status_rumah_perlu_isi_manual
+277,ARIZA NABILA RAHMA NA'IFA,new_from_excel,,0,
+278,Cindy Kartika Sari,new_from_excel,,1,status_rumah_perlu_isi_manual
+279,ANANDA CALLISTA RACHMAWATI,new_from_excel,,1,status_rumah_perlu_isi_manual
+280,BARIROTUT TAQIYYAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+281,Anggi Angraini Manurung,new_from_excel,,1,status_rumah_perlu_isi_manual
+282,PUTRI ELISYA VENNIA RAHMAH,new_from_excel,,0,
+283,Nadia Claresta Anastasia,new_from_excel,,0,
+284,INDRI MUSTIKA DEWI,new_from_excel,,0,
+285,Friscyllia Renindika Amanda Anggiethania,new_from_excel,,0,
+286,AULIA PUTRI DEWI,new_from_excel,,0,
+287,ANNERDA YURIKA,new_from_excel,,0,
+288,ITA JANNATUL HANIPA,new_from_excel,,0,
+289,Atika Nur Fitri,new_from_excel,,0,
+290,Tsalatsa Khairunisa,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+291,AZKA AULIA FIRDAUSA,new_from_excel,,0,
+292,ADRINA NAURAH ATALLAH,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung
+293,DENTA MIRA RAMADHANI,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+294,DEWI FITRI SAHIRA,new_from_excel,,0,
+295,FARIP SAPUTRA,new_from_excel,,0,
+296,CHARUNNYA DYAH AJENG ANGGRAENI,new_from_excel,,0,
+297,M. ALDI APRIANTO,new_from_excel,,0,
+298,Nala I'lma Kamila,new_from_excel,,0,
+299,NIKE MELIANA RAHMAWATI,new_from_excel,,0,
+300,DWI INDAH KARTIANA,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+301,ADREA SOFIE KARENINA,new_from_excel,,0,
+302,ADINDA DWI AULIA,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+303,ARTIKA SARI DEVI GULTOM,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+304,Warda Anis Sulalah,new_from_excel,,0,
+305,EZRA ANGELITA AMBARITA,new_from_excel,,0,
+306,Dewi Cantik Alfi Nurazizah,new_from_excel,,0,
+307,NILNA NURIL HIKMAH,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+308,Bayu Eka Harjanto,new_from_excel,,0,
+309,SAFITRI RAMADANI,new_from_excel,,0,
+310,SANY MUFTIFA SARI,new_from_excel,,0,
+311,TRIANA NUR LAILY,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+312,FAWWAZ ZADA FIRJATULLOH,new_from_excel,,0,
+313,FAATHIR AL-FAATH,new_from_excel,,0,
+314,Handini Suyatna,new_from_excel,,0,
+315,CICELY EVELYN,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+316,SHELLA APRILIA NUR LAILI,new_from_excel,,0,
+317,SHELLY APRILIA NUR LAILI,new_from_excel,,0,
+318,Elisa Ayuning Tiyas,new_from_excel,,0,
+319,MUHAMMAD SALMAN AL HAFIDZI,new_from_excel,,0,
+320,CINDY ALFIRA,new_from_excel,,0,
+321,ASWADINA,new_from_excel,,0,
+322,Erica Dwi Anantasya,new_from_excel,,1,status_rumah_perlu_isi_manual
+323,SULUNG AUFA PRIMA MARDIKA,new_from_excel,,0,
+324,YUVAN ADHE ANANTA WIBOWO,new_from_excel,,0,
+325,Febri Ananda Rosita Dewi,new_from_excel,,0,
+326,Vera Audicha Putri,new_from_excel,,0,
+327,SYAFIATUR ROHMAH,new_from_excel,,0,
+328,Alya Luthfitasari,new_from_excel,,0,
+329,NOVA EMILIA QUROTU NUR MELISA,new_from_excel,,0,
+330,NABILA SHEILA SEPTIANI,new_from_excel,,0,
+331,APRIYANTO MAUBANU,new_from_excel,,1,status_rumah_perlu_isi_manual
+332,Aditya Pratama,new_from_excel,,0,
+333,IRMA KRISTYAN AYU PERWITASARI,new_from_excel,,0,
+334,FAHMIYATUL FUNUN,new_from_excel,,0,
+335,Fanny Dwi Priyanti,new_from_excel,,0,
+336,SAYYIDAH NABILATUN NISA',new_from_excel,,0,
+337,ESTHER APRILIANA SIMANJUNTAK,new_from_excel,,0,
+338,Citra Aryani,new_from_excel,,1,status_rumah_perlu_isi_manual
+339,NABILA ARISTAWATI,new_from_excel,,1,status_rumah_perlu_isi_manual
+340,ANIS PAWITRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+341,SITTI KHOTIJAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+342,Kevin Febrian Hidayat,new_from_excel,,0,
+343,DEFVINA WAFA AWALIA,new_from_excel,,1,status_rumah_perlu_isi_manual
+344,Da'i Nugro Krisyanto,new_from_excel,,0,
+345,MARGAREZA DWI WAHYUNI,new_from_excel,,1,status_rumah_perlu_isi_manual
+346,Putri Hasna Calista,new_from_excel,,0,
+347,FAUZAN RHIZKY KURNIAWAN,new_from_excel,,0,
+348,Amelia Rahmadina Anas,new_from_excel,,1,status_rumah_perlu_isi_manual
+349,LUTVIONA FRANSQUENSYA,new_from_excel,,1,status_rumah_perlu_isi_manual
+350,AHYI HIDHAYATOLLOH KAHFI,new_from_excel,,0,
+351,DANDY AKBAR FARIZQI,new_from_excel,,0,
+352,Ratu Aphrodite Cinta Aurora,new_from_excel,,0,
+353,MELISA NADYA VELISTA,new_from_excel,,1,status_rumah_perlu_isi_manual
+354,ARDI CANDRA RAMADHANY,new_from_excel,,0,
+355,Diar Olifia Zizta Putri,new_from_excel,,1,status_rumah_perlu_isi_manual
+356,Yesenia Salsabila Ma'ruf,new_from_excel,,0,
+357,Stefanus Adi Nugraha,new_from_excel,,0,
+358,Velycia Andhani Halim,new_from_excel,,0,
+359,ARDIANA KHOFIFAH NUR,new_from_excel,,0,
+360,ADISTYA AYU AGUSTIN,new_from_excel,,0,
+361,NANDA DEVY APRILIA,new_from_excel,,0,
+362,Azizah Tri Rachmawati,new_from_excel,,1,status_rumah_perlu_isi_manual
+363,FRISCA KUSUMAWATI,new_from_excel,,0,
+364,Eka Zahrina Amalia,new_from_excel,,0,
+365,Naysilla Fani Eka Putri,new_from_excel,,0,
+366,FERISSA MAULIDA ISMI,new_from_excel,,0,
+367,SARAH NORMALITA AZZAHRA,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+368,NAFISA FACHRUDIA NIKMAH,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+369,DANICHA EAGHY SALVA,new_from_excel,,0,
+370,RAHMAT SADEWA,new_from_excel,,1,status_rumah_perlu_isi_manual
+371,RETNO WULAN DARI,new_from_excel,,1,status_rumah_perlu_isi_manual
+372,DWI SYARIFATUN NISYA',new_from_excel,,1,status_rumah_perlu_isi_manual
+373,Muhammad Fadhli Affan,new_from_excel,,1,status_rumah_perlu_isi_manual
+374,Hernandes Wildhan Syafi'i,new_from_excel,,1,status_rumah_perlu_isi_manual
+375,AMANDA FIRDA RAISHA,new_from_excel,,1,status_rumah_perlu_isi_manual
+376,Adrilla Femi velina Br Ginting,new_from_excel,,1,status_rumah_perlu_isi_manual
+377,EVIKA DEWI CANTIKA,new_from_excel,,1,status_rumah_perlu_isi_manual
+378,MUHAMMAD RAFI ARLIANSYAH,new_from_excel,,0,
+379,ANGGUN,new_from_excel,,0,
+380,Bernadetta Criselly Edlin Djaelani,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | penghasilan_ibu_perlu_cek_manual | jumlah_tanggungan_perlu_cek_manual | anak_ke_perlu_cek_manual | status_orangtua_perlu_cek_manual | daya_listrik_perlu_cek_manual | status_rumah_perlu_isi_manual
+381,Alya Nurul Fitriah,new_from_excel,,0,
+382,Selpiya Salsabila,new_from_excel,,1,status_rumah_perlu_isi_manual
+383,ROSA AMELIA PUTRI,new_from_excel,,0,
+384,Regita Ajeng Gayatri,new_from_excel,,0,
+385,GHEA NATASYA FAIZA,new_from_excel,,1,status_rumah_perlu_isi_manual
+386,Martha Cahya Sahirah,new_from_excel,,1,status_rumah_perlu_isi_manual
+387,Ilham Rizky Handriansyah,new_from_excel,,1,status_rumah_perlu_isi_manual
+388,AN NADHOFAH ADLIN,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual
+389,DIA MAGHFIROH,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual
+390,Tita Meliana Sari,new_from_excel,,1,status_rumah_perlu_isi_manual
+391,Dheravinza Cahya Hazana,new_from_excel,,0,
+392,Sintana Dewi Mustika Sari,new_from_excel,,0,
+393,Liliana vicha dhani,new_from_excel,,0,
+394,DIMAS IKA NINGSIH,new_from_excel,,0,
+395,CHRISTINA APRILIA DWI YANTI,new_from_excel,,0,
+396,HANI YUNISA,new_from_excel,,0,
+397,HASNA SIMA AYUDYA,new_from_excel,,0,
+398,ZUSA GRASIA PUTRI,new_from_excel,,0,
+399,Nasywa Hendinar Asmoro,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+400,MUHAMMAD RIZAL ABDUL AZIZ,new_from_excel,,1,status_rumah_perlu_isi_manual
+401,DENNIK SILVI PRAMUDIA WARDANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+402,FADHILATUN NISA' ADIILATUN,new_from_excel,,1,status_rumah_perlu_isi_manual
+403,RAHMALIKA AUMARA ZILKA,new_from_excel,,1,status_rumah_perlu_isi_manual
+404,JULIA WIDIYANTI,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+405,Irfan Hakim Pasaribu,new_from_excel,,1,status_rumah_perlu_isi_manual
+406,Muhammad Rizal Basthomy,new_from_excel,,1,status_rumah_perlu_isi_manual
+407,AULIA HANA TSURAYYA,new_from_excel,,1,status_rumah_perlu_isi_manual
+408,SANDA AULIA,new_from_excel,,1,penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+409,Nada Ananda Abdee,new_from_excel,,1,status_rumah_perlu_isi_manual
+410,LULUK ZAHARA UMAMI,new_from_excel,,1,status_rumah_perlu_isi_manual
+411,KARTIKA DEVINA PUTRI,new_from_excel,,0,
+412,Ryan Adi Taufiqurrahman,new_from_excel,,1,status_rumah_perlu_isi_manual
+413,Maslacha,new_from_excel,,1,status_rumah_perlu_isi_manual
+414,VISTA ARTAMARISTA HAPSARI KUSUMA,new_from_excel,,0,
+415,Delaila Novriyanti Panggabean,new_from_excel,,1,status_rumah_perlu_isi_manual
+416,DWI NABILA MAULIDHA,new_from_excel,,0,
+417,Dimaz Putra Firmansyah,new_from_excel,,1,status_rumah_perlu_isi_manual
+418,THANIA MAHMUD,new_from_excel,,0,
+419,Muh. Kayyis Al Ma'rufi,new_from_excel,,1,status_rumah_perlu_isi_manual
+420,Nailatul Mufida,new_from_excel,,1,status_rumah_perlu_isi_manual
+421,ANAZA VISIANGGUN,new_from_excel,,1,status_rumah_perlu_isi_manual
+422,NAZWA AZ-ZARAH M.,new_from_excel,,1,status_rumah_perlu_isi_manual
+423,Putri Nur Lailil,new_from_excel,,1,status_rumah_perlu_isi_manual
+424,DIKEN ASTIANA HANDINI,new_from_excel,,1,status_rumah_perlu_isi_manual
+425,SAFIRA ABIDAH HUSNA,new_from_excel,,1,status_rumah_perlu_isi_manual
+426,ELLYNA MAHARANI AGUSTYA,new_from_excel,,1,status_rumah_perlu_isi_manual
+427,ENDANG TRI ASTUTI,new_from_excel,,1,status_rumah_perlu_isi_manual
+428,DINDA DIANDRA KUSUMA DEWI,new_from_excel,,1,status_rumah_perlu_isi_manual
+429,JIHAN ERSA PUTRI YUNIAR,new_from_excel,,1,status_rumah_perlu_isi_manual
+430,FATIMAH AZZARAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+431,Qarina Rasya Aquila,new_from_excel,,1,status_rumah_perlu_isi_manual
+432,IKA NABILA ARIANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+433,Ilsanaya Fadia Rahma,new_from_excel,,1,status_rumah_perlu_isi_manual
+434,AFIF KHILMUN NAFIK,new_from_excel,,1,status_rumah_perlu_isi_manual
+435,DEWI NASTITI PUJI ANDAYANI,new_from_excel,,1,status_rumah_perlu_isi_manual
+436,FATIMAH AZZAHRA SAKINAH ASSAGUNG,new_from_excel,,1,status_rumah_perlu_isi_manual
+437,YULIA NUR HAMIDAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+438,WILDA FARAH NAILA KAMILA,new_from_excel,,1,status_rumah_perlu_isi_manual
+439,RAUDHA AURAIZAH,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+440,Meila Zalzabillah Putri Fadhiyanti,new_from_excel,,1,status_rumah_perlu_isi_manual
+441,Alya Agnia Yahdiyani,new_from_excel,,1,status_rumah_perlu_isi_manual
+442,Feby Dwi Rosalina,new_from_excel,,1,status_rumah_perlu_isi_manual
+443,Faza Safira Arif,new_from_excel,,1,status_rumah_perlu_isi_manual
+444,INDHY MAULVIE ACHMAYNA ZULMI,new_from_excel,,1,status_rumah_perlu_isi_manual
+445,NURMA DWI HIMATA SOLLY,new_from_excel,,1,status_rumah_perlu_isi_manual
+446,NURSYIFA'UL UMMAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+447,Elisabeth Virginia,new_from_excel,,1,status_rumah_perlu_isi_manual
+448,ANGELA FEDORA CALLISTA,new_from_excel,,1,status_rumah_perlu_isi_manual
+449,RISMA WAHYU ANANDA,new_from_excel,,1,penghasilan_ibu_perlu_cek_manual | status_rumah_perlu_isi_manual
+450,DIANA MANURUNG,new_from_excel,,1,status_rumah_perlu_isi_manual
+451,MELODIA CANDRA PRAMESTI,new_from_excel,,0,
+452,AMSALOM BAWANDA,new_from_excel,,1,status_rumah_perlu_isi_manual
+453,IRNA AZZA MAWADDAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+454,Moch Iqbal Maulana,new_from_excel,,1,status_rumah_perlu_isi_manual
+455,NAYZILLA SEPTIA NINGRUM,new_from_excel,,0,
+456,ZELDA NEISHA VERLIN,new_from_excel,,1,status_rumah_perlu_isi_manual
+457,CINDY PHAULINA,new_from_excel,,1,status_rumah_perlu_isi_manual
+458,KARINA SETYANINGRUM,new_from_excel,,1,status_rumah_perlu_isi_manual
+459,SUHAIL AJI SOKO,new_from_excel,,1,status_rumah_perlu_isi_manual
+460,SAFIRA SALSABILA,new_from_excel,,1,status_rumah_perlu_isi_manual
+461,Violina Tri Anandita,new_from_excel,,1,status_rumah_perlu_isi_manual
+462,CYNTIA AISYAH RAHMAWATI,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | penghasilan_ayah_perlu_cek_manual | status_rumah_perlu_isi_manual
+463,AINUN AZKA ROHMATILLAH,new_from_excel,,0,
+464,Diniyatus Sholikhah,new_from_excel,,1,status_rumah_perlu_isi_manual
+465,Addin Nuril Luthfiyah,new_from_excel,,1,status_rumah_perlu_isi_manual
+466,NAJWA RAMADHANI FAISAL PUTRI,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+467,Radhita Ramadhani,new_from_excel,,0,
+468,INTAN SAPUTRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+469,SITI ALISAH SURYANTI,new_from_excel,,0,
+470,Cantika Ratu Aulia,new_from_excel,,0,
+471,Laela Ayu Dewanti,new_from_excel,,0,
+472,ARIFALDO MULYASAPUTRA,new_from_excel,,1,status_rumah_perlu_isi_manual
+473,Feranita Kumalasari,new_from_excel,,1,status_rumah_perlu_isi_manual
+474,ADANI PRAMUDYANINGRUM,new_from_excel,,1,status_rumah_perlu_isi_manual
+475,FADL SABRI KURNIAWAN,new_from_excel,,1,status_rumah_perlu_isi_manual
+476,Silvia Maulidina Rochmah,new_from_excel,,1,status_rumah_perlu_isi_manual
+477,Miska Chirzia,new_from_excel,,1,status_rumah_perlu_isi_manual
+478,Rani Novitasari Tumanggor,new_from_excel,,1,status_rumah_perlu_isi_manual
+479,MOCHAMAD KHOIRUL ANAM,new_from_excel,,1,status_rumah_perlu_isi_manual
+480,WAHYU FAUZIAH IGA SYAFITRI,new_from_excel,,1,status_rumah_perlu_isi_manual
+481,NOVALDO COSTANTIN TAKDARE,new_from_excel,,1,status_rumah_perlu_isi_manual
+482,SAVIRA RAHMANIA,new_from_excel,,1,status_rumah_perlu_isi_manual
+483,ADDINA NURKAMILA,new_from_excel,,1,status_rumah_perlu_isi_manual
+484,FATHIYA AMILATURROHIMAH,new_from_excel,,0,
+485,MOHAMAT EKO PRASETIYO,new_from_excel,,1,status_rumah_perlu_isi_manual
+486,Lusi Noviyanti,new_from_excel,,1,status_rumah_perlu_isi_manual
+487,Ananda Putri Rahayu,new_from_excel,,1,status_rumah_perlu_isi_manual
+488,Akiqotus Syahriyah,new_from_excel,,1,status_rumah_perlu_isi_manual
+489,MOH ROFIUL IKHSAN,new_from_excel,,1,status_rumah_perlu_isi_manual
+490,Shofiyyurrohman Al Habib,new_from_excel,,1,status_rumah_perlu_isi_manual
+491,PRIECILIA ERLY ERLANGGA,new_from_excel,,1,status_rumah_perlu_isi_manual
+492,Qurratul Aini,new_from_excel,,1,status_rumah_perlu_isi_manual
+493,KURNIA MAULIDA FARASHOVY,new_from_excel,,1,status_rumah_perlu_isi_manual
+494,ELLYTA MARYAMIN,new_from_excel,,1,status_rumah_perlu_isi_manual
+495,DEA NIRMALA JANNATA,new_from_excel,,1,status_rumah_perlu_isi_manual
+496,AQIELA AZMI MUMTAZAH,new_from_excel,,1,status_rumah_perlu_isi_manual
+497,Ameera Cahya Rizal,new_from_excel,,1,status_rumah_perlu_isi_manual
+498,SITI MA'RIFATUL KHOIR,new_from_excel,,1,status_rumah_perlu_isi_manual
+499,NASYWA FIRMUNANDA KARISMAWATI,new_from_excel,,1,kolom bantuan sosial memuat istilah tambahan yang tidak dipetakan langsung | status_rumah_perlu_isi_manual
+500,CANTIKA AULYA PUTRI ANDINI,new_from_excel,,1,status_rumah_perlu_isi_manual
+501,SOVIRA MARGEBINA,new_from_excel,,1,status_rumah_perlu_isi_manual

@@ -9,6 +9,7 @@ use App\Models\ParameterSchemaVersion;
 use App\Models\SpkTrainingData;
 use App\Models\StudentApplication;
 use App\Models\User;
+use App\Services\OfflineImport\CsvStudentApplicationImporter;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -2015,5 +2016,201 @@ class SaasV1FlowTest extends TestCase
             'application_id' => $application->id,
             'action' => 'updated_house_status',
         ]);
+    }
+
+    public function test_csv_import_preserves_existing_house_status_when_incoming_value_is_blank(): void
+    {
+        $application = StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Applicant Existing',
+            'source_sheet_name' => 'Verif KIP SNBP 2023',
+            'source_row_number' => 200,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 1000000,
+            'penghasilan_ibu_rupiah' => 0,
+            'penghasilan_gabungan_rupiah' => 1000000,
+            'jumlah_tanggungan_raw' => 3,
+            'anak_ke_raw' => 1,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'Milik sendiri',
+            'daya_listrik_text' => '900',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+        ]);
+
+        $csvPath = $this->makeOfflineImportCsv([
+            [
+                'source_row_number' => 200,
+                'applicant_name' => 'Applicant Existing Updated',
+                'status_rumah_text' => '',
+                'status' => 'Rejected',
+                'admin_decision' => 'Rejected',
+            ],
+        ]);
+
+        /** @var CsvStudentApplicationImporter $importer */
+        $importer = app(CsvStudentApplicationImporter::class);
+        $result = $importer->import($csvPath, false);
+
+        $this->assertSame(1, $result['updated']);
+        $this->assertSame(1, $result['preserved_house_status']);
+
+        $application->refresh();
+
+        $this->assertSame('Applicant Existing Updated', $application->applicant_name);
+        $this->assertSame('Milik sendiri', $application->status_rumah_text);
+        $this->assertSame('Rejected', $application->status);
+    }
+
+    public function test_csv_import_refresh_preserves_existing_house_status_when_incoming_value_is_blank(): void
+    {
+        StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Applicant Existing',
+            'source_sheet_name' => 'Verif KIP SNBP 2023',
+            'source_row_number' => 201,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 1000000,
+            'penghasilan_ibu_rupiah' => 0,
+            'penghasilan_gabungan_rupiah' => 1000000,
+            'jumlah_tanggungan_raw' => 3,
+            'anak_ke_raw' => 1,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'Sewa',
+            'daya_listrik_text' => '900',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+        ]);
+
+        $csvPath = $this->makeOfflineImportCsv([
+            [
+                'source_row_number' => 201,
+                'applicant_name' => 'Applicant Refreshed',
+                'status_rumah_text' => '',
+                'status' => 'Verified',
+                'admin_decision' => 'Verified',
+            ],
+        ]);
+
+        /** @var CsvStudentApplicationImporter $importer */
+        $importer = app(CsvStudentApplicationImporter::class);
+        $result = $importer->import($csvPath, true);
+
+        $this->assertSame(1, $result['deleted_existing']);
+        $this->assertSame(1, $result['inserted']);
+        $this->assertSame(1, $result['preserved_house_status']);
+
+        $application = StudentApplication::query()
+            ->where('source_sheet_name', 'Verif KIP SNBP 2023')
+            ->where('source_row_number', 201)
+            ->firstOrFail();
+
+        $this->assertSame('Applicant Refreshed', $application->applicant_name);
+        $this->assertSame('Sewa', $application->status_rumah_text);
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $overrides
+     */
+    private function makeOfflineImportCsv(array $overrides): string
+    {
+        $headers = [
+            'schema_version',
+            'submission_source',
+            'student_user_id',
+            'applicant_name',
+            'applicant_email',
+            'study_program',
+            'faculty',
+            'source_reference_number',
+            'source_document_link',
+            'source_sheet_name',
+            'source_row_number',
+            'source_label_text',
+            'kip',
+            'pkh',
+            'kks',
+            'dtks',
+            'sktm',
+            'penghasilan_ayah_rupiah',
+            'penghasilan_ibu_rupiah',
+            'penghasilan_gabungan_rupiah',
+            'jumlah_tanggungan_raw',
+            'anak_ke_raw',
+            'status_orangtua_text',
+            'status_rumah_text',
+            'daya_listrik_text',
+            'status',
+            'admin_decision',
+            'admin_decision_note',
+            'manual_review_required',
+            'manual_house_review',
+            'cleaning_notes',
+        ];
+
+        $defaultRow = [
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'student_user_id' => '',
+            'applicant_name' => 'Applicant',
+            'applicant_email' => '',
+            'study_program' => 'Teknik Informatika',
+            'faculty' => 'Fakultas Vokasi',
+            'source_reference_number' => 'REF-001',
+            'source_document_link' => 'https://example.test/doc.pdf',
+            'source_sheet_name' => 'Verif KIP SNBP 2023',
+            'source_row_number' => 2,
+            'source_label_text' => 'layak',
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 1000000,
+            'penghasilan_ibu_rupiah' => 0,
+            'penghasilan_gabungan_rupiah' => 1000000,
+            'jumlah_tanggungan_raw' => 3,
+            'anak_ke_raw' => 1,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'Menumpang',
+            'daya_listrik_text' => '900',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+            'admin_decision_note' => 'Imported for test',
+            'manual_review_required' => 0,
+            'manual_house_review' => 0,
+            'cleaning_notes' => '',
+        ];
+
+        $tempPath = tempnam(sys_get_temp_dir(), 'kip-import-');
+        if ($tempPath === false) {
+            $this->fail('Gagal membuat file CSV sementara untuk test import.');
+        }
+
+        $handle = fopen($tempPath, 'wb');
+        if ($handle === false) {
+            $this->fail('Gagal membuka file CSV sementara untuk test import.');
+        }
+
+        fputcsv($handle, $headers);
+
+        foreach ($overrides as $rowOverrides) {
+            $row = array_merge($defaultRow, $rowOverrides);
+            fputcsv($handle, array_map(static fn (string $header): mixed => $row[$header] ?? '', $headers));
+        }
+
+        fclose($handle);
+
+        return $tempPath;
     }
 }
