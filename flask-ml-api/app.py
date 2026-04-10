@@ -57,7 +57,7 @@ FLASK_INTERNAL_TOKEN = os.getenv("FLASK_INTERNAL_TOKEN", "spk_internal_dev_token
 
 MODEL_REGISTRY = {"catboost": None, "naive_bayes": None, "metadata": None}
 DEFAULT_POSITIVE_THRESHOLD = float(os.getenv("DEFAULT_POSITIVE_THRESHOLD", "0.5"))
-POSITIVE_F_BETA = float(os.getenv("POSITIVE_F_BETA", "2.0"))
+POSITIVE_F_BETA = float(os.getenv("POSITIVE_F_BETA", "1.0"))
 
 
 def db_config() -> dict:
@@ -821,52 +821,77 @@ def train_and_save_models(
 
     positive_class_weight = calculate_positive_class_weight(y_train)
 
-    # ─── CatBoost: semua fitur sebagai kategorikal ──────────────────────────────
-    # Validasi 5-fold CV menunjukkan bahwa memperlakukan SEMUA fitur sebagai
-    # kategorikal memberikan performa terbaik pada dataset ini (F2=0.66, Recall=0.85).
-    # Ini karena fitur ordinal (1/2/3) pada dataset ini tidak memiliki relasi
-    # linear yang kuat dengan target, sehingga perlakuan independen lebih baik.
+    # ─── CatBoost: binary fitur sebagai kategorikal, ordinal sebagai numerik ─────
+    # Binary features (kip, pkh, kks, dtks, sktm) diperlakukan sebagai kategorikal
+    # karena tidak ada urutan bermakna antara 0 dan 1.
+    # Ordinal features (penghasilan, tanggungan, dll) diperlakukan sebagai numerik
+    # karena urutan 1→rendah, 2→sedang, 3→tinggi bermakna untuk prediksi.
     catboost_model = CatBoostClassifier(
-        iterations=150,
-        depth=5,
-        learning_rate=0.08,
+        iterations=500,
+        depth=6,
+        learning_rate=0.03,
+        l2_leaf_reg=7,
+        random_strength=1,
+        bagging_temperature=1,
+        border_count=64,
         verbose=False,
         random_seed=42,
-        eval_metric="Accuracy",
+        eval_metric="F1",
         class_weights=[1.0, positive_class_weight],
+        auto_class_weights=None,
     )
 
     if x_valid is not None and y_valid is not None:
         catboost_model.fit(
             x_train, y_train,
-            cat_features=FEATURE_COLUMNS,
+            cat_features=BINARY_FEATURES,
             eval_set=(x_valid, y_valid),
-            early_stopping_rounds=30,
+            early_stopping_rounds=50,
             verbose=False,
         )
     else:
-        catboost_model.fit(x_train, y_train, cat_features=FEATURE_COLUMNS)
+        catboost_model.fit(x_train, y_train, cat_features=BINARY_FEATURES)
 
     cb_train_accuracy = float(accuracy_score(y_train, catboost_model.predict(x_train)))
     cb_valid_accuracy = None
-    cb_threshold_metrics = {
-        "threshold": DEFAULT_POSITIVE_THRESHOLD,
-        "fbeta": 0.0,
-        "balanced_accuracy": 0.0,
-        "positive_recall": 0.0,
-        "positive_precision": 0.0,
-    }
+
+    # ─── Threshold selection via Stratified K-Fold CV (lebih robust) ─────────────
+    # Menggunakan seluruh data x_full/y_full untuk CV-based threshold selection
+    # agar threshold tidak overfit ke satu holdout split.
+    cb_threshold_metrics = select_threshold_with_cv(
+        CatBoostClassifier,
+        {
+            "iterations": 500,
+            "depth": 6,
+            "learning_rate": 0.03,
+            "l2_leaf_reg": 7,
+            "random_strength": 1,
+            "bagging_temperature": 1,
+            "border_count": 64,
+            "verbose": False,
+            "random_seed": 42,
+            "eval_metric": "F1",
+            "class_weights": [1.0, positive_class_weight],
+            "auto_class_weights": None,
+        },
+        x_full,
+        y_full,
+        cat_features=BINARY_FEATURES,
+        n_splits=5,
+        is_naive_bayes=False,
+        beta=POSITIVE_F_BETA,
+    )
+
+    # Clamp threshold minimum 0.35 agar tidak terlalu agresif
+    if cb_threshold_metrics["threshold"] < 0.35:
+        cb_threshold_metrics["threshold"] = DEFAULT_POSITIVE_THRESHOLD
+
     if x_valid is not None and y_valid is not None:
         cb_valid_accuracy = float(accuracy_score(y_valid, catboost_model.predict(x_valid)))
         cb_valid_probabilities = [
             probability_for_class(catboost_model, x_valid.iloc[[index]], target_class=1)
             for index in range(len(x_valid))
         ]
-        cb_threshold_metrics = select_optimal_indikasi_threshold(y_valid, cb_valid_probabilities)
-        # Jangan biarkan threshold terlalu rendah — clamp ke minimum 0.3
-        # agar prediksi tidak terlalu agresif menandai Indikasi.
-        if cb_threshold_metrics["threshold"] < 0.3:
-            cb_threshold_metrics["threshold"] = DEFAULT_POSITIVE_THRESHOLD
         cb_evaluation_metrics = build_evaluation_metrics(
             y_valid,
             cb_valid_probabilities,
@@ -885,7 +910,7 @@ def train_and_save_models(
             "training",
         )
 
-    # ─── Naive Bayes: dengan class prior proporsional dan Lidstone smoothing ──
+    # ─── Naive Bayes: dengan Laplace smoothing dan class prior proporsional ─────
     class_prior = compute_class_prior(y_train)
     # min_categories memastikan NB mengenali semua kemungkinan nilai fitur,
     # bahkan jika suatu nilai (misal dtks=1) tidak pernah muncul di data training.
@@ -894,7 +919,7 @@ def train_and_save_models(
     nb_params = {
         "fit_prior": True,
         "class_prior": class_prior,
-        "alpha": 0.5,
+        "alpha": 1.0,
         "min_categories": nb_min_categories,
     }
     naive_bayes_model = CategoricalNB(**nb_params)
@@ -902,22 +927,27 @@ def train_and_save_models(
     nb_train_accuracy = float(accuracy_score(y_train, naive_bayes_model.predict(nb_x_train)))
     nb_valid_accuracy = None
 
-    nb_threshold_metrics = {
-        "threshold": DEFAULT_POSITIVE_THRESHOLD,
-        "fbeta": 0.0,
-        "balanced_accuracy": 0.0,
-        "positive_recall": 0.0,
-        "positive_precision": 0.0,
-    }
+    # ─── NB Threshold via Stratified K-Fold CV ──────────────────────────────────
+    nb_threshold_metrics = select_threshold_with_cv(
+        CategoricalNB,
+        nb_params,
+        x_full,
+        y_full,
+        cat_features=BINARY_FEATURES,
+        n_splits=5,
+        is_naive_bayes=True,
+        beta=POSITIVE_F_BETA,
+    )
+
+    if nb_threshold_metrics["threshold"] < 0.35:
+        nb_threshold_metrics["threshold"] = DEFAULT_POSITIVE_THRESHOLD
+
     if nb_x_valid is not None and y_valid is not None:
         nb_valid_accuracy = float(accuracy_score(y_valid, naive_bayes_model.predict(nb_x_valid)))
         nb_valid_probabilities = [
             probability_for_class(naive_bayes_model, nb_x_valid.iloc[[index]], target_class=1)
             for index in range(len(nb_x_valid))
         ]
-        nb_threshold_metrics = select_optimal_indikasi_threshold(y_valid, nb_valid_probabilities)
-        if nb_threshold_metrics["threshold"] < 0.3:
-            nb_threshold_metrics["threshold"] = DEFAULT_POSITIVE_THRESHOLD
         nb_evaluation_metrics = build_evaluation_metrics(
             y_valid,
             nb_valid_probabilities,
@@ -963,9 +993,10 @@ def train_and_save_models(
     }
 
     note = (
-        "CatBoost adalah model primer (depth=5, lr=0.08, class_weight=auto, cat_features=all). "
-        "Categorical Naive Bayes (alpha=0.5, fit_prior=True, min_categories=enforced) "
-        "digunakan sebagai pembanding untuk deteksi disagreement."
+        "CatBoost adalah model primer (depth=6, lr=0.03, l2_leaf_reg=7, cat_features=binary_only). "
+        "Categorical Naive Bayes (alpha=1.0, fit_prior=True, min_categories=enforced) "
+        "digunakan sebagai pembanding untuk deteksi disagreement. "
+        "Threshold dipilih via Stratified 5-Fold CV."
     )
     note += (
         f" Threshold indikasi CatBoost={cb_threshold_metrics['threshold']:.4f}, "

@@ -46,13 +46,20 @@ class ApplicationFeatureEncodingService
      */
     public function encodeApplication(StudentApplication $application): array
     {
+        // Hitung penghasilan_gabungan: gunakan nilai eksplisit, fallback ke ayah + ibu
+        $penghasilanGabungan = $application->penghasilan_gabungan_rupiah;
+        if ($penghasilanGabungan === null || $penghasilanGabungan === '') {
+            $penghasilanGabungan = ((int) ($application->penghasilan_ayah_rupiah ?? 0))
+                + ((int) ($application->penghasilan_ibu_rupiah ?? 0));
+        }
+
         return [
             'kip' => $this->normalizeBinary($application->kip, 'kip'),
             'pkh' => $this->normalizeBinary($application->pkh, 'pkh'),
             'kks' => $this->normalizeBinary($application->kks, 'kks'),
             'dtks' => $this->normalizeBinary($application->dtks, 'dtks'),
             'sktm' => $this->normalizeBinary($application->sktm, 'sktm'),
-            'penghasilan_gabungan' => $this->encodeIncome($application->penghasilan_gabungan_rupiah, 'penghasilan_gabungan_rupiah'),
+            'penghasilan_gabungan' => $this->encodeIncome($penghasilanGabungan, 'penghasilan_gabungan_rupiah'),
             'penghasilan_ayah' => $this->encodeIncome($application->penghasilan_ayah_rupiah, 'penghasilan_ayah_rupiah'),
             'penghasilan_ibu' => $this->encodeIncome($application->penghasilan_ibu_rupiah, 'penghasilan_ibu_rupiah'),
             'jumlah_tanggungan' => $this->encodeJumlahTanggungan($application->jumlah_tanggungan_raw),
@@ -76,10 +83,9 @@ class ApplicationFeatureEncodingService
 
     private function encodeIncome(mixed $value, string $field): int
     {
-        if ($value === null || ! is_numeric($value)) {
-            throw ValidationException::withMessages([
-                $field => ["{$field} wajib berupa nominal rupiah yang valid."],
-            ]);
+        // NULL penghasilan → fallback ke 0 (orangtua tidak berpenghasilan/tidak diketahui)
+        if ($value === null || $value === '' || ! is_numeric($value)) {
+            $value = 0;
         }
 
         $income = (int) $value;
@@ -110,10 +116,9 @@ class ApplicationFeatureEncodingService
 
     private function encodeAnakKe(mixed $value): int
     {
+        // NULL atau 0 → fallback ke anak pertama (encode = 3, anak ke-1 atau ke-2)
         if ($value === null || ! is_numeric($value) || (int) $value < 1) {
-            throw ValidationException::withMessages([
-                'anak_ke_raw' => ['anak_ke_raw wajib berupa angka minimal 1.'],
-            ]);
+            $value = 1;
         }
 
         $childOrder = (int) $value;
@@ -129,32 +134,62 @@ class ApplicationFeatureEncodingService
     {
         $normalized = $this->normalizeText($value, 'status_orangtua_text');
 
+        // ── 1 = Yatim Piatu (kedua orangtua meninggal/wafat) ──
         if (str_contains($normalized, 'yatim piatu')) {
             return 1;
         }
 
-        if (str_contains($normalized, 'yatim') || str_contains($normalized, 'piatu')) {
-            return 2;
-        }
-
-        $fatherDeceased = $this->containsAny($normalized, ['ayah=wafat', 'ayah=meninggal', 'ayah meninggal', 'ayah wafat']);
-        $motherDeceased = $this->containsAny($normalized, ['ibu=wafat', 'ibu=meninggal', 'ibu meninggal', 'ibu wafat', 'ibu=wafar']);
+        // Deteksi status ayah
+        $fatherDeceased = $this->containsAny($normalized, [
+            'ayah=wafat', 'ayah=meninggal', 'ayah meninggal', 'ayah wafat',
+            'ayah=meninggal dunia',
+        ]);
+        $motherDeceased = $this->containsAny($normalized, [
+            'ibu=wafat', 'ibu=meninggal', 'ibu meninggal', 'ibu wafat',
+            'ibu=wafar', 'ibu=meninggal dunia',
+        ]);
 
         if ($fatherDeceased && $motherDeceased) {
             return 1;
+        }
+
+        // ── 2 = Keluarga tidak lengkap (yatim/piatu/cerai/tiri/wali/tidak jelas) ──
+        if (str_contains($normalized, 'yatim') || str_contains($normalized, 'piatu')) {
+            return 2;
         }
 
         if ($fatherDeceased || $motherDeceased) {
             return 2;
         }
 
+        // Cerai (cerai hidup, cerai mati, dll) → keluarga tidak lengkap
+        if (str_contains($normalized, 'cerai')) {
+            return 2;
+        }
+
+        // Tiri, Wali → keluarga tidak lengkap secara biologis
+        if ($this->containsAny($normalized, ['tiri', 'wali'])) {
+            return 2;
+        }
+
+        // Tidak jelas, kosong di salah satu sisi → asumsi tidak lengkap
+        if ($this->containsAny($normalized, ['tidak jelas', 'ayah=;', 'ibu=;'])) {
+            return 2;
+        }
+
+        // Ayah atau ibu kosong (misal "ayah=; ibu=Hidup")
+        if (preg_match('/ayah=\s*;/', $normalized) || preg_match('/ibu=\s*;/', $normalized)) {
+            return 2;
+        }
+
+        // ── 3 = Lengkap (kedua orangtua hidup) ──
         if ($this->containsAny($normalized, ['ayah=hidup', 'ibu=hidup', 'lengkap', 'orang tua lengkap'])) {
             return 3;
         }
 
-        throw ValidationException::withMessages([
-            'status_orangtua_text' => ['status_orangtua_text tidak bisa dipetakan ke kategori encoding.'],
-        ]);
+        // Fallback: jika tidak bisa dipetakan, asumsi tidak lengkap
+        // untuk menghindari data loss pada training
+        return 2;
     }
 
     private function encodeStatusRumah(?string $value): int
@@ -182,17 +217,19 @@ class ApplicationFeatureEncodingService
     {
         $normalized = $this->normalizeText($value, 'daya_listrik_text');
 
-        if ($this->containsAny($normalized, ['tidak ada', 'non pln', 'non-pln', 'nonpln'])) {
+        // Tidak ada listrik / non-PLN
+        if ($this->containsAny($normalized, ['tidak ada', 'non pln', 'non-pln', 'nonpln', 'tidak punya rek'])) {
             return 1;
         }
 
+        // Cari angka daya di teks
         preg_match_all('/\d+/', $normalized, $matches);
         $numbers = array_map(static fn (string $number): int => (int) $number, $matches[0] ?? []);
 
         if ($numbers === []) {
-            throw ValidationException::withMessages([
-                'daya_listrik_text' => ['daya_listrik_text tidak mengandung nilai daya yang valid.'],
-            ]);
+            // Tidak ada angka → fallback ke 2 (daya rendah/subsidi)
+            // Kasus: 'Token', 'unknown', '-', 'tidak ada ket', dll.
+            return 2;
         }
 
         $maxValue = max($numbers);
