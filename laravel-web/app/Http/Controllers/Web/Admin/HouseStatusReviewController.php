@@ -66,4 +66,35 @@ class HouseStatusReviewController extends Controller
                 'message' => $message,
             ]);
     }
+
+    public function batchUpdate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'house_state' => ['nullable', 'string', Rule::in(['missing', 'filled'])],
+            'applications' => ['required', 'array', 'min:1'],
+            'applications.*.id' => ['required', 'integer', 'distinct', Rule::exists('student_applications', 'id')],
+            'applications.*.status_rumah_text' => ['nullable', 'string', 'max:255', Rule::in($this->houseStatusReviewService->houseStatusOptions())],
+        ]);
+
+        $result = $this->houseStatusReviewService->batchUpdateHouseStatuses(
+            array_values($validated['applications']),
+            (int) $request->user()->id,
+        );
+
+        $message = $result['updated'] === 0
+            ? 'Tidak ada perubahan status rumah pada halaman ini.'
+            : "Tersimpan {$result['updated']} perubahan. Artefak lama yang dibersihkan: {$result['cleared_snapshots']} snapshot, {$result['cleared_encodings']} encoding, {$result['cleared_training_rows']} baris training.";
+
+        return redirect()
+            ->route('admin.applications.house-review', array_filter([
+                'q' => $validated['q'] ?? null,
+                'house_state' => $validated['house_state'] ?? null,
+            ]))
+            ->with('admin_notice', [
+                'type' => 'success',
+                'title' => 'Perubahan halaman tersimpan',
+                'message' => $message,
+            ]);
+    }
 }

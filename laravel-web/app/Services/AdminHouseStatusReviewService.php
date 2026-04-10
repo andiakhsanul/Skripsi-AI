@@ -133,14 +133,89 @@ class AdminHouseStatusReviewService
 
     public function updateHouseStatus(StudentApplication $application, ?string $statusRumahText, int $actorUserId): StudentApplication
     {
+        return $this->applyHouseStatusUpdate($application, $statusRumahText, $actorUserId)['application'];
+    }
+
+    /**
+     * @param  array<int, array{id:int|string, status_rumah_text:?string}>  $updates
+     * @return array{submitted:int, updated:int, unchanged:int, missing:int, cleared_training_rows:int, cleared_encodings:int, cleared_snapshots:int}
+     */
+    public function batchUpdateHouseStatuses(array $updates, int $actorUserId): array
+    {
+        $applicationIds = collect($updates)
+            ->pluck('id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->filter(static fn (int $id): bool => $id > 0)
+            ->unique()
+            ->values();
+
+        $applications = StudentApplication::query()
+            ->where('submission_source', 'offline_admin_import')
+            ->whereIn('id', $applicationIds)
+            ->get()
+            ->keyBy('id');
+
+        $summary = [
+            'submitted' => count($updates),
+            'updated' => 0,
+            'unchanged' => 0,
+            'missing' => 0,
+            'cleared_training_rows' => 0,
+            'cleared_encodings' => 0,
+            'cleared_snapshots' => 0,
+        ];
+
+        foreach ($updates as $update) {
+            $application = $applications->get((int) $update['id']);
+
+            if (! $application instanceof StudentApplication) {
+                $summary['missing']++;
+                continue;
+            }
+
+            $result = $this->applyHouseStatusUpdate(
+                $application,
+                $update['status_rumah_text'] ?? null,
+                $actorUserId,
+            );
+
+            if (! $result['changed']) {
+                $summary['unchanged']++;
+                continue;
+            }
+
+            $summary['updated']++;
+            $summary['cleared_training_rows'] += $result['deleted_training_rows'];
+            $summary['cleared_encodings'] += $result['deleted_encodings'];
+            $summary['cleared_snapshots'] += $result['deleted_snapshot'] ? 1 : 0;
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return array{application:StudentApplication, changed:bool, deleted_training_rows:int, deleted_encodings:int, deleted_snapshot:bool}
+     */
+    private function applyHouseStatusUpdate(StudentApplication $application, ?string $statusRumahText, int $actorUserId): array
+    {
         $newValue = blank($statusRumahText) ? null : trim((string) $statusRumahText);
         $oldValue = blank($application->status_rumah_text) ? null : trim((string) $application->status_rumah_text);
 
         if ($oldValue === $newValue) {
-            return $application->fresh();
+            return [
+                'application' => $application->fresh(),
+                'changed' => false,
+                'deleted_training_rows' => 0,
+                'deleted_encodings' => 0,
+                'deleted_snapshot' => false,
+            ];
         }
 
-        DB::transaction(function () use ($application, $newValue, $oldValue, $actorUserId): void {
+        $deletedTrainingRows = 0;
+        $deletedEncodings = 0;
+        $hadSnapshot = false;
+
+        DB::transaction(function () use ($application, $newValue, $oldValue, $actorUserId, &$deletedTrainingRows, &$deletedEncodings, &$hadSnapshot): void {
             $deletedTrainingRows = $application->trainingRows()->count();
             $deletedEncodings = $application->featureEncodings()->count();
             $hadSnapshot = $application->modelSnapshot()->exists();
@@ -170,10 +245,16 @@ class AdminHouseStatusReviewService
             ]);
         });
 
-        return $application->fresh([
-            'modelSnapshot',
-            'currentEncoding',
-            'trainingRows',
-        ]);
+        return [
+            'application' => $application->fresh([
+                'modelSnapshot',
+                'currentEncoding',
+                'trainingRows',
+            ]),
+            'changed' => true,
+            'deleted_training_rows' => $deletedTrainingRows,
+            'deleted_encodings' => $deletedEncodings,
+            'deleted_snapshot' => $hadSnapshot,
+        ];
     }
 }

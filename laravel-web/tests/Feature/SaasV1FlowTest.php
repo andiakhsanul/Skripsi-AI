@@ -2018,6 +2018,190 @@ class SaasV1FlowTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_batch_update_house_statuses_from_one_page(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $applicationWithArtifacts = StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Dina Safitri',
+            'source_reference_number' => 'A-020',
+            'source_row_number' => 20,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_ayah_rupiah' => 900000,
+            'penghasilan_ibu_rupiah' => 0,
+            'penghasilan_gabungan_rupiah' => 900000,
+            'jumlah_tanggungan_raw' => 4,
+            'anak_ke_raw' => 2,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => null,
+            'daya_listrik_text' => '450 VA',
+            'status' => 'Verified',
+            'admin_decision' => 'Verified',
+            'admin_decided_by' => $admin->id,
+            'admin_decided_at' => now(),
+        ]);
+
+        $encoding = ApplicationFeatureEncoding::query()->create([
+            'application_id' => $applicationWithArtifacts->id,
+            'schema_version' => 1,
+            'encoding_version' => 1,
+            'is_current' => true,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 3,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'encoded_at' => now(),
+        ]);
+
+        ApplicationModelSnapshot::query()->create([
+            'application_id' => $applicationWithArtifacts->id,
+            'encoding_id' => $encoding->id,
+            'schema_version' => 1,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 3,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'model_ready' => true,
+            'catboost_label' => 'Layak',
+            'catboost_confidence' => 0.7,
+            'naive_bayes_label' => 'Layak',
+            'naive_bayes_confidence' => 0.6,
+            'disagreement_flag' => false,
+            'final_recommendation' => 'Layak',
+            'review_priority' => 'normal',
+            'snapshotted_at' => now(),
+        ]);
+
+        SpkTrainingData::query()->create([
+            'source_application_id' => $applicationWithArtifacts->id,
+            'source_encoding_id' => $encoding->id,
+            'schema_version' => 1,
+            'encoding_version' => 1,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 1,
+            'penghasilan_gabungan' => 1,
+            'penghasilan_ayah' => 1,
+            'penghasilan_ibu' => 1,
+            'jumlah_tanggungan' => 2,
+            'anak_ke' => 3,
+            'status_orangtua' => 3,
+            'status_rumah' => 2,
+            'daya_listrik' => 2,
+            'label' => 'Layak',
+            'label_class' => 0,
+            'decision_status' => 'Verified',
+            'finalized_by_user_id' => $admin->id,
+            'finalized_at' => now(),
+            'is_active' => true,
+            'admin_corrected' => false,
+        ]);
+
+        $applicationWithoutArtifacts = StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Rani Kusuma',
+            'source_reference_number' => 'A-021',
+            'source_row_number' => 21,
+            'kip' => 1,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => 1200000,
+            'penghasilan_ibu_rupiah' => 400000,
+            'penghasilan_gabungan_rupiah' => 1600000,
+            'jumlah_tanggungan_raw' => 5,
+            'anak_ke_raw' => 2,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => null,
+            'daya_listrik_text' => '900',
+            'status' => 'Rejected',
+            'admin_decision' => 'Rejected',
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->post(route('admin.applications.house-review.batch-update'), [
+                'q' => '',
+                'house_state' => 'missing',
+                'applications' => [
+                    [
+                        'id' => $applicationWithArtifacts->id,
+                        'status_rumah_text' => 'Milik sendiri',
+                    ],
+                    [
+                        'id' => $applicationWithoutArtifacts->id,
+                        'status_rumah_text' => 'Menumpang',
+                    ],
+                ],
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.applications.house-review', ['house_state' => 'missing']))
+            ->assertSessionHas('admin_notice');
+
+        $this->assertDatabaseHas('student_applications', [
+            'id' => $applicationWithArtifacts->id,
+            'status_rumah_text' => 'Milik sendiri',
+        ]);
+
+        $this->assertDatabaseHas('student_applications', [
+            'id' => $applicationWithoutArtifacts->id,
+            'status_rumah_text' => 'Menumpang',
+        ]);
+
+        $this->assertDatabaseMissing('application_feature_encodings', [
+            'id' => $encoding->id,
+        ]);
+
+        $this->assertDatabaseMissing('application_model_snapshots', [
+            'application_id' => $applicationWithArtifacts->id,
+        ]);
+
+        $this->assertDatabaseMissing('spk_training_data', [
+            'source_application_id' => $applicationWithArtifacts->id,
+        ]);
+
+        $this->assertDatabaseCount('application_status_logs', 2);
+        $this->assertDatabaseHas('application_status_logs', [
+            'application_id' => $applicationWithArtifacts->id,
+            'action' => 'updated_house_status',
+        ]);
+        $this->assertDatabaseHas('application_status_logs', [
+            'application_id' => $applicationWithoutArtifacts->id,
+            'action' => 'updated_house_status',
+        ]);
+    }
+
     public function test_csv_import_preserves_existing_house_status_when_incoming_value_is_blank(): void
     {
         $application = StudentApplication::query()->create([

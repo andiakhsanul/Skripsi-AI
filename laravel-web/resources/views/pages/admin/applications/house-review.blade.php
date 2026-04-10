@@ -127,36 +127,68 @@
                 </form>
             </div>
 
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-slate-100">
-                    <thead class="bg-slate-50">
-                        <tr class="text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                            <th class="px-5 py-4">Applicant</th>
-                            <th class="px-5 py-4">Referensi</th>
-                            <th class="px-5 py-4">Status Rumah Saat Ini</th>
-                            <th class="px-5 py-4">Konteks Ringkas</th>
-                            <th class="px-5 py-4">Dokumen</th>
-                            <th class="px-5 py-4">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 bg-white">
-                        @forelse ($applications as $application)
-                            @include('pages.admin.applications.partials.house-review-row', [
-                                'application' => $application,
-                                'filters' => $filters,
-                                'houseStatusOptions' => $houseStatusOptions,
-                            ])
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-6 py-16 text-center">
-                                    <p class="text-sm font-bold text-slate-500">Tidak ada applicant yang sesuai dengan filter saat ini.</p>
-                                    <p class="mt-2 text-sm text-slate-400">Coba ubah pencarian atau tampilkan semua status rumah.</p>
-                                </td>
+            <form method="POST" action="{{ route('admin.applications.house-review.batch-update') }}">
+                @csrf
+                <input type="hidden" name="q" value="{{ $filters['q'] }}">
+                <input type="hidden" name="house_state" value="{{ $filters['house_state'] }}">
+
+                <div class="flex flex-col gap-3 border-b border-slate-100 bg-slate-50/70 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-slate-700">Perubahan pada halaman ini akan disimpan sekaligus.</p>
+                        <p class="text-xs font-medium text-slate-500">Dokumen tetap dibuka per baris, tetapi submit status rumah sekarang cukup sekali untuk semua row yang terlihat.</p>
+                    </div>
+
+                    <button
+                        type="submit"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-blue-700"
+                    >
+                        <span class="material-symbols-outlined text-base">save</span>
+                        Simpan Perubahan Halaman Ini
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-100">
+                        <thead class="bg-slate-50">
+                            <tr class="text-left text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                                <th class="px-5 py-4">Applicant</th>
+                                <th class="px-5 py-4">Referensi</th>
+                                <th class="px-5 py-4">Status Rumah Saat Ini</th>
+                                <th class="px-5 py-4">Konteks Ringkas</th>
+                                <th class="px-5 py-4">Dokumen</th>
+                                <th class="px-5 py-4">Pilihan Baru</th>
                             </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 bg-white">
+                            @forelse ($applications as $application)
+                                @include('pages.admin.applications.partials.house-review-row', [
+                                    'application' => $application,
+                                    'houseStatusOptions' => $houseStatusOptions,
+                                ])
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="px-6 py-16 text-center">
+                                        <p class="text-sm font-bold text-slate-500">Tidak ada applicant yang sesuai dengan filter saat ini.</p>
+                                        <p class="mt-2 text-sm text-slate-400">Coba ubah pencarian atau tampilkan semua status rumah.</p>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+                @if ($applications->isNotEmpty())
+                    <div class="flex justify-end border-t border-slate-100 bg-slate-50/70 px-6 py-4">
+                        <button
+                            type="submit"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-blue-700"
+                        >
+                            <span class="material-symbols-outlined text-base">save</span>
+                            Simpan Perubahan Halaman Ini
+                        </button>
+                    </div>
+                @endif
+            </form>
 
             @if ($applications->hasPages())
                 <div class="border-t border-slate-100 px-6 py-4">

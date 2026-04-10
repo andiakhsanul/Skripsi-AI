@@ -52,16 +52,11 @@
         </div>
     </td>
     <td class="px-5 py-4">
-        <form
-            method="POST"
-            action="{{ route('admin.applications.house-review.update', array_filter(['application' => $application->id, 'q' => $filters['q'] ?: null, 'house_state' => $filters['house_state'] ?: null])) }}"
-            class="flex min-w-[240px] flex-col gap-3"
-        >
-            @csrf
-            @method('PUT')
+        <div class="flex min-w-[240px] flex-col gap-3">
+            <input type="hidden" name="applications[{{ $application->id }}][id]" value="{{ $application->id }}" />
 
             <select
-                name="status_rumah_text"
+                name="applications[{{ $application->id }}][status_rumah_text]"
                 class="rounded-xl border-none bg-surface-container px-4 py-3 text-sm font-semibold text-on-surface focus:ring-2 focus:ring-primary/20"
             >
                 <option value="">Kosongkan dulu</option>
@@ -70,13 +65,9 @@
                 @endforeach
             </select>
 
-            <button
-                type="submit"
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-3 text-sm font-black text-white shadow-lg shadow-primary/20 transition hover:bg-blue-700"
-            >
-                <span class="material-symbols-outlined text-base">save</span>
-                Simpan
-            </button>
-        </form>
+            <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                Perubahan tersimpan saat tombol submit halaman ditekan.
+            </p>
+        </div>
     </td>
 </tr>

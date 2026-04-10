@@ -44,6 +44,7 @@ Route::middleware('auth')->group(function (): void {
     Route::middleware('role.admin')->prefix('admin')->group(function (): void {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
         Route::get('/applications/house-review', [AdminHouseStatusReviewController::class, 'index'])->name('admin.applications.house-review');
+        Route::post('/applications/house-review/batch-update', [AdminHouseStatusReviewController::class, 'batchUpdate'])->name('admin.applications.house-review.batch-update');
         Route::put('/applications/{application}/house-review', [AdminHouseStatusReviewController::class, 'update'])->name('admin.applications.house-review.update');
         Route::post('/applications/run-predictions', [AdminApplicationReviewController::class, 'runPredictions'])->name('admin.applications.run-predictions');
         Route::get('/applications/{application}', [AdminApplicationReviewController::class, 'show'])->name('admin.applications.show');
