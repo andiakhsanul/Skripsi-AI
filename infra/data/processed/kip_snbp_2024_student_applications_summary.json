@@ -1,0 +1,43 @@
+{
+  "generated_at": "2026-04-11T14:44:07.489333+00:00",
+  "source_file": "/Users/andiakhsanul/Downloads/VERIFIKASI KIPK SNBP 2024 - PENGUMPULAN BERKAS KIPK 2024 (Jawaban).xlsx",
+  "target_sheet": "VERIFIKASI",
+  "total_applicant_rows": 367,
+  "status_counts": {
+    "Verified": 307,
+    "Submitted": 59,
+    "Rejected": 1
+  },
+  "source_label_counts": {
+    "LAYAK": 307,
+    "SURVEY": 45,
+    "INDIKASI": 1,
+    "survey": 2,
+    "Wawancara": 5,
+    "Survey": 5,
+    "WAWANCARA": 2
+  },
+  "support_counts": {
+    "kip": 105,
+    "pkh": 40,
+    "kks": 74,
+    "dtks": 19,
+    "sktm": 284
+  },
+  "manual_review_rows": 367,
+  "cleaning_note_counts": {
+    "penghasilan_ayah_perlu_cek_manual": 231,
+    "anak_ke_perlu_cek_manual": 333,
+    "status_rumah_perlu_isi_manual": 358,
+    "daya_listrik_perlu_cek_manual": 366,
+    "penghasilan_ibu_perlu_cek_manual": 101,
+    "penghasilan_gabungan_perlu_cek_manual": 70,
+    "jumlah_tanggungan_perlu_cek_manual": 172,
+    "hasil_verifikasi_belum_final": 59,
+    "sktm_perlu_cek_manual": 9,
+    "ada_catatan_indikasi": 91,
+    "kis_terdeteksi_tetapi_tidak_termasuk_13_fitur": 2,
+    "kps_terdeteksi_tetapi_tidak_termasuk_13_fitur": 2
+  },
+  "assumption": "KIP/PKH/KKS dibaca dari kolom Kartu Miskin, DTKS dari Kartu Miskin atau SKTM, SKTM dari kolom SKTM. LAYAK dipetakan ke Verified; INDIKASI/Tidak Layak ke Rejected; SURVEY/WAWANCARA tetap Submitted agar tidak otomatis masuk training final."
+}

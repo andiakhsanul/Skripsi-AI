@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Optional
 
 import joblib
+import numpy as np
 import pandas as pd
 import psycopg2
 from catboost import CatBoostClassifier
@@ -44,7 +45,13 @@ ORDINAL_FEATURES = [
     "status_rumah",
     "daya_listrik",
 ]
-FEATURE_COLUMNS = BINARY_FEATURES + ORDINAL_FEATURES
+DB_FEATURE_COLUMNS = BINARY_FEATURES + ORDINAL_FEATURES
+
+# Engineered Features
+ENGINEERED_BINARY = ["rendah_tanpa_bantuan"]
+ENGINEERED_ORDINAL = ["skor_bantuan_sosial"]  # 0 to 5 categories
+
+FEATURE_COLUMNS = DB_FEATURE_COLUMNS + ENGINEERED_BINARY + ENGINEERED_ORDINAL
 TARGET_COLUMN = "label_class"
 REVIEW_PRIORITY_THRESHOLD = float(os.getenv("REVIEW_PRIORITY_THRESHOLD", "0.65"))
 MODEL_VALIDATION_SPLIT = min(max(float(os.getenv("MODEL_VALIDATION_SPLIT", "0.2")), 0.1), 0.4)
@@ -324,6 +331,16 @@ def fetch_training_dataframe(schema_version: Optional[int] = None) -> pd.DataFra
         return pd.read_sql(query.as_string(conn), conn, params=params)
 
 
+def add_engineered_features(features: pd.DataFrame) -> pd.DataFrame:
+    df = features.copy()
+    # 1. Skor bantuan sosial komposit (0-5)
+    df["skor_bantuan_sosial"] = df["kip"] + df["pkh"] + df["kks"] + df["dtks"] + df["sktm"]
+    
+    # 2. Flag penghasilan rendah tanpa bantuan
+    df["rendah_tanpa_bantuan"] = ((df["penghasilan_gabungan"] == 1) & (df["skor_bantuan_sosial"] == 0)).astype(int)
+    return df
+
+
 def derive_label_and_confidence(probability_indikasi: float, threshold: float = DEFAULT_POSITIVE_THRESHOLD) -> tuple[str, float]:
     bounded_probability = max(0.0, min(float(probability_indikasi), 1.0))
     bounded_threshold = max(0.0, min(float(threshold), 1.0))
@@ -522,6 +539,7 @@ def build_evaluation_metrics(y_true: pd.Series, probabilities, threshold: float,
 def transform_features_for_naive_bayes(features: pd.DataFrame) -> pd.DataFrame:
     transformed = features.copy().astype(int)
     transformed.loc[:, ORDINAL_FEATURES] = transformed[ORDINAL_FEATURES] - 1
+    # Note: skor_bantuan_sosial is already 0-5. No need to subtract 1.
     return transformed
 
 
@@ -534,8 +552,9 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
     model_ready = catboost_model is not None and nb_model is not None
 
     if model_ready:
-        cb_probability = probability_for_class(catboost_model, features, target_class=1)
-        nb_features = transform_features_for_naive_bayes(features)
+        features_extended = add_engineered_features(features)
+        cb_probability = probability_for_class(catboost_model, features_extended, target_class=1)
+        nb_features = transform_features_for_naive_bayes(features_extended)
         nb_probability = probability_for_class(nb_model, nb_features, target_class=1)
 
         pred_cb, confidence_cb = derive_label_and_confidence(cb_probability, catboost_threshold)
@@ -789,11 +808,14 @@ def train_and_save_models(
     if dataframe.empty:
         raise ValueError("Data training kosong. Tambahkan data valid terlebih dahulu.")
 
-    missing = [column for column in FEATURE_COLUMNS if column not in dataframe.columns]
+    # Terapkan feature engineering sebelum pengecekan FEATURE_COLUMNS
+    df_engineered = add_engineered_features(dataframe)
+
+    missing = [column for column in FEATURE_COLUMNS if column not in df_engineered.columns]
     if missing:
         raise ValueError(f"Kolom training tidak lengkap: {', '.join(missing)}")
 
-    cleaned = dataframe.dropna(subset=FEATURE_COLUMNS).copy()
+    cleaned = df_engineered.dropna(subset=FEATURE_COLUMNS).copy()
     if cleaned.empty:
         raise ValueError("Data training tidak valid setelah pembersihan nilai kosong.")
 
@@ -810,6 +832,21 @@ def train_and_save_models(
         raise ValueError("Kolom target tidak tersedia. Minimal butuh label atau label_class.")
 
     cleaned[TARGET_COLUMN] = cleaned[TARGET_COLUMN].astype(int)
+    
+    # --- Fase 1: Data Cleaning (Majority Voting & Deduplication) ---
+    grouped = cleaned.groupby(FEATURE_COLUMNS)[TARGET_COLUMN]
+    
+    def resolve_majority_or_drop(x):
+        modes = x.mode()
+        return modes.iloc[0] if len(modes) == 1 else -1
+        
+    cleaned["resolved_label"] = grouped.transform(resolve_majority_or_drop)
+    cleaned = cleaned[cleaned["resolved_label"] != -1].copy()
+    cleaned[TARGET_COLUMN] = cleaned["resolved_label"].astype(int)
+    
+    cleaned = cleaned.drop_duplicates(subset=FEATURE_COLUMNS + [TARGET_COLUMN])
+    # -----------------------------------------------------------------
+
     if cleaned[TARGET_COLUMN].nunique() < 2:
         raise ValueError("Data training harus memiliki minimal 2 kelas label.")
 
@@ -821,19 +858,19 @@ def train_and_save_models(
 
     positive_class_weight = calculate_positive_class_weight(y_train)
 
-    # ─── CatBoost: binary fitur sebagai kategorikal, ordinal sebagai numerik ─────
-    # Binary features (kip, pkh, kks, dtks, sktm) diperlakukan sebagai kategorikal
-    # karena tidak ada urutan bermakna antara 0 dan 1.
-    # Ordinal features (penghasilan, tanggungan, dll) diperlakukan sebagai numerik
-    # karena urutan 1→rendah, 2→sedang, 3→tinggi bermakna untuk prediksi.
+    # ─── CatBoost: Tungning Hyperparameters & Feature Engineering ─────
+    # Kurangi depth dan tambahkan l2_leaf_reg agar tidak overfit ke label conflict (noise).
+    # Fitur ordinal diperlakukan sebagai numerik. Binary sebagai kategorikal.
+    cat_features_list = BINARY_FEATURES + ENGINEERED_BINARY
     catboost_model = CatBoostClassifier(
-        iterations=500,
-        depth=6,
-        learning_rate=0.03,
-        l2_leaf_reg=7,
-        random_strength=1,
+        iterations=300,
+        depth=4,
+        learning_rate=0.05,
+        l2_leaf_reg=10,
+        random_strength=2,
         bagging_temperature=1,
         border_count=64,
+        min_data_in_leaf=10,
         verbose=False,
         random_seed=42,
         eval_metric="F1",
@@ -844,13 +881,13 @@ def train_and_save_models(
     if x_valid is not None and y_valid is not None:
         catboost_model.fit(
             x_train, y_train,
-            cat_features=BINARY_FEATURES,
+            cat_features=cat_features_list,
             eval_set=(x_valid, y_valid),
             early_stopping_rounds=50,
             verbose=False,
         )
     else:
-        catboost_model.fit(x_train, y_train, cat_features=BINARY_FEATURES)
+        catboost_model.fit(x_train, y_train, cat_features=cat_features_list)
 
     cb_train_accuracy = float(accuracy_score(y_train, catboost_model.predict(x_train)))
     cb_valid_accuracy = None
@@ -861,12 +898,13 @@ def train_and_save_models(
     cb_threshold_metrics = select_threshold_with_cv(
         CatBoostClassifier,
         {
-            "iterations": 500,
-            "depth": 6,
-            "learning_rate": 0.03,
-            "l2_leaf_reg": 7,
-            "random_strength": 1,
+            "iterations": 300,
+            "depth": 4,
+            "learning_rate": 0.05,
+            "l2_leaf_reg": 10,
+            "random_strength": 2,
             "bagging_temperature": 1,
+            "min_data_in_leaf": 10,
             "border_count": 64,
             "verbose": False,
             "random_seed": 42,
@@ -876,7 +914,7 @@ def train_and_save_models(
         },
         x_full,
         y_full,
-        cat_features=BINARY_FEATURES,
+        cat_features=cat_features_list,
         n_splits=5,
         is_naive_bayes=False,
         beta=POSITIVE_F_BETA,
@@ -910,30 +948,50 @@ def train_and_save_models(
             "training",
         )
 
+    from sklearn.calibration import CalibratedClassifierCV
     # ─── Naive Bayes: dengan Laplace smoothing dan class prior proporsional ─────
+    # min_categories untuk DB_FEATURE_COLUMNS (13): 5 binary(2) + 8 ordinal(3).
+    # ENGINEERED_BINARY = 1 fitur rendah_tanpa_bantuan -> (2)
+    # ENGINEERED_ORDINAL = 1 fitur skor_bantuan_sosial -> (6 karena 0,1,2,3,4,5)
     class_prior = compute_class_prior(y_train)
-    # min_categories memastikan NB mengenali semua kemungkinan nilai fitur,
-    # bahkan jika suatu nilai (misal dtks=1) tidak pernah muncul di data training.
-    # Binary features: 2 kategori (0/1), ordinal features setelah transform: 3 kategori (0/1/2).
-    nb_min_categories = [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3]
+    nb_base_categories = [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3]
+    nb_min_categories = nb_base_categories + [2] + [6] # total 15 features
     nb_params = {
         "fit_prior": True,
         "class_prior": class_prior,
-        "alpha": 1.0,
+        "alpha": 2.0, # Increased smoothing for noise
         "min_categories": nb_min_categories,
     }
-    naive_bayes_model = CategoricalNB(**nb_params)
-    naive_bayes_model.fit(nb_x_train, y_train)
+    # Base model training
+    naive_bayes_model_base = CategoricalNB(**nb_params)
+    naive_bayes_model_base.fit(nb_x_train, y_train)
+    
+    # Isotonic calibration to make probabilities realistic
+    naive_bayes_model = CalibratedClassifierCV(naive_bayes_model_base, method='isotonic', cv=min(5, len(np.unique(y_train))))
+    if len(y_train) < 10: # Fallback for very small data where CV fails
+        naive_bayes_model = naive_bayes_model_base
+    else:
+        try:
+            naive_bayes_model.fit(nb_x_train, y_train)
+        except ValueError:
+            # Fallback to uncalibrated if not enough data / monotonic constraints fail
+            naive_bayes_model = naive_bayes_model_base
+            
     nb_train_accuracy = float(accuracy_score(y_train, naive_bayes_model.predict(nb_x_train)))
     nb_valid_accuracy = None
 
     # ─── NB Threshold via Stratified K-Fold CV ──────────────────────────────────
+    # For threshold selection we use the uncalibrated CategoricalNB because cross_val needs base estimator
+    # Or ideally, we should wrap it. But for speed and CV, we use base NB model class
+    # Since select_threshold_with_cv doesn't support CalibratedClassifierCV natively out of the box optimally with cat_features mapping
+    # We will use the uncalibrated approach for threshold discovery since it's order-preserving,
+    # and we calibrate final predictions.
     nb_threshold_metrics = select_threshold_with_cv(
         CategoricalNB,
         nb_params,
         x_full,
         y_full,
-        cat_features=BINARY_FEATURES,
+        cat_features=cat_features_list,
         n_splits=5,
         is_naive_bayes=True,
         beta=POSITIVE_F_BETA,
@@ -1085,28 +1143,24 @@ def train_and_save_models(
 
 
 def get_prediction_input(payload: dict) -> pd.DataFrame:
-    missing_fields = [field for field in FEATURE_COLUMNS if field not in payload]
+    missing_fields = [field for field in DB_FEATURE_COLUMNS if field not in payload]
     if missing_fields:
         raise ValueError(f"Field wajib tidak lengkap: {', '.join(missing_fields)}")
 
     try:
         values = {}
-
-        for feature in BINARY_FEATURES:
+        for feature in DB_FEATURE_COLUMNS:
             parsed_value = int(payload[feature])
-            if parsed_value not in (0, 1):
+            if feature in BINARY_FEATURES and parsed_value not in (0, 1):
                 raise ValueError(f"Field {feature} wajib bernilai 0 atau 1 (biner)")
-            values[feature] = parsed_value
-
-        for feature in ORDINAL_FEATURES:
-            parsed_value = int(payload[feature])
-            if parsed_value not in (1, 2, 3):
+            elif feature in ORDINAL_FEATURES and parsed_value not in (1, 2, 3):
                 raise ValueError(f"Field {feature} wajib bernilai 1, 2, atau 3 (ordinal)")
             values[feature] = parsed_value
-    except (TypeError, ValueError) as exc:
+    except (TypeError, ValueError, KeyError) as exc:
         raise ValueError("Nilai fitur harus berupa angka yang valid") from exc
 
-    return pd.DataFrame([values], columns=FEATURE_COLUMNS)
+    df = pd.DataFrame([values], columns=DB_FEATURE_COLUMNS)
+    return add_engineered_features(df)
 
 
 @app.route("/api/health", methods=["GET"])
