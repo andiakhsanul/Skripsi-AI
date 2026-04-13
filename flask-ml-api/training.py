@@ -30,7 +30,6 @@ from evaluation import (
     build_evaluation_metrics,
 )
 from model_registry import (
-    ensure_model_directory,
     relative_artifact_path,
     create_model_artifact
 )
@@ -161,8 +160,14 @@ def train_and_save_models(
     if cleaned[TARGET_COLUMN].nunique() < 2:
         raise ValueError("Data training harus memiliki minimal 2 kelas label.")
 
-    x_full = cleaned[FEATURE_COLUMNS].astype(int)
-    y_full = cleaned[TARGET_COLUMN].astype(int)
+    # ─── Resolusi Konflik (Majority-Vote Deduplication) ─────
+    # Jika ada baris dengan vektor fitur identik tapi label berbeda, ambil label mayoritas
+    deduplicated = cleaned.groupby(FEATURE_COLUMNS)[TARGET_COLUMN].agg(
+        lambda items: items.value_counts().index[0]
+    ).reset_index()
+
+    x_full = deduplicated[FEATURE_COLUMNS].astype(int)
+    y_full = deduplicated[TARGET_COLUMN].astype(int)
     quality_summary = training_quality_summary(x_full, y_full)
     x_eval_train, x_valid, y_eval_train, y_valid, validation_strategy = split_training_dataset(x_full, y_full)
     
@@ -275,7 +280,8 @@ def train_and_save_models(
 
     # ─── Naive Bayes: dengan Laplace smoothing dan class prior proporsional ─────
     class_prior = compute_class_prior(y_full)
-    nb_base_categories = [2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3] # 5 binary + 8 ordinal
+    # 5 binary (2), 5 ordinal (5), 1 status_orangtua (3), 1 status_rumah (4), 1 daya_listrik (5)
+    nb_base_categories = [2, 2, 2, 2, 2, 5, 5, 5, 5, 5, 3, 4, 5]
     nb_min_categories = nb_base_categories + [2] + [6] # + rendah_tanpa_bantuan(2) + skor_bantuan_sosial(6)
     
     nb_params = {
@@ -396,10 +402,10 @@ def train_and_save_models(
         "Threshold dipilih memakai 10-Fold CV."
     )
     
-    if quality_summary["conflicting_feature_vectors"] > 0:
+    if len(deduplicated) < len(cleaned):
         note += (
-            f" Ditemukan {quality_summary['conflicting_feature_vectors']} kombinasi fitur "
-            "dengan label berbeda; tetap dilatih karena keputusan admin valid."
+            f" Dilakukan resolusi konflik (majority-vote deduplication) mengurangi "
+            f"{len(cleaned)} baris menjadi {len(deduplicated)} baris unik."
         )
 
     version_record = persist_model_version_record(

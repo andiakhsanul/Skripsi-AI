@@ -185,13 +185,13 @@ class AdminTrainingDataReviewService
     {
         return [
             'binary' => 'KIP/PKH/KKS/DTKS/SKTM: 0 = Tidak, 1 = Ya',
-            'ordinal' => 'Ordinal: 1 = prioritas tertinggi, 3 = prioritas lebih rendah',
-            'income' => 'Penghasilan: 1 = < 1jt, 2 = 1jt - < 4jt, 3 = ≥ 4jt',
-            'dependents' => 'Jumlah tanggungan: 1 = ≥ 6, 2 = 4 - 5, 3 = 0 - 3',
-            'child' => 'Anak ke-: 1 = ≥ 5, 2 = 3 - 4, 3 = 1 - 2',
+            'ordinal' => 'Ordinal: 1 = prioritas tertinggi, 5 = prioritas lebih rendah',
+            'income' => 'Penghasilan: 1 = Rp0, 2 = < 1jt, 3 = 1-2jt, 4 = 2-4jt, 5 = ≥ 4jt',
+            'dependents' => 'Jumlah tanggungan: 1 = ≥ 6, 2 = 5, 3 = 4, 4 = 2-3, 5 = ≤ 1',
+            'child' => 'Anak ke-: 1 = ≥ 5, 2 = 4, 3 = 3 (atau tidak diketahui), 4 = 2, 5 = 1',
             'parent' => 'Status orang tua: 1 = yatim piatu, 2 = yatim/piatu, 3 = lengkap',
-            'house' => 'Status rumah: 1 = tidak memiliki, 2 = sewa/menumpang, 3 = milik sendiri',
-            'power' => 'Daya listrik: 1 = non-PLN/tidak ada, 2 = 450-900 VA, 3 = > 900 VA',
+            'house' => 'Status rumah: 1 = tidak memiliki, 2 = menumpang, 3 = sewa, 4 = milik sendiri',
+            'power' => 'Daya listrik: 1 = non-PLN, 2 = 450 VA, 3 = 900 VA, 4 = 1300 VA, 5 = > 1300 VA',
             'label' => 'Label akhir: Layak = 0, Indikasi = 1',
         ];
     }
@@ -207,19 +207,25 @@ class AdminTrainingDataReviewService
                 1 => '1 - Ya',
             ],
             'income' => [
-                1 => '1 - < Rp1.000.000',
-                2 => '2 - Rp1.000.000 s.d. < Rp4.000.000',
-                3 => '3 - ≥ Rp4.000.000',
+                1 => '1 - Rp0 / Tidak Berpenghasilan',
+                2 => '2 - < Rp1.000.000',
+                3 => '3 - Rp1.000.000 s.d. < Rp2.000.000',
+                4 => '4 - Rp2.000.000 s.d. < Rp4.000.000',
+                5 => '5 - ≥ Rp4.000.000',
             ],
             'dependents' => [
                 1 => '1 - ≥ 6 orang',
-                2 => '2 - 4 sampai 5 orang',
-                3 => '3 - 0 sampai 3 orang',
+                2 => '2 - 5 orang',
+                3 => '3 - 4 orang',
+                4 => '4 - 2 sampai 3 orang',
+                5 => '5 - 0 sampai 1 orang',
             ],
             'child' => [
                 1 => '1 - Anak ke-5 atau lebih',
-                2 => '2 - Anak ke-3 atau ke-4',
-                3 => '3 - Anak ke-1 atau ke-2',
+                2 => '2 - Anak ke-4',
+                3 => '3 - Anak ke-3 (atau tidak diketahui)',
+                4 => '4 - Anak ke-2',
+                5 => '5 - Anak ke-1',
             ],
             'parent' => [
                 1 => '1 - Yatim Piatu',
@@ -228,13 +234,16 @@ class AdminTrainingDataReviewService
             ],
             'house' => [
                 1 => '1 - Tidak memiliki rumah',
-                2 => '2 - Sewa / Menumpang',
-                3 => '3 - Milik sendiri',
+                2 => '2 - Menumpang',
+                3 => '3 - Sewa / Kontrak',
+                4 => '4 - Milik sendiri',
             ],
             'power' => [
                 1 => '1 - Tidak ada / Non-PLN',
-                2 => '2 - PLN 450 - 900 VA',
-                3 => '3 - PLN > 900 VA',
+                2 => '2 - PLN ≤ 450 VA',
+                3 => '3 - PLN 451 - 900 VA',
+                4 => '4 - PLN 901 - 1300 VA',
+                5 => '5 - PLN > 1300 VA',
             ],
             'label' => [
                 0 => 'Layak',

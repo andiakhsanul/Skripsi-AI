@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timezone
+from typing import Optional
 from config import FLASK_INTERNAL_TOKEN
 from database import mark_model_version_as_current, fetch_model_version_record_by_id
 from model_registry import load_models_from_version_record, current_model_metadata, MODEL_REGISTRY
@@ -23,7 +24,7 @@ def activate_model_version_local(model_version_id: int) -> dict:
 
     return activated_record
 
-def serialize_datetime(value) -> str|None:
+def serialize_datetime(value) -> Optional[str]:
     if value is None:
         return None
     if isinstance(value, datetime):

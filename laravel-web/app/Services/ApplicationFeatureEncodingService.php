@@ -90,10 +90,15 @@ class ApplicationFeatureEncodingService
 
         $income = (int) $value;
 
+        if ($income === 0) {
+            return 1;
+        }
+
         return match (true) {
-            $income < 1_000_000 => 1,
-            $income < 4_000_000 => 2,
-            default => 3,
+            $income < 1_000_000 => 2,
+            $income < 2_000_000 => 3,
+            $income < 4_000_000 => 4,
+            default => 5,
         };
     }
 
@@ -109,24 +114,28 @@ class ApplicationFeatureEncodingService
 
         return match (true) {
             $dependents >= 6 => 1,
-            $dependents >= 4 => 2,
-            default => 3,
+            $dependents >= 5 => 2,
+            $dependents >= 4 => 3,
+            $dependents >= 2 => 4,
+            default => 5,
         };
     }
 
     private function encodeAnakKe(mixed $value): int
     {
-        // NULL atau 0 → fallback ke anak pertama (encode = 3, anak ke-1 atau ke-2)
-        if ($value === null || ! is_numeric($value) || (int) $value < 1) {
-            $value = 1;
+        // NULL atau 0 → fallback ke 3 (tengah-tengah)
+        if ($value === null || ! is_numeric($value) || (int) $value <= 0) {
+            return 3;
         }
 
         $childOrder = (int) $value;
 
         return match (true) {
             $childOrder >= 5 => 1,
-            $childOrder >= 3 => 2,
-            default => 3,
+            $childOrder === 4 => 2,
+            $childOrder === 3 => 3,
+            $childOrder === 2 => 4,
+            default => 5,
         };
     }
 
@@ -200,17 +209,23 @@ class ApplicationFeatureEncodingService
             return 1;
         }
 
-        if ($this->containsAny($normalized, ['sewa', 'kontrak', 'menumpang', 'menempati', 'bukan milik sendiri'])) {
-            return 2;
-        }
-
-        if ($this->containsAny($normalized, ['milik sendiri', 'rumah sendiri', 'sendiri', 'punya pribadi', 'punya sendiri', 'milik pribadi'])) {
+        if ($this->containsAny($normalized, ['sewa / menumpang'])) {
             return 3;
         }
 
-        throw ValidationException::withMessages([
-            'status_rumah_text' => ['status_rumah_text tidak bisa dipetakan ke kategori encoding.'],
-        ]);
+        if ($this->containsAny($normalized, ['menumpang'])) {
+            return 2;
+        }
+
+        if ($this->containsAny($normalized, ['sewa', 'kontrak'])) {
+            return 3;
+        }
+
+        if ($this->containsAny($normalized, ['milik sendiri', 'rumah sendiri', 'sendiri', 'punya pribadi', 'punya sendiri', 'milik pribadi'])) {
+            return 4;
+        }
+
+        return 2;
     }
 
     private function encodeDayaListrik(?string $value): int
@@ -236,8 +251,10 @@ class ApplicationFeatureEncodingService
 
         return match (true) {
             $maxValue <= 0 => 1,
-            $maxValue <= 900 => 2,
-            default => 3,
+            $maxValue <= 450 => 2,
+            $maxValue <= 900 => 3,
+            $maxValue <= 1300 => 4,
+            default => 5,
         };
     }
 

@@ -19,12 +19,16 @@ def encode_income(value, field_name: str) -> int:
     except (TypeError, ValueError):
         income = 0
         
-    if income < 1_000_000:
+    if income == 0:
         return 1
-    elif income < 4_000_000:
+    elif income < 1_000_000:
         return 2
-    else:
+    elif income < 2_000_000:
         return 3
+    elif income < 4_000_000:
+        return 4
+    else:
+        return 5
 
 def encode_jumlah_tanggungan(value) -> int:
     try:
@@ -34,25 +38,34 @@ def encode_jumlah_tanggungan(value) -> int:
         
     if dependents >= 6:
         return 1
-    elif dependents >= 4:
+    elif dependents >= 5:
         return 2
-    else:
+    elif dependents >= 4:
         return 3
+    elif dependents >= 2:
+        return 4
+    else:
+        return 5
 
 def encode_anak_ke(value) -> int:
     try:
-        child_order = int(float(value)) if value is not None else 1
-        if child_order < 1:
-            child_order = 1
+        # Fallback to 3 (middle ground) for unknown/0
+        child_order = int(float(value)) if value is not None and str(value).strip() != "" else 0
+        if child_order <= 0:
+            return 3
     except (TypeError, ValueError):
-        child_order = 1
+        return 3
         
     if child_order >= 5:
         return 1
-    elif child_order >= 3:
+    elif child_order == 4:
         return 2
-    else:
+    elif child_order == 3:
         return 3
+    elif child_order == 2:
+        return 4
+    else:
+        return 5
 
 def _normalize_text(value) -> str:
     if value is None:
@@ -115,13 +128,19 @@ def encode_status_rumah(value) -> int:
     if _contains_any(normalized, ["tidak memiliki", "tidak punya rumah"]):
         return 1
         
-    if _contains_any(normalized, ["sewa", "kontrak", "menumpang", "menempati", "bukan milik sendiri"]):
+    if _contains_any(normalized, ["sewa / menumpang"]):
+        return 3 # Normalize combo to Sewa
+        
+    if _contains_any(normalized, ["menumpang"]):
         return 2
         
-    if _contains_any(normalized, ["milik sendiri", "rumah sendiri", "sendiri", "punya pribadi", "punya sendiri", "milik pribadi"]):
+    if _contains_any(normalized, ["sewa", "kontrak"]):
         return 3
         
-    # If unmapped, default to 2 to be safe
+    if _contains_any(normalized, ["milik sendiri", "rumah sendiri", "sendiri", "punya pribadi", "punya sendiri", "milik pribadi"]):
+        return 4
+        
+    # If unmapped empty or else, fallback to 2 (Menumpang)
     return 2
 
 def encode_daya_listrik(value) -> int:
@@ -132,15 +151,19 @@ def encode_daya_listrik(value) -> int:
         
     numbers = [int(num) for num in re.findall(r'\d+', normalized)]
     if not numbers:
-        return 2
+        return 2 # Fallback to 2 (450VA) if unknown
         
     max_value = max(numbers)
     if max_value <= 0:
         return 1
-    elif max_value <= 900:
+    elif max_value <= 450:
         return 2
-    else:
+    elif max_value <= 900:
         return 3
+    elif max_value <= 1300:
+        return 4
+    else:
+        return 5
 
 def encode_application_features(raw_data: dict) -> dict:
     """Takes raw application string/number data and encodes it using authoritative rules."""
@@ -180,8 +203,12 @@ def validate_encoded_features(payload: dict) -> dict:
             parsed_value = int(payload[feature])
             if feature in BINARY_FEATURES and parsed_value not in (0, 1):
                 raise ValueError(f"Field {feature} wajib bernilai 0 atau 1 (biner). Nilai: {parsed_value}")
-            elif feature in ORDINAL_FEATURES and parsed_value not in (1, 2, 3):
-                raise ValueError(f"Field {feature} wajib bernilai 1, 2, atau 3 (ordinal). Nilai: {parsed_value}")
+            elif feature == "status_rumah" and parsed_value not in (1, 2, 3, 4):
+                raise ValueError(f"Field {feature} wajib bernilai 1.4 (ordinal). Nilai: {parsed_value}")
+            elif feature == "status_orangtua" and parsed_value not in (1, 2, 3):
+                raise ValueError(f"Field {feature} wajib bernilai 1..3 (ordinal). Nilai: {parsed_value}")
+            elif feature in ORDINAL_FEATURES and feature not in ("status_rumah", "status_orangtua") and parsed_value not in (1, 2, 3, 4, 5):
+                raise ValueError(f"Field {feature} wajib bernilai 1..5 (ordinal). Nilai: {parsed_value}")
             values[feature] = parsed_value
         except (TypeError, ValueError) as exc:
             raise ValueError(f"Nilai fitur {feature} harus berupa angka yang valid") from exc

@@ -59,6 +59,7 @@ services:
       context: ./flask-ml-api
       dockerfile: Dockerfile
     container_name: spk_flask_api
+    command: gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app:app
     restart: always
     env_file:
       - ./flask-ml-api/.env
@@ -69,6 +70,7 @@ services:
       db:
         condition: service_healthy
     volumes:
+      - ./flask-ml-api:/app
       - ./flask-ml-api/models:/app/models
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/api/health')"]
