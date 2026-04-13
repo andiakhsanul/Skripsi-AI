@@ -74,16 +74,27 @@ class HouseStatusReviewController extends Controller
             'house_state' => ['nullable', 'string', Rule::in(['missing', 'filled'])],
             'applications' => ['required', 'array', 'min:1'],
             'applications.*.id' => ['required', 'integer', 'distinct', Rule::exists('student_applications', 'id')],
+            'applications.*.kip' => ['nullable', 'integer', Rule::in([0, 1])],
+            'applications.*.pkh' => ['nullable', 'integer', Rule::in([0, 1])],
+            'applications.*.kks' => ['nullable', 'integer', Rule::in([0, 1])],
+            'applications.*.dtks' => ['nullable', 'integer', Rule::in([0, 1])],
+            'applications.*.sktm' => ['nullable', 'integer', Rule::in([0, 1])],
+            'applications.*.penghasilan_ayah_rupiah' => ['nullable', 'integer', 'min:0'],
+            'applications.*.penghasilan_ibu_rupiah' => ['nullable', 'integer', 'min:0'],
+            'applications.*.jumlah_tanggungan_raw' => ['nullable', 'integer', 'min:0'],
+            'applications.*.anak_ke_raw' => ['nullable', 'integer', 'min:0'],
+            'applications.*.status_orangtua_text' => ['nullable', 'string', 'max:255'],
             'applications.*.status_rumah_text' => ['nullable', 'string', 'max:255', Rule::in($this->houseStatusReviewService->houseStatusOptions())],
+            'applications.*.daya_listrik_text' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $result = $this->houseStatusReviewService->batchUpdateHouseStatuses(
+        $result = $this->houseStatusReviewService->batchUpdateRawData(
             array_values($validated['applications']),
             (int) $request->user()->id,
         );
 
         $message = $result['updated'] === 0
-            ? 'Tidak ada perubahan status rumah pada halaman ini.'
+            ? 'Tidak ada perubahan data mentah pada halaman ini.'
             : "Tersimpan {$result['updated']} perubahan. Artefak lama yang dibersihkan: {$result['cleared_snapshots']} snapshot, {$result['cleared_encodings']} encoding, {$result['cleared_training_rows']} baris training.";
 
         return redirect()

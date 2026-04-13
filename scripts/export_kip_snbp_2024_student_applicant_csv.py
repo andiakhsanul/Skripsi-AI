@@ -287,7 +287,7 @@ def resolve_decision(label: str) -> tuple[str, str]:
     normalized = normalize_text(label)
     if normalized == "layak":
         return "Verified", "Verified"
-    if "indikasi" in normalized or "tidak layak" in normalized:
+    if contains_any(normalized, ["indikasi", "tidak layak", "survey", "wawancara"]):
         return "Rejected", "Rejected"
     return "Submitted", ""
 
@@ -493,7 +493,7 @@ def main() -> int:
         },
         "manual_review_rows": len(review_rows),
         "cleaning_note_counts": dict(note_counts),
-        "assumption": "KIP/PKH/KKS dibaca dari kolom Kartu Miskin, DTKS dari Kartu Miskin atau SKTM, SKTM dari kolom SKTM. LAYAK dipetakan ke Verified; INDIKASI/Tidak Layak ke Rejected; SURVEY/WAWANCARA tetap Submitted agar tidak otomatis masuk training final.",
+        "assumption": "KIP/PKH/KKS dibaca dari kolom Kartu Miskin, DTKS dari Kartu Miskin atau SKTM, SKTM dari kolom SKTM. LAYAK dipetakan ke Verified; INDIKASI/Tidak Layak/SURVEY/WAWANCARA dipetakan ke Rejected karena sudah dianggap Indikasi oleh admin offline.",
     }
 
     applicant_path = output_dir / "kip_snbp_2024_student_applications_draft.csv"

@@ -13,6 +13,23 @@ class AdminHouseStatusReviewService
     /**
      * @return list<string>
      */
+    private function requiredRawFields(): array
+    {
+        return [
+            'penghasilan_ayah_rupiah',
+            'penghasilan_ibu_rupiah',
+            'penghasilan_gabungan_rupiah',
+            'jumlah_tanggungan_raw',
+            'anak_ke_raw',
+            'status_orangtua_text',
+            'status_rumah_text',
+            'daya_listrik_text',
+        ];
+    }
+
+    /**
+     * @return list<string>
+     */
     public function houseStatusOptions(): array
     {
         return [
@@ -20,6 +37,17 @@ class AdminHouseStatusReviewService
             'Sewa',
             'Menumpang',
             'Milik sendiri',
+        ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function binaryOptions(): array
+    {
+        return [
+            0 => 'Tidak',
+            1 => 'Ya',
         ];
     }
 
@@ -32,12 +60,7 @@ class AdminHouseStatusReviewService
             ->where('submission_source', 'offline_admin_import');
 
         $total = (clone $baseQuery)->count();
-        $pending = (clone $baseQuery)
-            ->where(function (Builder $query): void {
-                $query->whereNull('status_rumah_text')
-                    ->orWhere('status_rumah_text', '');
-            })
-            ->count();
+        $pending = $this->applyIncompleteRawDataScope(clone $baseQuery)->count();
 
         return [
             'total_offline' => $total,
@@ -62,11 +85,11 @@ class AdminHouseStatusReviewService
                     'icon' => 'dataset',
                 ],
                 [
-                    'label' => 'Perlu Koreksi Rumah',
+                    'label' => 'Perlu Dilengkapi',
                     'value' => number_format($summary['pending_house_review']),
-                    'hint' => 'Status rumah masih kosong dan perlu Anda isi',
+                    'hint' => 'Ada data mentah wajib yang masih kosong',
                     'tone' => 'bg-error-container text-error',
-                    'icon' => 'home_work',
+                    'icon' => 'edit_note',
                 ],
                 [
                     'label' => 'Sudah Lengkap',
@@ -77,15 +100,16 @@ class AdminHouseStatusReviewService
                 ],
             ],
             'filter_options' => [
-                '' => 'Semua status rumah',
+                '' => 'Semua data',
                 'missing' => 'Perlu dilengkapi',
-                'filled' => 'Sudah diisi',
+                'filled' => 'Data wajib lengkap',
             ],
+            'binary_options' => $this->binaryOptions(),
             'house_status_options' => $this->houseStatusOptions(),
             'guides' => [
                 'Halaman ini hanya memperbaiki data mentah, belum menyentuh data training.',
-                'Pilih status rumah yang paling sesuai berdasarkan dokumen pendukung mahasiswa.',
-                'Jika status rumah diubah setelah ada encoding atau snapshot, sistem akan menghapus artefak lama agar sinkron kembali.',
+                'Lengkapi kartu pendukung, penghasilan, tanggungan, status orang tua, rumah, dan listrik berdasarkan dokumen pendukung.',
+                'Draft isian disimpan di browser. Jika session habis sebelum submit, nilai yang belum tersimpan akan dipulihkan saat halaman dibuka lagi.',
             ],
         ];
     }
@@ -116,19 +140,55 @@ class AdminHouseStatusReviewService
             )
             ->when(
                 ($filters['house_state'] ?? '') === 'missing',
-                fn (Builder $query) => $query->where(function (Builder $scopedQuery): void {
-                    $scopedQuery->whereNull('status_rumah_text')
-                        ->orWhere('status_rumah_text', '');
-                })
+                fn (Builder $query) => $this->applyIncompleteRawDataScope($query)
             )
             ->when(
                 ($filters['house_state'] ?? '') === 'filled',
-                fn (Builder $query) => $query->whereNotNull('status_rumah_text')->where('status_rumah_text', '!=', '')
+                fn (Builder $query) => $this->applyCompleteRawDataScope($query)
             )
-            ->orderByRaw("CASE WHEN status_rumah_text IS NULL OR status_rumah_text = '' THEN 0 ELSE 1 END ASC")
+            ->orderByRaw($this->missingSortExpression())
             ->orderBy('source_row_number')
             ->paginate($perPage)
             ->withQueryString();
+    }
+
+    private function applyIncompleteRawDataScope(Builder $query): Builder
+    {
+        return $query->where(function (Builder $scopedQuery): void {
+            foreach ($this->requiredRawFields() as $field) {
+                $scopedQuery->orWhereNull($field);
+
+                if (str_ends_with($field, '_text')) {
+                    $scopedQuery->orWhere($field, '');
+                }
+            }
+        });
+    }
+
+    private function applyCompleteRawDataScope(Builder $query): Builder
+    {
+        foreach ($this->requiredRawFields() as $field) {
+            $query->whereNotNull($field);
+
+            if (str_ends_with($field, '_text')) {
+                $query->where($field, '!=', '');
+            }
+        }
+
+        return $query;
+    }
+
+    private function missingSortExpression(): string
+    {
+        return collect($this->requiredRawFields())
+            ->map(function (string $field): string {
+                if (str_ends_with($field, '_text')) {
+                    return "CASE WHEN {$field} IS NULL OR {$field} = '' THEN 0 ELSE 1 END";
+                }
+
+                return "CASE WHEN {$field} IS NULL THEN 0 ELSE 1 END";
+            })
+            ->implode(' + ');
     }
 
     public function updateHouseStatus(StudentApplication $application, ?string $statusRumahText, int $actorUserId): StudentApplication
@@ -137,10 +197,10 @@ class AdminHouseStatusReviewService
     }
 
     /**
-     * @param  array<int, array{id:int|string, status_rumah_text:?string}>  $updates
+     * @param  array<int, array<string, mixed>>  $updates
      * @return array{submitted:int, updated:int, unchanged:int, missing:int, cleared_training_rows:int, cleared_encodings:int, cleared_snapshots:int}
      */
-    public function batchUpdateHouseStatuses(array $updates, int $actorUserId): array
+    public function batchUpdateRawData(array $updates, int $actorUserId): array
     {
         $applicationIds = collect($updates)
             ->pluck('id')
@@ -175,7 +235,7 @@ class AdminHouseStatusReviewService
 
             $result = $this->applyHouseStatusUpdate(
                 $application,
-                $update['status_rumah_text'] ?? null,
+                $update,
                 $actorUserId,
             );
 
@@ -196,12 +256,39 @@ class AdminHouseStatusReviewService
     /**
      * @return array{application:StudentApplication, changed:bool, deleted_training_rows:int, deleted_encodings:int, deleted_snapshot:bool}
      */
-    private function applyHouseStatusUpdate(StudentApplication $application, ?string $statusRumahText, int $actorUserId): array
+    private function applyHouseStatusUpdate(StudentApplication $application, array|string|null $payload, int $actorUserId): array
     {
-        $newValue = blank($statusRumahText) ? null : trim((string) $statusRumahText);
-        $oldValue = blank($application->status_rumah_text) ? null : trim((string) $application->status_rumah_text);
+        $newValues = is_array($payload)
+            ? $this->normalizeRawDataPayload($payload)
+            : ['status_rumah_text' => blank($payload) ? null : trim((string) $payload)];
 
-        if ($oldValue === $newValue) {
+        $oldValues = [];
+        foreach (array_keys($newValues) as $field) {
+            $oldValues[$field] = $application->{$field};
+        }
+
+        if (array_key_exists('penghasilan_ayah_rupiah', $newValues) || array_key_exists('penghasilan_ibu_rupiah', $newValues)) {
+            $fatherIncome = $newValues['penghasilan_ayah_rupiah'] ?? $application->penghasilan_ayah_rupiah;
+            $motherIncome = $newValues['penghasilan_ibu_rupiah'] ?? $application->penghasilan_ibu_rupiah;
+            $newValues['penghasilan_gabungan_rupiah'] = $fatherIncome !== null && $motherIncome !== null
+                ? (int) $fatherIncome + (int) $motherIncome
+                : null;
+            $oldValues['penghasilan_gabungan_rupiah'] = $application->penghasilan_gabungan_rupiah;
+        }
+
+        $changedValues = [];
+        foreach ($newValues as $field => $newValue) {
+            $oldValue = $oldValues[$field] ?? null;
+            if ($this->sameRawValue($oldValue, $newValue)) {
+                continue;
+            }
+            $changedValues[$field] = [
+                'old' => $oldValue,
+                'new' => $newValue,
+            ];
+        }
+
+        if ($changedValues === []) {
             return [
                 'application' => $application->fresh(),
                 'changed' => false,
@@ -215,14 +302,14 @@ class AdminHouseStatusReviewService
         $deletedEncodings = 0;
         $hadSnapshot = false;
 
-        DB::transaction(function () use ($application, $newValue, $oldValue, $actorUserId, &$deletedTrainingRows, &$deletedEncodings, &$hadSnapshot): void {
+        DB::transaction(function () use ($application, $newValues, $changedValues, $actorUserId, &$deletedTrainingRows, &$deletedEncodings, &$hadSnapshot): void {
             $deletedTrainingRows = $application->trainingRows()->count();
             $deletedEncodings = $application->featureEncodings()->count();
             $hadSnapshot = $application->modelSnapshot()->exists();
+            $changedFieldNames = array_keys($changedValues);
+            $houseOnlyUpdate = $changedFieldNames === ['status_rumah_text'];
 
-            $application->forceFill([
-                'status_rumah_text' => $newValue,
-            ])->save();
+            $application->forceFill($newValues)->save();
 
             $application->modelSnapshot()->delete();
             $application->trainingRows()->delete();
@@ -233,11 +320,14 @@ class AdminHouseStatusReviewService
                 'actor_user_id' => $actorUserId,
                 'from_status' => $application->status,
                 'to_status' => $application->status,
-                'action' => 'updated_house_status',
-                'note' => 'Admin memperbarui status rumah pada data mentah.',
+                'action' => $houseOnlyUpdate ? 'updated_house_status' : 'updated_raw_applicant_data',
+                'note' => $houseOnlyUpdate
+                    ? 'Admin memperbarui status rumah pada data mentah.'
+                    : 'Admin memperbarui data mentah applicant offline.',
                 'metadata' => [
-                    'old_status_rumah_text' => $oldValue,
-                    'new_status_rumah_text' => $newValue,
+                    'changed_fields' => $changedValues,
+                    'old_status_rumah_text' => $changedValues['status_rumah_text']['old'] ?? null,
+                    'new_status_rumah_text' => $changedValues['status_rumah_text']['new'] ?? null,
                     'deleted_training_rows' => $deletedTrainingRows,
                     'deleted_encodings' => $deletedEncodings,
                     'deleted_snapshot' => $hadSnapshot,
@@ -256,5 +346,75 @@ class AdminHouseStatusReviewService
             'deleted_encodings' => $deletedEncodings,
             'deleted_snapshot' => $hadSnapshot,
         ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     * @return array<string, mixed>
+     */
+    private function normalizeRawDataPayload(array $payload): array
+    {
+        $integerFields = [
+            'kip',
+            'pkh',
+            'kks',
+            'dtks',
+            'sktm',
+            'penghasilan_ayah_rupiah',
+            'penghasilan_ibu_rupiah',
+            'jumlah_tanggungan_raw',
+            'anak_ke_raw',
+        ];
+        $stringFields = [
+            'status_orangtua_text',
+            'status_rumah_text',
+            'daya_listrik_text',
+        ];
+        $normalized = [];
+
+        foreach ($integerFields as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $normalized[$field] = $this->nullableInt($payload[$field]);
+        }
+
+        foreach ($stringFields as $field) {
+            if (! array_key_exists($field, $payload)) {
+                continue;
+            }
+            $normalized[$field] = $this->nullableString($payload[$field]);
+        }
+
+        return $normalized;
+    }
+
+    private function nullableInt(mixed $value): ?int
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        return (int) $value;
+    }
+
+    private function nullableString(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        $stringValue = trim((string) $value);
+
+        return $stringValue === '' ? null : $stringValue;
+    }
+
+    private function sameRawValue(mixed $oldValue, mixed $newValue): bool
+    {
+        if ($oldValue === null && $newValue === null) {
+            return true;
+        }
+
+        return (string) $oldValue === (string) $newValue;
     }
 }

@@ -166,8 +166,8 @@
                                 href="{{ route('admin.applications.house-review') }}"
                                 class="flex items-center justify-center gap-2 rounded-2xl border border-outline-variant bg-surface px-4 py-4 text-sm font-bold text-on-surface transition hover:bg-surface-container"
                             >
-                                <span class="material-symbols-outlined text-lg">home_work</span>
-                                Perbaikan Rumah
+                                <span class="material-symbols-outlined text-lg">edit_note</span>
+                                Kelengkapan Data
                             </a>
                         </div>
                     </div>

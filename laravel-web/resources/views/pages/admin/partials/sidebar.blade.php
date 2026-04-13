@@ -12,8 +12,8 @@
         ],
         [
             'key' => 'house-review',
-            'label' => 'Perbaikan Rumah',
-            'icon' => 'home_work',
+            'label' => 'Kelengkapan Data',
+            'icon' => 'edit_note',
             'href' => route('admin.applications.house-review'),
         ],
     ];

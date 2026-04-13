@@ -228,9 +228,9 @@ class AdminDashboardService
                     'detail' => 'Baris training aktif yang siap dipakai retrain',
                 ],
                 [
-                    'label' => 'Perbaikan Rumah',
+                    'label' => 'Kelengkapan Data',
                     'value' => number_format($applicationStats['pending_house_review']),
-                    'detail' => 'Applicant offline yang status rumahnya masih perlu dilengkapi',
+                    'detail' => 'Applicant offline dengan data mentah wajib yang masih kosong',
                 ],
                 [
                     'label' => 'Snapshot Siap Pakai',

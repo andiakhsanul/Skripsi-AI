@@ -1873,9 +1873,9 @@ class SaasV1FlowTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('Perbaikan Status Rumah')
+            ->assertSee('Kelengkapan Data Mentah')
             ->assertSee('Nadia Prameswari')
-            ->assertSee('Belum diisi');
+            ->assertSee('data kosong');
     }
 
     public function test_admin_can_update_house_status_without_populating_training_data(): void
@@ -2199,6 +2199,85 @@ class SaasV1FlowTest extends TestCase
         $this->assertDatabaseHas('application_status_logs', [
             'application_id' => $applicationWithoutArtifacts->id,
             'action' => 'updated_house_status',
+        ]);
+    }
+
+    public function test_admin_can_batch_update_missing_raw_applicant_data_from_one_page(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+        ]);
+
+        $application = StudentApplication::query()->create([
+            'schema_version' => 1,
+            'submission_source' => 'offline_admin_import',
+            'applicant_name' => 'Salsa Maharani',
+            'source_reference_number' => 'A-030',
+            'source_row_number' => 30,
+            'kip' => 0,
+            'pkh' => 0,
+            'kks' => 0,
+            'dtks' => 0,
+            'sktm' => 0,
+            'penghasilan_ayah_rupiah' => null,
+            'penghasilan_ibu_rupiah' => null,
+            'penghasilan_gabungan_rupiah' => null,
+            'jumlah_tanggungan_raw' => null,
+            'anak_ke_raw' => null,
+            'status_orangtua_text' => null,
+            'status_rumah_text' => null,
+            'daya_listrik_text' => null,
+            'status' => 'Submitted',
+            'admin_decision' => null,
+        ]);
+
+        $response = $this
+            ->actingAs($admin)
+            ->post(route('admin.applications.house-review.batch-update'), [
+                'q' => '',
+                'house_state' => 'missing',
+                'applications' => [
+                    [
+                        'id' => $application->id,
+                        'kip' => 1,
+                        'pkh' => 1,
+                        'kks' => 0,
+                        'dtks' => 1,
+                        'sktm' => 1,
+                        'penghasilan_ayah_rupiah' => 1500000,
+                        'penghasilan_ibu_rupiah' => 500000,
+                        'jumlah_tanggungan_raw' => 4,
+                        'anak_ke_raw' => 2,
+                        'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+                        'status_rumah_text' => 'Sewa',
+                        'daya_listrik_text' => '900',
+                    ],
+                ],
+            ]);
+
+        $response
+            ->assertRedirect(route('admin.applications.house-review', ['house_state' => 'missing']))
+            ->assertSessionHas('admin_notice');
+
+        $this->assertDatabaseHas('student_applications', [
+            'id' => $application->id,
+            'kip' => 1,
+            'pkh' => 1,
+            'dtks' => 1,
+            'sktm' => 1,
+            'penghasilan_ayah_rupiah' => 1500000,
+            'penghasilan_ibu_rupiah' => 500000,
+            'penghasilan_gabungan_rupiah' => 2000000,
+            'jumlah_tanggungan_raw' => 4,
+            'anak_ke_raw' => 2,
+            'status_orangtua_text' => 'ayah=hidup; ibu=hidup',
+            'status_rumah_text' => 'Sewa',
+            'daya_listrik_text' => '900',
+        ]);
+
+        $this->assertDatabaseHas('application_status_logs', [
+            'application_id' => $application->id,
+            'action' => 'updated_raw_applicant_data',
         ]);
     }
 
