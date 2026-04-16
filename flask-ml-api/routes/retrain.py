@@ -38,26 +38,58 @@ def retrain_model():
         if "triggered_by_email" in payload and payload["triggered_by_email"] is not None:
             triggered_by_email = str(payload["triggered_by_email"]).strip() or None
 
-        dataframe = fetch_training_dataframe(schema_version=schema_version)
-        training_result = train_and_save_models(
-            dataframe,
-            schema_version=schema_version,
-            triggered_by_user_id=triggered_by_user_id,
-            triggered_by_email=triggered_by_email,
+        import threading
+        from database import persist_model_version_record
+        from training import build_version_name
+        from datetime import datetime, timezone
+
+        trained_at = datetime.now(timezone.utc)
+        version_name = build_version_name(schema_version, trained_at, status="training")
+        
+        try:
+            persist_model_version_record({
+                "version_name": version_name,
+                "schema_version": schema_version or 1,
+                "status": "training",
+                "is_current": False,
+                "triggered_by_user_id": triggered_by_user_id,
+                "triggered_by_email": triggered_by_email,
+                "training_table": "spk_training_data",
+                "primary_model": "catboost",
+                "secondary_model": "categorical_nb",
+                "note": "Proses pelatihan sedang berjalan di latar belakang...",
+                "trained_at": trained_at,
+            })
+        except Exception:
+            pass
+            
+        def run_retrain_async(sv, uid, email):
+            try:
+                dataframe = fetch_training_dataframe(schema_version=sv)
+                train_and_save_models(
+                    dataframe,
+                    schema_version=sv,
+                    triggered_by_user_id=uid,
+                    triggered_by_email=email,
+                )
+            except Exception as exc:
+                register_failed_retrain(sv, uid, email, str(exc))
+
+        thread = threading.Thread(
+            target=run_retrain_async,
+            args=(schema_version, triggered_by_user_id, triggered_by_email)
         )
+        thread.daemon = True
+        thread.start()
 
         return (
             jsonify({
                 "status": "success",
-                "message": "Retrain model berhasil dijalankan",
+                "message": "Pelatihan ulang model sedang dikerjakan di latar belakang.",
                 "schema_version": schema_version,
-                "training_summary": training_result,
             }),
-            200,
+            202,
         )
-    except ValueError as exc:
-        register_failed_retrain(schema_version, triggered_by_user_id, triggered_by_email, str(exc))
-        return jsonify({"status": "error", "message": str(exc)}), 400
     except Exception as exc:
         register_failed_retrain(schema_version, triggered_by_user_id, triggered_by_email, str(exc))
         return (

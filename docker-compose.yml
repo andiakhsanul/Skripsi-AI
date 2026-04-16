@@ -59,7 +59,7 @@ services:
       context: ./flask-ml-api
       dockerfile: Dockerfile
     container_name: spk_flask_api
-    command: gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 300 app:app
+    command: gunicorn --bind 0.0.0.0:5000 --workers 2 --timeout 600 --graceful-timeout 600 app:app
     restart: always
     env_file:
       - ./flask-ml-api/.env

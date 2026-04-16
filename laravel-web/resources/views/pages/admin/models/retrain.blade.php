@@ -215,6 +215,12 @@
 
                     @if ($activeModelEvaluation)
                         <div class="space-y-4">
+                            @if ($activeModel->note)
+                                <div class="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-900">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.18em] text-blue-500">Summary Catatan Model</p>
+                                    <p class="mt-2 text-sm font-medium leading-relaxed">{{ $activeModel->note }}</p>
+                                </div>
+                            @endif
                             @include('pages.admin.models.partials.evaluation-card', ['metrics' => $activeModelEvaluation['catboost']])
                             @include('pages.admin.models.partials.evaluation-card', ['metrics' => $activeModelEvaluation['naive_bayes']])
                         </div>
@@ -233,6 +239,12 @@
 
                     @if ($latestReadyModelEvaluation)
                         <div class="space-y-4">
+                            @if ($latestReadyModel->note)
+                                <div class="rounded-2xl border border-slate-200 bg-surface-container-low p-5 text-slate-700">
+                                    <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-500">Summary Catatan Model</p>
+                                    <p class="mt-2 text-sm font-medium leading-relaxed">{{ $latestReadyModel->note }}</p>
+                                </div>
+                            @endif
                             @include('pages.admin.models.partials.evaluation-card', ['metrics' => $latestReadyModelEvaluation['catboost']])
                             @include('pages.admin.models.partials.evaluation-card', ['metrics' => $latestReadyModelEvaluation['naive_bayes']])
                         </div>

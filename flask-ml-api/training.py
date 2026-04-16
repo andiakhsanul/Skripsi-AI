@@ -50,6 +50,7 @@ def build_version_name(schema_version: Optional[int], trained_at: datetime, stat
     return f"{status}-{schema_token}-{suffix}"
 
 def calculate_positive_class_weight(target: pd.Series) -> float:
+    """Calculate weight ratio. Kept for metadata logging only; not used in model."""
     class_counts = target.value_counts()
     negative_count = int(class_counts.get(0, 0))
     positive_count = int(class_counts.get(1, 0))
@@ -178,21 +179,23 @@ def train_and_save_models(
     positive_class_weight = calculate_positive_class_weight(y_full)
 
     # ─── CatBoost: Optimasi 499 baris data ─────
+    # auto_class_weights='Balanced' agar CatBoost menghitung bobot kelas otomatis
+    # depth=4 untuk mengurangi overfitting pada 394 vektor unik
+    # l2_leaf_reg=8 untuk regularisasi lebih ketat (mengurangi false positives)
     cat_features_list = BINARY_FEATURES + ENGINEERED_BINARY
     catboost_eval_model = CatBoostClassifier(
-        iterations=500,        # Lebih banyak iterasi karena data ada 499
-        depth=5,               # Sedikit lebih dalam untuk 15 fitur
-        learning_rate=0.05,    
-        l2_leaf_reg=5,         # Regularisasi dikurangi karena jumlah data cukup representatif
+        iterations=500,
+        depth=4,
+        learning_rate=0.05,
+        l2_leaf_reg=8,
         random_strength=2,
         bagging_temperature=1,
-        border_count=32,       # Kurangi border_count untuk fitur ordinal kecil (1-3)
-        min_data_in_leaf=5,    # Leaf bisa lebih spesifik
+        border_count=32,
+        min_data_in_leaf=7,
         verbose=False,
         random_seed=42,
-        eval_metric="F1",
-        class_weights=[1.0, positive_class_weight],
-        auto_class_weights=None,
+        eval_metric="BalancedAccuracy",
+        auto_class_weights="Balanced",
     )
 
     if x_valid is not None and y_valid is not None:
@@ -214,17 +217,17 @@ def train_and_save_models(
         CatBoostClassifier,
         {
             "iterations": 500,
-            "depth": 5,
+            "depth": 4,
             "learning_rate": 0.05,
-            "l2_leaf_reg": 5,
+            "l2_leaf_reg": 8,
             "random_strength": 2,
             "bagging_temperature": 1,
-            "min_data_in_leaf": 5,
+            "min_data_in_leaf": 7,
             "border_count": 32,
             "verbose": False,
             "random_seed": 42,
-            "eval_metric": "F1",
-            "class_weights": [1.0, positive_class_weight],
+            "eval_metric": "BalancedAccuracy",
+            "auto_class_weights": "Balanced",
         },
         x_full,
         y_full,
@@ -234,7 +237,7 @@ def train_and_save_models(
         beta=POSITIVE_F_BETA,
     )
 
-    if cb_threshold_metrics["threshold"] < 0.30:
+    if cb_threshold_metrics["threshold"] < 0.40:
         cb_threshold_metrics["threshold"] = DEFAULT_POSITIVE_THRESHOLD
 
     if x_valid is not None and y_valid is not None:
@@ -263,17 +266,17 @@ def train_and_save_models(
 
     catboost_model = CatBoostClassifier(
         iterations=500,
-        depth=5,
+        depth=4,
         learning_rate=0.05,
-        l2_leaf_reg=5,
+        l2_leaf_reg=8,
         random_strength=2,
         bagging_temperature=1,
         border_count=32,
-        min_data_in_leaf=5,
+        min_data_in_leaf=7,
         verbose=False,
         random_seed=42,
-        eval_metric="F1",
-        class_weights=[1.0, positive_class_weight],
+        eval_metric="BalancedAccuracy",
+        auto_class_weights="Balanced",
     )
     catboost_model.fit(x_full, y_full, cat_features=cat_features_list)
     cb_final_train_accuracy = float(accuracy_score(y_full, catboost_model.predict(x_full)))
@@ -339,7 +342,7 @@ def train_and_save_models(
         beta=POSITIVE_F_BETA,
     )
 
-    if nb_threshold_metrics["threshold"] < 0.30:
+    if nb_threshold_metrics["threshold"] < 0.40:
         nb_threshold_metrics["threshold"] = DEFAULT_POSITIVE_THRESHOLD
 
     if nb_x_valid is not None and y_valid is not None:
@@ -397,9 +400,9 @@ def train_and_save_models(
     }
 
     note = (
-        "CatBoost dioptimasi untuk 499 baris data (depth=5, iter=500, l2=5). "
+        "CatBoost dioptimasi untuk precision tinggi (depth=4, iter=500, l2=8, auto_class_weights=Balanced). "
         "Categorical NB diaktifkan dengan prior proporsional dan Isotonic calibration. "
-        "Threshold dipilih memakai 10-Fold CV."
+        "Threshold dipilih memakai 10-Fold CV dengan minimum floor 0.40."
     )
     
     if len(deduplicated) < len(cleaned):

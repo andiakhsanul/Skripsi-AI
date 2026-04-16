@@ -128,7 +128,7 @@ class MlGatewayService
         $retrainUrl = env('FLASK_RETRAIN_URL', 'http://flask-api:5000/api/retrain');
         $internalToken = env('FLASK_INTERNAL_TOKEN', 'spk_internal_dev_token');
 
-        $response = Http::timeout(120)
+        $response = Http::timeout(540)
             ->retry(1, 300)
             ->withHeaders([
                 'X-Internal-Token' => $internalToken,

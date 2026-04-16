@@ -16,7 +16,11 @@
             </span>
         </div>
 
-        <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div class="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
+            <div class="rounded-xl bg-white px-4 py-3">
+                <p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Accuracy</p>
+                <p class="mt-1 text-lg font-black text-primary">{{ number_format((float) ($metrics['accuracy'] ?? 0), 4) }}</p>
+            </div>
             <div class="rounded-xl bg-white px-4 py-3">
                 <p class="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Precision Indikasi</p>
                 <p class="mt-1 text-lg font-black text-on-surface">{{ number_format((float) ($metrics['precision_indikasi'] ?? 0), 4) }}</p>

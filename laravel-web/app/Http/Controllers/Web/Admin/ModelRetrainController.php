@@ -60,15 +60,12 @@ class ModelRetrainController extends Controller
                 ]);
         }
 
-        $trainingSummary = $result['ml_response']['training_summary'] ?? [];
-        $rowsUsed = $trainingSummary['rows_used'] ?? $result['training_rows'];
-
         return redirect()
             ->route('admin.models.retrain')
             ->with('admin_notice', [
                 'type' => 'success',
-                'title' => 'Retrain model berhasil',
-                'message' => "Schema v{$result['schema_version']} dilatih ulang menggunakan {$rowsUsed} data aktif.",
+                'title' => 'Retrain Model Diproses',
+                'message' => 'Permintaan mulai diproses di latar belakang. Silakan muat ulang halaman ini dalam beberapa menit untuk melihat hasilnya.',
             ]);
     }
 
