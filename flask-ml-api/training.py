@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from catboost import CatBoostClassifier
 from sklearn.calibration import CalibratedClassifierCV
-from sklearn.metrics import accuracy_score, roc_auc_score, cohen_kappa_score, matthews_corrcoef
+from sklearn.metrics import accuracy_score, cohen_kappa_score, matthews_corrcoef
 from sklearn.model_selection import train_test_split, StratifiedKFold
 
 from sklearn.naive_bayes import CategoricalNB
@@ -203,16 +203,11 @@ def compute_cv_accuracy(model_class, model_params, x, y, cat_features, is_naive_
 
 
 def build_extended_evaluation(y_true, probabilities, threshold, dataset_label):
-    """Bangun evaluasi yang diperluas dengan ROC-AUC, Kappa, MCC."""
+    """Bangun evaluasi yang diperluas dengan Kappa dan MCC (ROC-AUC sudah ada di base)."""
     base_metrics = build_evaluation_metrics(y_true, probabilities, threshold, dataset_label)
 
     y_true_list = [int(v) for v in y_true]
     y_pred = [1 if float(p) >= threshold else 0 for p in probabilities]
-
-    try:
-        roc_auc = round(float(roc_auc_score(y_true_list, probabilities)), 4)
-    except ValueError:
-        roc_auc = None
 
     try:
         kappa = round(float(cohen_kappa_score(y_true_list, y_pred)), 4)
@@ -224,7 +219,6 @@ def build_extended_evaluation(y_true, probabilities, threshold, dataset_label):
     except Exception:
         mcc = None
 
-    base_metrics["roc_auc"] = roc_auc
     base_metrics["cohen_kappa"] = kappa
     base_metrics["matthews_corrcoef"] = mcc
     return base_metrics

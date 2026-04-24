@@ -7,6 +7,7 @@ from sklearn.metrics import (
     fbeta_score,
     precision_score,
     recall_score,
+    roc_auc_score,
 )
 from sklearn.model_selection import StratifiedKFold
 from config import DEFAULT_POSITIVE_THRESHOLD, POSITIVE_F_BETA
@@ -174,15 +175,38 @@ def build_evaluation_metrics(y_true: pd.Series, probabilities, threshold: float,
     predicted_values = [1 if float(probability) >= threshold else 0 for probability in probabilities]
     tn, fp, fn, tp = confusion_matrix(y_true_values, predicted_values, labels=[0, 1]).ravel()
 
+    try:
+        roc_auc = round(float(roc_auc_score(y_true_values, [float(p) for p in probabilities])), 4)
+    except ValueError:
+        roc_auc = None
+
     return {
         "evaluation_dataset": evaluation_dataset,
         "threshold": round(float(threshold), 4),
+        # Overall
         "accuracy": round(float(accuracy_score(y_true_values, predicted_values)), 4),
         "balanced_accuracy": round(float(balanced_accuracy_score(y_true_values, predicted_values)), 4),
-        "precision_indikasi": round(float(precision_score(y_true_values, predicted_values, zero_division=0)), 4),
-        "recall_indikasi": round(float(recall_score(y_true_values, predicted_values, zero_division=0)), 4),
-        "f1_indikasi": round(float(f1_score(y_true_values, predicted_values, zero_division=0)), 4),
-        "fbeta_indikasi": round(float(fbeta_score(y_true_values, predicted_values, beta=POSITIVE_F_BETA, zero_division=0)), 4),
+        "roc_auc": roc_auc,
+        # Kelas 0 — Layak
+        "precision_layak": round(float(precision_score(y_true_values, predicted_values, pos_label=0, zero_division=0)), 4),
+        "recall_layak": round(float(recall_score(y_true_values, predicted_values, pos_label=0, zero_division=0)), 4),
+        "f1_layak": round(float(f1_score(y_true_values, predicted_values, pos_label=0, zero_division=0)), 4),
+        "support_layak": int(y_true_values.count(0)),
+        # Kelas 1 — Indikasi
+        "precision_indikasi": round(float(precision_score(y_true_values, predicted_values, pos_label=1, zero_division=0)), 4),
+        "recall_indikasi": round(float(recall_score(y_true_values, predicted_values, pos_label=1, zero_division=0)), 4),
+        "f1_indikasi": round(float(f1_score(y_true_values, predicted_values, pos_label=1, zero_division=0)), 4),
+        "fbeta_indikasi": round(float(fbeta_score(y_true_values, predicted_values, beta=POSITIVE_F_BETA, pos_label=1, zero_division=0)), 4),
+        "support_indikasi": int(y_true_values.count(1)),
+        # Macro average
+        "precision_macro": round(float(precision_score(y_true_values, predicted_values, average="macro", zero_division=0)), 4),
+        "recall_macro": round(float(recall_score(y_true_values, predicted_values, average="macro", zero_division=0)), 4),
+        "f1_macro": round(float(f1_score(y_true_values, predicted_values, average="macro", zero_division=0)), 4),
+        # Weighted average
+        "precision_weighted": round(float(precision_score(y_true_values, predicted_values, average="weighted", zero_division=0)), 4),
+        "recall_weighted": round(float(recall_score(y_true_values, predicted_values, average="weighted", zero_division=0)), 4),
+        "f1_weighted": round(float(f1_score(y_true_values, predicted_values, average="weighted", zero_division=0)), 4),
+        # Confusion matrix
         "confusion_matrix": {
             "tn": int(tn),
             "fp": int(fp),
