@@ -48,11 +48,16 @@ def select_threshold_with_cv(
     X: pd.DataFrame,
     y: pd.Series,
     cat_features: list[str],
-    n_splits: int = 10,
+    n_splits: int = 5,
     is_naive_bayes: bool = False,
     beta: float = POSITIVE_F_BETA,
+    cancel_check=None,
 ) -> dict:
-    """Use Stratified K-Fold cross-validation for more robust threshold selection."""
+    """Use Stratified K-Fold cross-validation for more robust threshold selection.
+    
+    Args:
+        cancel_check: Optional callable that raises if training is cancelled.
+    """
     if len(y) < n_splits * 2:
         # Fallback to smaller splits if data is tiny
         if len(y) > 4:
@@ -75,6 +80,9 @@ def select_threshold_with_cv(
     all_labels = []
 
     for train_idx, val_idx in skf.split(X, y):
+        if cancel_check:
+            cancel_check("cv_threshold_fold")
+
         X_fold_train = X.iloc[train_idx]
         y_fold_train = y.iloc[train_idx]
         X_fold_val = X.iloc[val_idx]

@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 from config import FLASK_INTERNAL_TOKEN
 from database import fetch_training_dataframe, purge_all_training_data, purge_model_artifacts
 from training import train_and_save_models, register_failed_retrain
+from training_manager import training_manager, TrainingCancelled
 
 retrain_bp = Blueprint("retrain", __name__)
 
@@ -40,6 +41,14 @@ def retrain_model():
 
         purge_training = bool(payload.get("purge_training", False))
 
+        # Cek apakah training sedang berjalan
+        if training_manager.is_running:
+            return jsonify({
+                "status": "error",
+                "message": "Training sedang berjalan. Hentikan dulu sebelum memulai yang baru.",
+                "current_training": training_manager.get_status(),
+            }), 409
+
         import threading
         from database import persist_model_version_record
         from training import build_version_name
@@ -67,9 +76,6 @@ def retrain_model():
             pass
 
         # Jika purge diminta, hapus artifact model lama secara sinkron
-        # sebelum thread async dimulai, agar model baru tidak bercampur dengan model lama.
-        # CATATAN: Training data di DB (spk_training_data) dikelola oleh Laravel,
-        # Flask hanya membersihkan file model .joblib yang sudah tidak diperlukan.
         purge_summary = {}
         if purge_training:
             deleted_files = purge_model_artifacts()
@@ -81,18 +87,33 @@ def retrain_model():
         def run_retrain_async(sv, uid, email):
             import logging
             logger = logging.getLogger("retrain_thread")
+
+            if not training_manager.start():
+                logger.error("[RETRAIN] Cannot start: another training is running")
+                return
+
             try:
+                training_manager.advance_step("fetching_data")
                 logger.info(f"[RETRAIN] Starting training with schema_version={sv}")
                 dataframe = fetch_training_dataframe(schema_version=sv)
                 logger.info(f"[RETRAIN] Fetched {len(dataframe)} training rows")
+
                 result = train_and_save_models(
                     dataframe,
                     schema_version=sv,
                     triggered_by_user_id=uid,
                     triggered_by_email=email,
                 )
-                logger.info(f"[RETRAIN] Training completed successfully: {result.get('version_name', 'unknown')}")
+                training_manager.finish(result)
+                logger.info(f"[RETRAIN] Training completed: {result.get('model_version_name', 'unknown')}")
+
+            except TrainingCancelled as exc:
+                training_manager.mark_cancelled()
+                logger.info(f"[RETRAIN] Training cancelled: {exc}")
+                register_failed_retrain(sv, uid, email, f"Dibatalkan: {exc}")
+
             except Exception as exc:
+                training_manager.fail(str(exc))
                 logger.error(f"[RETRAIN] Training failed: {exc}", exc_info=True)
                 register_failed_retrain(sv, uid, email, str(exc))
 
@@ -103,12 +124,15 @@ def retrain_model():
         )
         thread.daemon = False
         thread.start()
+        training_manager.set_thread(thread)
 
         response_payload = {
             "status": "success",
             "message": "Pelatihan ulang model sedang dikerjakan di latar belakang.",
             "schema_version": schema_version,
             "purge_training": purge_training,
+            "training_status_url": "/api/training/status",
+            "training_cancel_url": "/api/training/cancel",
         }
         if purge_summary:
             response_payload["purge_summary"] = purge_summary
@@ -125,3 +149,30 @@ def retrain_model():
             }),
             500,
         )
+
+
+@retrain_bp.route("/api/training/status", methods=["GET"])
+def training_status():
+    """Cek status training yang sedang/sudah berjalan."""
+    status = training_manager.get_status()
+    return jsonify({"status": "success", "training": status}), 200
+
+
+@retrain_bp.route("/api/training/cancel", methods=["POST"])
+def cancel_training():
+    """Hentikan training yang sedang berjalan."""
+    if not check_internal_token():
+        return jsonify({"status": "error", "message": "Token internal tidak valid"}), 401
+
+    if training_manager.cancel():
+        return jsonify({
+            "status": "success",
+            "message": "Sinyal pembatalan telah dikirim. Training akan berhenti di checkpoint berikutnya.",
+            "training": training_manager.get_status(),
+        }), 200
+    else:
+        return jsonify({
+            "status": "info",
+            "message": "Tidak ada training yang sedang berjalan.",
+            "training": training_manager.get_status(),
+        }), 200
