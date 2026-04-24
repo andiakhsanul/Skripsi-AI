@@ -52,14 +52,14 @@ class ParameterSchemaService
             'dtks' => ['required', 'integer', 'in:0,1'],
             'sktm' => ['required', 'integer', 'in:0,1'],
 
-            'penghasilan_gabungan' => ['required', 'integer', 'in:1,2,3'],
-            'penghasilan_ayah' => ['required', 'integer', 'in:1,2,3'],
-            'penghasilan_ibu' => ['required', 'integer', 'in:1,2,3'],
-            'jumlah_tanggungan' => ['required', 'integer', 'in:1,2,3'],
-            'anak_ke' => ['required', 'integer', 'in:1,2,3'],
+            'penghasilan_gabungan' => ['required', 'integer', 'in:1,2,3,4,5'],
+            'penghasilan_ayah' => ['required', 'integer', 'in:1,2,3,4,5'],
+            'penghasilan_ibu' => ['required', 'integer', 'in:1,2,3,4,5'],
+            'jumlah_tanggungan' => ['required', 'integer', 'in:1,2,3,4,5'],
+            'anak_ke' => ['required', 'integer', 'in:1,2,3,4,5'],
             'status_orangtua' => ['required', 'integer', 'in:1,2,3'],
-            'status_rumah' => ['required', 'integer', 'in:1,2,3'],
-            'daya_listrik' => ['required', 'integer', 'in:1,2,3'],
+            'status_rumah' => ['required', 'integer', 'in:1,2,3,4'],
+            'daya_listrik' => ['required', 'integer', 'in:1,2,3,4,5'],
         ]);
 
         if ($baseValidator->fails()) {

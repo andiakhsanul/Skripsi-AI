@@ -18,7 +18,8 @@ class ApplicationController extends Controller
         private readonly TrainingDataSyncService $trainingDataSyncService,
         private readonly AdminApplicationReviewService $reviewService,
         private readonly AdminTrainingDataReviewService $trainingDataReviewService,
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): JsonResponse
     {
@@ -30,15 +31,15 @@ class ApplicationController extends Controller
 
         $applications = StudentApplication::query()
             ->with(['student:id,name,email', 'currentEncoding', 'modelSnapshot'])
-            ->when($validated['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
+            ->when($validated['status'] ?? null, fn($query, $status) => $query->where('status', $status))
             ->when(
                 $validated['review_priority'] ?? null,
-                fn ($query, $priority) => $query->whereHas(
+                fn($query, $priority) => $query->whereHas(
                     'modelSnapshot',
-                    fn ($snapshotQuery) => $snapshotQuery->where('review_priority', $priority)
+                    fn($snapshotQuery) => $snapshotQuery->where('review_priority', $priority)
                 )
             )
-            ->when($validated['year'] ?? null, fn ($query, $year) => $query->whereYear('created_at', $year))
+            ->when($validated['year'] ?? null, fn($query, $year) => $query->whereYear('created_at', $year))
             ->orderByDesc('created_at')
             ->get();
 

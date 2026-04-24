@@ -13,7 +13,8 @@ class TrainingDataCorrectionController extends Controller
 {
     public function __construct(
         private readonly AdminTrainingDataReviewService $trainingDataReviewService,
-    ) {}
+    ) {
+    }
 
     public function show(Request $request, int $application): View|RedirectResponse
     {
