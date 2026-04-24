@@ -302,4 +302,45 @@ class AdminApplicationReviewService
 
         return $this->detail($applicationId);
     }
+
+    /**
+     * Admin mengkonfirmasi apakah hasil AI benar atau salah setelah memberi keputusan final.
+     *
+     * @return array{training_row: \App\Models\SpkTrainingData, ai_correct: bool}
+     */
+    public function confirmAiRecommendation(int $applicationId, int $adminUserId, bool $aiCorrect, ?string $correctionNote = null): array
+    {
+        $application = StudentApplication::query()
+            ->with(['modelSnapshot', 'latestTrainingRow'])
+            ->findOrFail($applicationId);
+
+        if (! in_array($application->status, ['Verified', 'Rejected'], true)) {
+            throw new DomainException('Konfirmasi AI hanya bisa dilakukan setelah pengajuan difinalisasi.');
+        }
+
+        $trainingRow = $application->latestTrainingRow;
+        if (! $trainingRow) {
+            throw new DomainException('Data training belum tersedia. Lakukan sinkronisasi terlebih dahulu.');
+        }
+
+        if ($aiCorrect) {
+            // AI benar: tandai admin_corrected = true, data siap training
+            $trainingRow->update([
+                'admin_corrected' => true,
+                'correction_note' => $correctionNote ?? 'Hasil AI dikonfirmasi benar oleh admin.',
+            ]);
+        } else {
+            // AI salah: tandai admin_corrected = true juga (karena admin sudah review)
+            // tapi label sudah mengikuti keputusan admin (Verified/Rejected), bukan label AI
+            $trainingRow->update([
+                'admin_corrected' => true,
+                'correction_note' => $correctionNote ?? 'Hasil AI tidak sesuai — label mengikuti keputusan admin.',
+            ]);
+        }
+
+        return [
+            'training_row' => $trainingRow->fresh(),
+            'ai_correct' => $aiCorrect,
+        ];
+    }
 }

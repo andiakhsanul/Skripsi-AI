@@ -261,6 +261,74 @@
                                 </a>
                             @endif
                         </div>
+
+                        {{-- Panel Konfirmasi Hasil AI --}}
+                        @if ($trainingRow && $snapshot)
+                            <div class="rounded-2xl border {{ $trainingRow->admin_corrected ? 'border-emerald-200 bg-emerald-50' : 'border-amber-200 bg-amber-50' }} p-4">
+                                <div class="flex items-center gap-2 mb-3">
+                                    <span class="material-symbols-outlined text-lg {{ $trainingRow->admin_corrected ? 'text-emerald-600' : 'text-amber-600' }}">
+                                        {{ $trainingRow->admin_corrected ? 'verified' : 'help_outline' }}
+                                    </span>
+                                    <p class="text-[11px] font-black uppercase tracking-[0.18em] {{ $trainingRow->admin_corrected ? 'text-emerald-700' : 'text-amber-700' }}">
+                                        {{ $trainingRow->admin_corrected ? 'Konfirmasi AI Selesai' : 'Konfirmasi Hasil AI' }}
+                                    </p>
+                                </div>
+
+                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                    <div class="rounded-xl bg-white/80 p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Rekomendasi AI</p>
+                                        <p class="mt-1 text-sm font-black {{ ($snapshot->final_recommendation ?? '') === 'Indikasi' ? 'text-error' : 'text-primary' }}">
+                                            {{ $snapshot->final_recommendation ?? 'Belum Ada' }}
+                                        </p>
+                                        <p class="mt-0.5 text-[10px] text-slate-500">
+                                            CB: {{ $snapshot->catboost_label ?? '-' }} · NB: {{ $snapshot->naive_bayes_label ?? '-' }}
+                                        </p>
+                                    </div>
+                                    <div class="rounded-xl bg-white/80 p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Keputusan Admin</p>
+                                        <p class="mt-1 text-sm font-black {{ $application->status === 'Rejected' ? 'text-error' : 'text-emerald-600' }}">
+                                            {{ $application->status === 'Verified' ? 'Layak' : 'Indikasi' }}
+                                        </p>
+                                        <p class="mt-0.5 text-[10px] text-slate-500">
+                                            {{ $application->admin_decided_at?->format('d M Y H:i') ?? '-' }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                @if ($trainingRow->admin_corrected)
+                                    <div class="rounded-xl bg-white/60 p-3">
+                                        <p class="text-xs font-bold text-emerald-700">
+                                            <span class="material-symbols-outlined text-sm align-middle">check_circle</span>
+                                            Data training sudah dikonfirmasi dan siap untuk retrain.
+                                        </p>
+                                        @if ($trainingRow->correction_note)
+                                            <p class="mt-1 text-xs text-slate-600">{{ $trainingRow->correction_note }}</p>
+                                        @endif
+                                    </div>
+                                @else
+                                    <p class="text-xs font-medium leading-5 {{ $trainingRow->admin_corrected ? 'text-emerald-700' : 'text-amber-800' }} mb-3">
+                                        Apakah rekomendasi AI sudah sesuai dengan keputusan admin? Konfirmasi ini menentukan kesiapan data untuk pelatihan ulang model.
+                                    </p>
+
+                                    <form method="POST" action="{{ route('admin.applications.confirm-ai', $application) }}">
+                                        @csrf
+                                        <div class="mb-3">
+                                            <textarea name="correction_note" rows="2" class="w-full rounded-xl border-none bg-white/80 p-3 text-xs text-slate-700 placeholder:text-slate-400 focus:ring-2 focus:ring-primary/20" placeholder="Catatan opsional (alasan koreksi jika AI salah)..."></textarea>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <button type="submit" name="ai_correct" value="1" class="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-black text-white shadow transition hover:bg-emerald-700">
+                                                <span class="material-symbols-outlined text-sm">thumb_up</span>
+                                                AI Benar
+                                            </button>
+                                            <button type="submit" name="ai_correct" value="0" class="flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 px-3 py-2.5 text-xs font-black text-white shadow transition hover:bg-amber-700">
+                                                <span class="material-symbols-outlined text-sm">thumb_down</span>
+                                                AI Salah
+                                            </button>
+                                        </div>
+                                    </form>
+                                @endif
+                            </div>
+                        @endif
                     @endif
                 </div>
             </section>

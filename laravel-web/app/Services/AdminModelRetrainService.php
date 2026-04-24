@@ -35,6 +35,11 @@ class AdminModelRetrainService
             ->where('admin_corrected', true)
             ->count();
 
+        $pendingConfirmation = SpkTrainingData::query()
+            ->where('is_active', true)
+            ->where('admin_corrected', false)
+            ->count();
+
         $predictionSnapshots = ApplicationModelSnapshot::query()->count();
         $applicationsWithoutSnapshot = StudentApplication::query()
             ->whereDoesntHave('modelSnapshot')
@@ -50,6 +55,8 @@ class AdminModelRetrainService
             'training_rows' => $trainingRows,
             'training_gap' => max($finalizedApplications - $trainingRows, 0),
             'training_corrections' => $trainingCorrections,
+            'confirmed_training_rows' => $trainingCorrections,
+            'pending_confirmation' => $pendingConfirmation,
             'prediction_snapshots' => $predictionSnapshots,
             'applications_without_snapshot' => $applicationsWithoutSnapshot,
             'label_distribution' => $this->labelDistribution(),
@@ -125,6 +132,22 @@ class AdminModelRetrainService
                     'icon_wrap' => 'bg-slate-100 text-slate-700',
                     'icon' => 'analytics',
                 ],
+                [
+                    'label' => 'Dikonfirmasi Admin',
+                    'value' => number_format($payload['confirmed_training_rows'] ?? 0),
+                    'hint' => 'Training data yang sudah dikonfirmasi admin.',
+                    'border' => 'border-emerald-500',
+                    'icon_wrap' => 'bg-emerald-50 text-emerald-600',
+                    'icon' => 'verified',
+                ],
+                [
+                    'label' => 'Menunggu Konfirmasi',
+                    'value' => number_format($payload['pending_confirmation'] ?? 0),
+                    'hint' => 'Training data yang belum dikonfirmasi admin.',
+                    'border' => 'border-amber-500',
+                    'icon_wrap' => 'bg-amber-50 text-amber-700',
+                    'icon' => 'schedule',
+                ],
             ],
         ];
     }
@@ -140,13 +163,13 @@ class AdminModelRetrainService
     /**
      * @return array<string, mixed>
      */
-    public function triggerRetrain(User $admin): array
+    public function triggerRetrain(User $admin, bool $purgeTraining = false): array
     {
         $trainingRows = SpkTrainingData::query()
             ->where('is_active', true)
             ->count();
 
-        if ($trainingRows === 0) {
+        if ($trainingRows === 0 && ! $purgeTraining) {
             throw new RuntimeException('Belum ada data training aktif. Sinkronkan data final terlebih dahulu.');
         }
 
@@ -155,11 +178,13 @@ class AdminModelRetrainService
             'triggered_by_user_id' => $admin->id,
             'triggered_by_email' => $admin->email,
             'schema_version' => $schemaVersion,
+            'purge_training' => $purgeTraining,
         ]);
 
         return [
             'schema_version' => $schemaVersion,
             'training_rows' => $trainingRows,
+            'purge_training' => $purgeTraining,
             'ml_response' => $mlResponse,
         ];
     }

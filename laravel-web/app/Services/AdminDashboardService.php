@@ -58,6 +58,11 @@ class AdminDashboardService
             ->where('admin_corrected', true)
             ->count();
 
+        $pendingConfirmationCount = DB::table('spk_training_data')
+            ->where('is_active', true)
+            ->where('admin_corrected', false)
+            ->count();
+
         $activeSchema = ParameterSchemaVersion::query()
             ->where('is_active', true)
             ->orderByDesc('version')
@@ -79,6 +84,7 @@ class AdminDashboardService
             'training_data' => [
                 'total_active' => $trainingCount,
                 'admin_corrected' => $adminCorrectedCount,
+                'pending_confirmation' => $pendingConfirmationCount,
             ],
             'active_schema' => $activeSchema,
         ];
@@ -240,7 +246,12 @@ class AdminDashboardService
                 [
                     'label' => 'Koreksi Training',
                     'value' => number_format($trainingStats['admin_corrected']),
-                    'detail' => 'Baris training yang sudah dikoreksi admin',
+                    'detail' => 'Baris training yang sudah dikonfirmasi admin',
+                ],
+                [
+                    'label' => 'Menunggu Konfirmasi',
+                    'value' => number_format($trainingStats['pending_confirmation'] ?? 0),
+                    'detail' => 'Baris training yang belum dikonfirmasi admin',
                 ],
             ],
         ];
@@ -266,7 +277,7 @@ class AdminDashboardService
     public function paginateApplications(array $filters, int $perPage = 10): LengthAwarePaginator
     {
         return StudentApplication::query()
-            ->with(['student:id,name,email', 'modelSnapshot'])
+            ->with(['student:id,name,email', 'modelSnapshot', 'latestTrainingRow'])
             ->when(
                 $filters['q'] ?? null,
                 function (Builder $query, string $term): void {

@@ -1,216 +1,267 @@
+"""Authoritative encoder untuk fitur aplikasi KIP-K.
+
+Seluruh encoding aplikasi dilakukan di Flask ML. Laravel hanya menyimpan
+raw data (student_applications) — Flask yang menerjemahkan teks/angka
+mentah menjadi kode ordinal/biner yang dipakai model.
+
+Konvensi ordinal: kode tinggi = kondisi lebih sejahtera / risiko indikasi lebih rendah.
+  penghasilan:      1 (tidak ada) .. 5 (>=4jt)
+  jumlah_tanggungan:1 (>=6)       .. 5 (<2)
+  anak_ke:          1 (>=5)       .. 5 (anak pertama)
+  status_orangtua:  1 (yatim piatu) .. 3 (lengkap)
+  status_rumah:     1 (tidak punya) .. 4 (milik sendiri)
+  daya_listrik:     1 (tidak ada) .. 5 (>1300VA)
+
+Binary (kip/pkh/kks/dtks/sktm): 1 = punya bantuan / indikator kurang mampu.
+"""
+
 import re
+from typing import Any
 
-def normalize_binary(value, field_name: str) -> int:
-    try:
-        val = int(value)
-        if val in (0, 1):
-            return val
-    except (TypeError, ValueError):
-        pass
-    raise ValueError(f"{field_name} wajib bernilai 0 atau 1.")
+from config import BINARY_FEATURES, DB_FEATURE_COLUMNS, ORDINAL_FEATURES
 
-def encode_income(value, field_name: str) -> int:
-    # NULL penghasilan → fallback ke 0
-    if value is None or value == "":
-        value = 0
-    
-    try:
-        income = int(float(value))
-    except (TypeError, ValueError):
-        income = 0
-        
-    if income == 0:
-        return 1
-    elif income < 1_000_000:
-        return 2
-    elif income < 2_000_000:
-        return 3
-    elif income < 4_000_000:
-        return 4
-    else:
-        return 5
+RAW_APPLICANT_FIELDS = [
+    "kip", "pkh", "kks", "dtks", "sktm",
+    "penghasilan_ayah_rupiah", "penghasilan_ibu_rupiah", "penghasilan_gabungan_rupiah",
+    "jumlah_tanggungan_raw", "anak_ke_raw",
+    "status_orangtua_text", "status_rumah_text", "daya_listrik_text",
+]
 
-def encode_jumlah_tanggungan(value) -> int:
-    try:
-        dependents = int(float(value)) if value is not None else 0
-    except (TypeError, ValueError):
-        raise ValueError("jumlah_tanggungan_raw wajib berupa angka.")
-        
-    if dependents >= 6:
-        return 1
-    elif dependents >= 5:
-        return 2
-    elif dependents >= 4:
-        return 3
-    elif dependents >= 2:
-        return 4
-    else:
-        return 5
 
-def encode_anak_ke(value) -> int:
-    try:
-        # Fallback to 3 (middle ground) for unknown/0
-        child_order = int(float(value)) if value is not None and str(value).strip() != "" else 0
-        if child_order <= 0:
-            return 3
-    except (TypeError, ValueError):
-        return 3
-        
-    if child_order >= 5:
-        return 1
-    elif child_order == 4:
-        return 2
-    elif child_order == 3:
-        return 3
-    elif child_order == 2:
-        return 4
-    else:
-        return 5
-
-def _normalize_text(value) -> str:
+def _normalize_text(value: Any) -> str:
     if value is None:
         return ""
     text = str(value).strip().lower()
-    return re.sub(r'\s+', ' ', text)
+    return re.sub(r"\s+", " ", text)
+
 
 def _contains_any(haystack: str, needles: list[str]) -> bool:
-    for needle in needles:
-        if needle in haystack:
-            return True
-    return False
+    return any(needle in haystack for needle in needles)
 
-def encode_status_orangtua(value) -> int:
+
+def normalize_binary(value: Any, field_name: str) -> int:
+    try:
+        parsed = int(float(value))
+    except (TypeError, ValueError):
+        raise ValueError(f"{field_name} wajib bernilai 0 atau 1.")
+    if parsed not in (0, 1):
+        raise ValueError(f"{field_name} wajib bernilai 0 atau 1.")
+    return parsed
+
+
+def encode_income(value: Any) -> int:
+    if value is None or value == "":
+        return 1
+    try:
+        income = int(float(value))
+    except (TypeError, ValueError):
+        return 1
+    if income <= 0:
+        return 1
+    if income < 1_000_000:
+        return 2
+    if income < 2_000_000:
+        return 3
+    if income < 4_000_000:
+        return 4
+    return 5
+
+
+def encode_jumlah_tanggungan(value: Any) -> int:
+    try:
+        dependents = int(float(value)) if value not in (None, "") else 0
+    except (TypeError, ValueError):
+        raise ValueError("jumlah_tanggungan_raw wajib berupa angka.")
+    if dependents >= 6:
+        return 1
+    if dependents >= 5:
+        return 2
+    if dependents >= 4:
+        return 3
+    if dependents >= 2:
+        return 4
+    return 5
+
+
+def encode_anak_ke(value: Any) -> int:
+    try:
+        child_order = int(float(value)) if value not in (None, "") else 0
+    except (TypeError, ValueError):
+        return 3
+    if child_order <= 0:
+        return 3
+    if child_order >= 5:
+        return 1
+    if child_order == 4:
+        return 2
+    if child_order == 3:
+        return 3
+    if child_order == 2:
+        return 4
+    return 5
+
+
+def encode_status_orangtua(value: Any) -> int:
     normalized = _normalize_text(value)
     if not normalized:
-        return 2 # Fallback
-        
+        return 2
+
     if "yatim piatu" in normalized:
         return 1
-        
+
     father_deceased = _contains_any(normalized, [
         "ayah=wafat", "ayah=meninggal", "ayah meninggal", "ayah wafat",
-        "ayah=meninggal dunia"
     ])
     mother_deceased = _contains_any(normalized, [
-        "ibu=wafat", "ibu=meninggal", "ibu meninggal", "ibu wafat",
-        "ibu=wafar", "ibu=meninggal dunia"
+        "ibu=wafat", "ibu=meninggal", "ibu meninggal", "ibu wafat", "ibu=wafar",
     ])
-    
+
     if father_deceased and mother_deceased:
         return 1
-        
-    if "yatim" in normalized or "piatu" in normalized:
-        return 2
-        
+
     if father_deceased or mother_deceased:
         return 2
-        
-    if "cerai" in normalized:
+
+    if _contains_any(normalized, [
+        "yatim", "piatu", "cerai", "tiri", "wali",
+        "tidak jelas", "tidak lengkap", "terpisah",
+    ]):
         return 2
-        
-    if _contains_any(normalized, ["tiri", "wali"]):
+
+    if re.search(r"(ayah|ibu)=\s*(;|$)", normalized):
         return 2
-        
-    if _contains_any(normalized, ["tidak jelas", "ayah=;", "ibu=;"]):
-        return 2
-        
-    if re.search(r'ayah=\s*;', normalized) or re.search(r'ibu=\s*;', normalized):
-        return 2
-        
+
     if _contains_any(normalized, ["ayah=hidup", "ibu=hidup", "lengkap", "orang tua lengkap"]):
         return 3
-        
+
     return 2
 
-def encode_status_rumah(value) -> int:
+
+def encode_status_rumah(value: Any) -> int:
     normalized = _normalize_text(value)
-    
-    if _contains_any(normalized, ["tidak memiliki", "tidak punya rumah"]):
-        return 1
-        
-    if _contains_any(normalized, ["sewa / menumpang"]):
-        return 3 # Normalize combo to Sewa
-        
-    if _contains_any(normalized, ["menumpang"]):
+    if not normalized:
         return 2
-        
+
+    if _contains_any(normalized, ["tidak memiliki", "tidak punya rumah", "tidak punya"]):
+        return 1
+
+    # "Sewa / Menumpang" — gabungan, perlakukan sebagai menumpang (lebih rawan)
+    if "sewa / menumpang" in normalized or "sewa/menumpang" in normalized:
+        return 2
+
+    if "menumpang" in normalized:
+        return 2
+
     if _contains_any(normalized, ["sewa", "kontrak"]):
         return 3
-        
-    if _contains_any(normalized, ["milik sendiri", "rumah sendiri", "sendiri", "punya pribadi", "punya sendiri", "milik pribadi"]):
+
+    if _contains_any(normalized, [
+        "milik sendiri", "rumah sendiri", "milik pribadi",
+        "punya sendiri", "punya pribadi",
+    ]):
         return 4
-        
-    # If unmapped empty or else, fallback to 2 (Menumpang)
+
     return 2
 
-def encode_daya_listrik(value) -> int:
+
+def encode_daya_listrik(value: Any) -> int:
     normalized = _normalize_text(value)
-    
-    if _contains_any(normalized, ["tidak ada", "non pln", "non-pln", "nonpln", "tidak punya rek"]):
+    if not normalized:
+        return 2
+
+    if _contains_any(normalized, [
+        "tidak ada", "non pln", "non-pln", "nonpln", "tidak punya",
+    ]):
         return 1
-        
-    numbers = [int(num) for num in re.findall(r'\d+', normalized)]
+
+    # "2.200 VA" / "1.300 va" → hilangkan titik/koma pemisah ribuan
+    cleaned = re.sub(r"(\d)[.,](\d)", r"\1\2", normalized)
+    numbers = [int(num) for num in re.findall(r"\d+", cleaned)]
     if not numbers:
-        return 2 # Fallback to 2 (450VA) if unknown
-        
+        return 2
+
     max_value = max(numbers)
     if max_value <= 0:
         return 1
-    elif max_value <= 450:
+    if max_value <= 450:
         return 2
-    elif max_value <= 900:
+    if max_value <= 900:
         return 3
-    elif max_value <= 1300:
+    if max_value <= 1300:
         return 4
-    else:
-        return 5
+    return 5
 
-def encode_application_features(raw_data: dict) -> dict:
-    """Takes raw application string/number data and encodes it using authoritative rules."""
-    
-    penghasilan_gabungan = raw_data.get("penghasilan_gabungan_rupiah")
-    if penghasilan_gabungan is None or penghasilan_gabungan == "":
-        # Fallback to sum of ayah and ibu
-        p_ayah = float(raw_data.get("penghasilan_ayah_rupiah") or 0)
-        p_ibu = float(raw_data.get("penghasilan_ibu_rupiah") or 0)
-        penghasilan_gabungan = p_ayah + p_ibu
 
+def _coalesce_penghasilan_gabungan(raw: dict) -> Any:
+    gabungan = raw.get("penghasilan_gabungan_rupiah")
+    if gabungan not in (None, ""):
+        return gabungan
+    ayah = raw.get("penghasilan_ayah_rupiah") or 0
+    ibu = raw.get("penghasilan_ibu_rupiah") or 0
+    try:
+        return float(ayah) + float(ibu)
+    except (TypeError, ValueError):
+        return 0
+
+
+def encode_application_features(raw: dict) -> dict:
+    """Terima raw applicant data → kembalikan 13 fitur terkode siap model."""
     return {
-        "kip": normalize_binary(raw_data.get("kip"), "kip"),
-        "pkh": normalize_binary(raw_data.get("pkh"), "pkh"),
-        "kks": normalize_binary(raw_data.get("kks"), "kks"),
-        "dtks": normalize_binary(raw_data.get("dtks"), "dtks"),
-        "sktm": normalize_binary(raw_data.get("sktm"), "sktm"),
-        "penghasilan_gabungan": encode_income(penghasilan_gabungan, "penghasilan_gabungan_rupiah"),
-        "penghasilan_ayah": encode_income(raw_data.get("penghasilan_ayah_rupiah"), "penghasilan_ayah_rupiah"),
-        "penghasilan_ibu": encode_income(raw_data.get("penghasilan_ibu_rupiah"), "penghasilan_ibu_rupiah"),
-        "jumlah_tanggungan": encode_jumlah_tanggungan(raw_data.get("jumlah_tanggungan_raw")),
-        "anak_ke": encode_anak_ke(raw_data.get("anak_ke_raw")),
-        "status_orangtua": encode_status_orangtua(raw_data.get("status_orangtua_text")),
-        "status_rumah": encode_status_rumah(raw_data.get("status_rumah_text")),
-        "daya_listrik": encode_daya_listrik(raw_data.get("daya_listrik_text")),
+        "kip": normalize_binary(raw.get("kip"), "kip"),
+        "pkh": normalize_binary(raw.get("pkh"), "pkh"),
+        "kks": normalize_binary(raw.get("kks"), "kks"),
+        "dtks": normalize_binary(raw.get("dtks"), "dtks"),
+        "sktm": normalize_binary(raw.get("sktm"), "sktm"),
+        "penghasilan_gabungan": encode_income(_coalesce_penghasilan_gabungan(raw)),
+        "penghasilan_ayah": encode_income(raw.get("penghasilan_ayah_rupiah")),
+        "penghasilan_ibu": encode_income(raw.get("penghasilan_ibu_rupiah")),
+        "jumlah_tanggungan": encode_jumlah_tanggungan(raw.get("jumlah_tanggungan_raw")),
+        "anak_ke": encode_anak_ke(raw.get("anak_ke_raw")),
+        "status_orangtua": encode_status_orangtua(raw.get("status_orangtua_text")),
+        "status_rumah": encode_status_rumah(raw.get("status_rumah_text")),
+        "daya_listrik": encode_daya_listrik(raw.get("daya_listrik_text")),
     }
 
+
+def _looks_like_raw_payload(payload: dict) -> bool:
+    """Raw payload terdeteksi jika ada kolom bersufiks _rupiah/_raw/_text."""
+    raw_markers = {
+        "penghasilan_ayah_rupiah", "penghasilan_ibu_rupiah", "penghasilan_gabungan_rupiah",
+        "jumlah_tanggungan_raw", "anak_ke_raw",
+        "status_orangtua_text", "status_rumah_text", "daya_listrik_text",
+    }
+    return any(key in payload for key in raw_markers)
+
+
+def encode_or_validate(payload: dict) -> dict:
+    """Masuk raw → encode; masuk pre-encoded → validasi range. Selalu output 13 kolom int."""
+    if _looks_like_raw_payload(payload):
+        return encode_application_features(payload)
+    return validate_encoded_features(payload)
+
+
 def validate_encoded_features(payload: dict) -> dict:
-    """Validates that a dictionary of already-encoded features has correct ranges (1, 2, 3 or 0, 1)."""
-    from config import BINARY_FEATURES, ORDINAL_FEATURES, DB_FEATURE_COLUMNS
-    
+    """Fallback: validasi payload yang sudah terkode (backward compat)."""
     values = {}
     for feature in DB_FEATURE_COLUMNS:
         if feature not in payload:
             raise ValueError(f"Field wajib tidak lengkap: {feature}")
         try:
-            parsed_value = int(payload[feature])
-            if feature in BINARY_FEATURES and parsed_value not in (0, 1):
-                raise ValueError(f"Field {feature} wajib bernilai 0 atau 1 (biner). Nilai: {parsed_value}")
-            elif feature == "status_rumah" and parsed_value not in (1, 2, 3, 4):
-                raise ValueError(f"Field {feature} wajib bernilai 1.4 (ordinal). Nilai: {parsed_value}")
-            elif feature == "status_orangtua" and parsed_value not in (1, 2, 3):
-                raise ValueError(f"Field {feature} wajib bernilai 1..3 (ordinal). Nilai: {parsed_value}")
-            elif feature in ORDINAL_FEATURES and feature not in ("status_rumah", "status_orangtua") and parsed_value not in (1, 2, 3, 4, 5):
-                raise ValueError(f"Field {feature} wajib bernilai 1..5 (ordinal). Nilai: {parsed_value}")
-            values[feature] = parsed_value
+            parsed = int(payload[feature])
         except (TypeError, ValueError) as exc:
             raise ValueError(f"Nilai fitur {feature} harus berupa angka yang valid") from exc
-            
+
+        if feature in BINARY_FEATURES and parsed not in (0, 1):
+            raise ValueError(f"Field {feature} wajib bernilai 0 atau 1. Nilai: {parsed}")
+        if feature == "status_rumah" and parsed not in (1, 2, 3, 4):
+            raise ValueError(f"Field {feature} wajib bernilai 1..4. Nilai: {parsed}")
+        if feature == "status_orangtua" and parsed not in (1, 2, 3):
+            raise ValueError(f"Field {feature} wajib bernilai 1..3. Nilai: {parsed}")
+        if (
+            feature in ORDINAL_FEATURES
+            and feature not in ("status_rumah", "status_orangtua")
+            and parsed not in (1, 2, 3, 4, 5)
+        ):
+            raise ValueError(f"Field {feature} wajib bernilai 1..5. Nilai: {parsed}")
+        values[feature] = parsed
     return values

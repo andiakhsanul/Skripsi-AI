@@ -1,22 +1,32 @@
 import pandas as pd
 from config import ORDINAL_FEATURES
 
+
 def add_engineered_features(features: pd.DataFrame) -> pd.DataFrame:
     df = features.copy()
-    
+
     if "kip" in df.columns:
-        # 1. Skor bantuan sosial komposit (0-5)
-        df["skor_bantuan_sosial"] = df["kip"] + df["pkh"] + df["kks"] + df["dtks"] + df["sktm"]
-        
-        # 2. Flag penghasilan rendah tanpa bantuan
-        df["rendah_tanpa_bantuan"] = ((df["penghasilan_gabungan"] == 1) & (df["skor_bantuan_sosial"] == 0)).astype(int)
-    
+        # Skor bantuan sosial komposit (0-5) — semakin banyak aid = semakin miskin
+        df["skor_bantuan_sosial"] = (
+            df["kip"] + df["pkh"] + df["kks"] + df["dtks"] + df["sktm"]
+        )
+
+        # Flag penghasilan sangat rendah tanpa bantuan sosial apapun
+        if "penghasilan_gabungan" in df.columns:
+            df["rendah_tanpa_bantuan"] = (
+                (df["penghasilan_gabungan"] <= 2) & (df["skor_bantuan_sosial"] == 0)
+            ).astype(int)
+        else:
+            df["rendah_tanpa_bantuan"] = 0
+
     return df
 
+
 def transform_features_for_naive_bayes(features: pd.DataFrame) -> pd.DataFrame:
+    """Pergeseran index ke 0-based untuk CategoricalNB."""
     transformed = features.copy().astype(int)
-    # Subtract 1 from ordinal features (1-3) to make them (0-2) for Naive Bayes
-    if all(col in transformed.columns for col in ORDINAL_FEATURES):
-        transformed.loc[:, ORDINAL_FEATURES] = transformed[ORDINAL_FEATURES] - 1
-    # Note: skor_bantuan_sosial is already 0-5. No need to subtract 1.
+    ordinal_cols = [col for col in ORDINAL_FEATURES if col in transformed.columns]
+    if ordinal_cols:
+        transformed.loc[:, ordinal_cols] = transformed[ordinal_cols] - 1
+    # skor_bantuan_sosial & rendah_tanpa_bantuan sudah 0-based
     return transformed

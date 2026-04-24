@@ -18,13 +18,16 @@ class ApplicationInferenceService
 
     public function syncPredictionSnapshot(StudentApplication $application, ?int $actorUserId = null): ApplicationModelSnapshot
     {
+        // Encoding tetap disimpan di DB untuk audit/tampilan admin, tapi prediksi
+        // dikirim ke Flask dalam bentuk RAW agar Flask jadi authoritative encoder.
         $encoding = $this->encodingService->syncFromApplication($application, $actorUserId);
         $features = $encoding->toFeatureArray();
         $schema = ParameterSchemaVersion::query()->where('version', $application->schema_version)->first();
 
         $this->schemaService->validateApplicationPayload($features, [], $schema);
 
-        $inference = $this->mlGateway->predictOrFallback($features);
+        $rawPayload = $this->buildRawPayload($application);
+        $inference = $this->mlGateway->predictOrFallback($rawPayload);
         $ruleScore = $this->ruleScoringService->score($features, [], $schema);
         $reviewPriority = $this->resolveReviewPriority($inference, $ruleScore);
 
@@ -35,6 +38,28 @@ class ApplicationInferenceService
             $ruleScore,
             $reviewPriority,
         );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildRawPayload(StudentApplication $application): array
+    {
+        return [
+            'kip' => (int) $application->kip,
+            'pkh' => (int) $application->pkh,
+            'kks' => (int) $application->kks,
+            'dtks' => (int) $application->dtks,
+            'sktm' => (int) $application->sktm,
+            'penghasilan_ayah_rupiah' => $application->penghasilan_ayah_rupiah,
+            'penghasilan_ibu_rupiah' => $application->penghasilan_ibu_rupiah,
+            'penghasilan_gabungan_rupiah' => $application->penghasilan_gabungan_rupiah,
+            'jumlah_tanggungan_raw' => $application->jumlah_tanggungan_raw,
+            'anak_ke_raw' => $application->anak_ke_raw,
+            'status_orangtua_text' => $application->status_orangtua_text,
+            'status_rumah_text' => $application->status_rumah_text,
+            'daya_listrik_text' => $application->daya_listrik_text,
+        ];
     }
 
     /**

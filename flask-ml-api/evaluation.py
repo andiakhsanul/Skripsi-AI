@@ -14,6 +14,7 @@ from config import DEFAULT_POSITIVE_THRESHOLD, POSITIVE_F_BETA
 from features import transform_features_for_naive_bayes
 
 def probability_for_class(model, features: pd.DataFrame, target_class: int = 1) -> float:
+    """Get probability of target_class for a SINGLE row."""
     probabilities = model.predict_proba(features)[0]
     classes = list(getattr(model, "classes_", []))
 
@@ -24,6 +25,21 @@ def probability_for_class(model, features: pd.DataFrame, target_class: int = 1) 
         return float(probabilities[0])
 
     return float(probabilities[1])
+
+
+def batch_probability_for_class(model, features: pd.DataFrame, target_class: int = 1) -> list[float]:
+    """Get probability of target_class for ALL rows in a batch (much faster)."""
+    probabilities = model.predict_proba(features)
+    classes = list(getattr(model, "classes_", []))
+
+    if target_class in classes:
+        col_idx = classes.index(target_class)
+    elif probabilities.shape[1] == 1:
+        col_idx = 0
+    else:
+        col_idx = 1
+
+    return [float(p) for p in probabilities[:, col_idx]]
 
 
 def select_threshold_with_cv(
@@ -73,10 +89,9 @@ def select_threshold_with_cv(
             fold_model = model_class(**model_params)
             fold_model.fit(X_fold_train, y_fold_train, cat_features=cat_features)
 
-        for idx in range(len(X_fold_val)):
-            prob = probability_for_class(fold_model, X_fold_val.iloc[[idx]], target_class=1)
-            all_probabilities.append(prob)
-            all_labels.append(int(y_fold_val.iloc[idx]))
+        fold_probs = batch_probability_for_class(fold_model, X_fold_val, target_class=1)
+        all_probabilities.extend(fold_probs)
+        all_labels.extend(int(v) for v in y_fold_val)
 
     y_cv = pd.Series(all_labels)
     return select_optimal_indikasi_threshold(y_cv, all_probabilities, beta=beta)

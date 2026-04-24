@@ -138,6 +138,19 @@
                                     </button>
                                 </form>
                             </div>
+
+                            <form method="POST" action="{{ route('admin.models.retrain.run') }}">
+                                @csrf
+                                <input type="hidden" name="purge_training" value="1" />
+                                <button
+                                    type="submit"
+                                    onclick="return confirm('Apakah Anda yakin ingin menghapus SEMUA data training lama dan melatih ulang dari awal? Tindakan ini tidak bisa dibatalkan.')"
+                                    class="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-error bg-error/10 px-4 py-3.5 text-sm font-black text-error transition hover:bg-error hover:text-white"
+                                >
+                                    <span class="material-symbols-outlined text-lg">delete_sweep</span>
+                                    Hapus Data Lama & Latih Ulang Dari Awal
+                                </button>
+                            </form>
                         </div>
                     </div>
 

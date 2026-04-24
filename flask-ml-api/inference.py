@@ -2,7 +2,7 @@ import pandas as pd
 from typing import Optional
 
 from config import DEFAULT_POSITIVE_THRESHOLD, REVIEW_PRIORITY_THRESHOLD, DB_FEATURE_COLUMNS, MODEL_REGISTRY
-from encoding import validate_encoded_features
+from encoding import encode_or_validate
 from features import add_engineered_features, transform_features_for_naive_bayes
 from evaluation import probability_for_class
 from model_registry import ensure_latest_models_loaded, extract_model_payload, current_model_metadata
@@ -70,7 +70,9 @@ def infer_with_dual_model(features: pd.DataFrame) -> dict:
     }
 
 def get_prediction_input(payload: dict) -> pd.DataFrame:
-    """Takes features, validates that they assume expected encoded integer forms, adds engineered features."""
-    values = validate_encoded_features(payload)
+    """Terima payload RAW (status_orangtua_text, penghasilan_ayah_rupiah, dst)
+    ATAU pre-encoded (fallback). Encode bila perlu, kembalikan DataFrame dengan
+    13 fitur dasar + fitur engineered."""
+    values = encode_or_validate(payload)
     df = pd.DataFrame([values], columns=DB_FEATURE_COLUMNS)
     return add_engineered_features(df)

@@ -28,6 +28,7 @@
         ? \Illuminate\Support\Facades\Storage::disk('public')->url($application->submitted_pdf_path)
         : $application->source_document_link;
     $documentLabel = $application->submitted_pdf_path ? 'PDF' : 'Berkas';
+    $trainingRow = $application->latestTrainingRow;
 @endphp
 
 <tr class="transition-colors {{ $snapshot?->final_recommendation === 'Indikasi' && $application->status === 'Submitted' ? 'bg-red-50/30 hover:bg-red-50/50' : 'hover:bg-slate-50/50' }}">
@@ -73,6 +74,21 @@
         </p>
         @if ($snapshot?->disagreement_flag)
             <p class="mt-1 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">Disagreement model</p>
+        @endif
+        @if (in_array($application->status, ['Verified', 'Rejected']))
+            <p class="mt-1">
+                @if ($trainingRow?->admin_corrected)
+                    <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                        <span class="material-symbols-outlined text-xs">verified</span>
+                        AI Confirmed
+                    </span>
+                @elseif ($trainingRow)
+                    <span class="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+                        <span class="material-symbols-outlined text-xs">schedule</span>
+                        Belum Konfirmasi
+                    </span>
+                @endif
+            </p>
         @endif
     </td>
     <td class="px-6 py-5">

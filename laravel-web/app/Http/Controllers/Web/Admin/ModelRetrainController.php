@@ -48,8 +48,14 @@ class ModelRetrainController extends Controller
 
     public function retrain(Request $request): RedirectResponse
     {
+        $validated = $request->validate([
+            'purge_training' => ['nullable', 'boolean'],
+        ]);
+
+        $purgeTraining = (bool) ($validated['purge_training'] ?? false);
+
         try {
-            $result = $this->adminModelRetrainService->triggerRetrain($request->user());
+            $result = $this->adminModelRetrainService->triggerRetrain($request->user(), $purgeTraining);
         } catch (\Throwable $throwable) {
             return redirect()
                 ->route('admin.models.retrain')
@@ -60,12 +66,16 @@ class ModelRetrainController extends Controller
                 ]);
         }
 
+        $message = $purgeTraining
+            ? 'Data training lama dihapus dan model sedang dilatih ulang dari awal. Muat ulang halaman ini dalam beberapa menit.'
+            : 'Permintaan mulai diproses di latar belakang. Silakan muat ulang halaman ini dalam beberapa menit untuk melihat hasilnya.';
+
         return redirect()
             ->route('admin.models.retrain')
             ->with('admin_notice', [
                 'type' => 'success',
-                'title' => 'Retrain Model Diproses',
-                'message' => 'Permintaan mulai diproses di latar belakang. Silakan muat ulang halaman ini dalam beberapa menit untuk melihat hasilnya.',
+                'title' => $purgeTraining ? 'Purge & Retrain Diproses' : 'Retrain Model Diproses',
+                'message' => $message,
             ]);
     }
 

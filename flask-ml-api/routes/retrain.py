@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from config import FLASK_INTERNAL_TOKEN
-from database import fetch_training_dataframe
+from database import fetch_training_dataframe, purge_all_training_data, purge_model_artifacts
 from training import train_and_save_models, register_failed_retrain
 
 retrain_bp = Blueprint("retrain", __name__)
@@ -38,6 +38,8 @@ def retrain_model():
         if "triggered_by_email" in payload and payload["triggered_by_email"] is not None:
             triggered_by_email = str(payload["triggered_by_email"]).strip() or None
 
+        purge_training = bool(payload.get("purge_training", False))
+
         import threading
         from database import persist_model_version_record
         from training import build_version_name
@@ -57,39 +59,62 @@ def retrain_model():
                 "training_table": "spk_training_data",
                 "primary_model": "catboost",
                 "secondary_model": "categorical_nb",
-                "note": "Proses pelatihan sedang berjalan di latar belakang...",
+                "note": "Proses pelatihan sedang berjalan di latar belakang..."
+                       + (" (purge & re-encode)" if purge_training else ""),
                 "trained_at": trained_at,
             })
         except Exception:
             pass
-            
+
+        # Jika purge diminta, hapus artifact model lama secara sinkron
+        # sebelum thread async dimulai, agar model baru tidak bercampur dengan model lama.
+        # CATATAN: Training data di DB (spk_training_data) dikelola oleh Laravel,
+        # Flask hanya membersihkan file model .joblib yang sudah tidak diperlukan.
+        purge_summary = {}
+        if purge_training:
+            deleted_files = purge_model_artifacts()
+            purge_summary = {
+                "purged_model_files": len(deleted_files),
+                "purged_model_file_names": deleted_files,
+            }
+
         def run_retrain_async(sv, uid, email):
+            import logging
+            logger = logging.getLogger("retrain_thread")
             try:
+                logger.info(f"[RETRAIN] Starting training with schema_version={sv}")
                 dataframe = fetch_training_dataframe(schema_version=sv)
-                train_and_save_models(
+                logger.info(f"[RETRAIN] Fetched {len(dataframe)} training rows")
+                result = train_and_save_models(
                     dataframe,
                     schema_version=sv,
                     triggered_by_user_id=uid,
                     triggered_by_email=email,
                 )
+                logger.info(f"[RETRAIN] Training completed successfully: {result.get('version_name', 'unknown')}")
             except Exception as exc:
+                logger.error(f"[RETRAIN] Training failed: {exc}", exc_info=True)
                 register_failed_retrain(sv, uid, email, str(exc))
 
         thread = threading.Thread(
             target=run_retrain_async,
-            args=(schema_version, triggered_by_user_id, triggered_by_email)
+            args=(schema_version, triggered_by_user_id, triggered_by_email),
+            name="retrain-worker",
         )
-        thread.daemon = True
+        thread.daemon = False
         thread.start()
 
-        return (
-            jsonify({
-                "status": "success",
-                "message": "Pelatihan ulang model sedang dikerjakan di latar belakang.",
-                "schema_version": schema_version,
-            }),
-            202,
-        )
+        response_payload = {
+            "status": "success",
+            "message": "Pelatihan ulang model sedang dikerjakan di latar belakang.",
+            "schema_version": schema_version,
+            "purge_training": purge_training,
+        }
+        if purge_summary:
+            response_payload["purge_summary"] = purge_summary
+
+        return jsonify(response_payload), 202
+
     except Exception as exc:
         register_failed_retrain(schema_version, triggered_by_user_id, triggered_by_email, str(exc))
         return (

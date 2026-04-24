@@ -83,6 +83,19 @@ class TrainingDataSyncService
         $label = $application->status === 'Verified' ? 'Layak' : 'Indikasi';
         $labelClass = $label === 'Indikasi' ? 1 : 0;
 
+        // Ambil snapshot AI jika tersedia
+        $snapshot = $application->modelSnapshot;
+        $aiData = [];
+        if ($snapshot) {
+            $aiData = [
+                'ai_recommendation' => $snapshot->final_recommendation,
+                'ai_catboost_label' => $snapshot->catboost_label,
+                'ai_naive_bayes_label' => $snapshot->naive_bayes_label,
+                'ai_catboost_confidence' => $snapshot->catboost_confidence,
+                'ai_naive_bayes_confidence' => $snapshot->naive_bayes_confidence,
+            ];
+        }
+
         SpkTrainingData::query()->updateOrCreate(
             ['source_encoding_id' => $encoding->id],
             [
@@ -92,6 +105,7 @@ class TrainingDataSyncService
                 ...$encoding->toFeatureArray(),
                 'label' => $label,
                 'label_class' => $labelClass,
+                ...$aiData,
                 'decision_status' => $application->status,
                 'finalized_by_user_id' => $application->admin_decided_by ?? $finalizedByUserId,
                 'finalized_at' => $application->admin_decided_at ?? now(),
@@ -102,3 +116,4 @@ class TrainingDataSyncService
         );
     }
 }
+

@@ -49,6 +49,36 @@ class ApplicationReviewController extends Controller
         return $this->finalize($request, $application, 'Rejected');
     }
 
+    public function confirmAi(Request $request, int $application): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ai_correct' => ['required', 'boolean'],
+            'correction_note' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        try {
+            $result = $this->reviewService->confirmAiRecommendation(
+                $application,
+                $request->user()->id,
+                (bool) $validated['ai_correct'],
+                $validated['correction_note'] ?? null,
+            );
+
+            $title = $result['ai_correct']
+                ? 'Hasil AI dikonfirmasi benar'
+                : 'Hasil AI dikonfirmasi salah';
+            $message = $result['ai_correct']
+                ? 'Data training sudah ditandai valid dan siap digunakan untuk pelatihan ulang model.'
+                : 'Label mengikuti keputusan admin. Data training sudah ditandai valid.';
+
+            return $this->redirectWithNotice($application, 'success', $title, $message);
+        } catch (DomainException $domainException) {
+            return $this->redirectWithNotice($application, 'error', 'Konfirmasi AI gagal', $domainException->getMessage());
+        } catch (\Throwable $throwable) {
+            return $this->redirectWithNotice($application, 'error', 'Terjadi kesalahan', $throwable->getMessage());
+        }
+    }
+
     public function runPredictions(Request $request): RedirectResponse
     {
         $validated = $request->validate([

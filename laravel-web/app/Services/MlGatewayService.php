@@ -97,10 +97,15 @@ class MlGatewayService
      */
     private function fallbackPrediction(array $features, string $reason): array
     {
-        $isLikelyEligible = (int) ($features['kip'] ?? 0) === 1
-            && (int) ($features['penghasilan_gabungan'] ?? 3) === 1
-            && (int) ($features['daya_listrik'] ?? 3) <= 2;
+        // Heuristik ringan saat Flask unreachable. Mendukung raw maupun encoded input.
+        $penghasilan = (int) ($features['penghasilan_gabungan_rupiah']
+            ?? $features['penghasilan_gabungan']
+            ?? 0);
+        $isLowIncome = isset($features['penghasilan_gabungan_rupiah'])
+            ? $penghasilan < 1_000_000
+            : $penghasilan === 1;
 
+        $isLikelyEligible = (int) ($features['kip'] ?? 0) === 1 && $isLowIncome;
         $label = $isLikelyEligible ? 'Layak' : 'Indikasi';
 
         return [

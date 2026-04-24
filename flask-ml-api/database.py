@@ -112,21 +112,60 @@ def fetch_model_version_record_by_id(model_version_id: int, status: Optional[str
 
 
 def fetch_training_dataframe(schema_version: Optional[int] = None) -> pd.DataFrame:
+    """Ambil SEMUA raw applicant data terlabel (status Verified/Rejected).
+
+    Label default berasal dari status aplikasi:
+      Verified → Layak (label_class=0)
+      Rejected → Indikasi (label_class=1)
+
+    Jika baris sudah muncul di spk_training_data sebagai admin_corrected,
+    label dari training_data dipakai (menghormati koreksi admin).
+
+    Flask melakukan encoding sendiri dari raw fields — tidak mengandalkan
+    kolom encoded di DB.
+    """
     query = sql.SQL(
-        "SELECT kip, pkh, kks, dtks, sktm, "
-        "penghasilan_gabungan, penghasilan_ayah, penghasilan_ibu, "
-        "jumlah_tanggungan, anak_ke, status_orangtua, status_rumah, "
-        "daya_listrik, label, label_class "
-        "FROM {table_name} WHERE is_active = TRUE"
-    ).format(table_name=sql.Identifier(TRAINING_TABLE))
+        """
+        SELECT
+            sa.id AS source_application_id,
+            sa.schema_version,
+            sa.kip, sa.pkh, sa.kks, sa.dtks, sa.sktm,
+            sa.penghasilan_ayah_rupiah, sa.penghasilan_ibu_rupiah,
+            sa.penghasilan_gabungan_rupiah,
+            sa.jumlah_tanggungan_raw, sa.anak_ke_raw,
+            sa.status_orangtua_text, sa.status_rumah_text, sa.daya_listrik_text,
+            CASE WHEN sa.status = 'Verified' THEN 'Layak' ELSE 'Indikasi' END AS default_label,
+            CASE WHEN sa.status = 'Verified' THEN 0 ELSE 1 END AS default_label_class,
+            td.label AS corrected_label,
+            td.label_class AS corrected_label_class,
+            COALESCE(td.admin_corrected, FALSE) AS admin_corrected
+        FROM student_applications sa
+        LEFT JOIN {training_table} td
+               ON td.source_application_id = sa.id
+              AND td.is_active = TRUE
+              AND COALESCE(td.admin_corrected, FALSE) = TRUE
+        WHERE sa.status IN ('Verified', 'Rejected')
+        """
+    ).format(training_table=sql.Identifier(TRAINING_TABLE))
 
     params: tuple[int, ...] = ()
     if schema_version is not None:
-        query += sql.SQL(" AND schema_version = %s")
+        query += sql.SQL(" AND sa.schema_version = %s")
         params = (schema_version,)
 
     with psycopg2.connect(**db_config()) as conn:
-        return pd.read_sql(query.as_string(conn), conn, params=params)
+        df = pd.read_sql(query.as_string(conn), conn, params=params)
+
+    # Terapkan koreksi admin bila ada, jika tidak gunakan default dari status.
+    df["label"] = df["corrected_label"].where(df["admin_corrected"], df["default_label"])
+    df["label_class"] = df["corrected_label_class"].where(
+        df["admin_corrected"], df["default_label_class"]
+    ).astype(int)
+
+    return df.drop(columns=[
+        "default_label", "default_label_class",
+        "corrected_label", "corrected_label_class", "admin_corrected",
+    ])
 
 
 def persist_model_version_record(payload: dict) -> dict:
@@ -248,3 +287,39 @@ def mark_model_version_as_current(model_version_id: int, activated_at: Optional[
         raise ValueError("Versi model siap tidak ditemukan atau tidak dapat diaktifkan.")
 
     return dict(row)
+
+
+def purge_all_training_data() -> int:
+    """Hapus SEMUA baris di spk_training_data. Return jumlah baris yang dihapus."""
+    with psycopg2.connect(**db_config()) as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                sql.SQL("DELETE FROM {table_name}").format(
+                    table_name=sql.Identifier(TRAINING_TABLE)
+                )
+            )
+            deleted_count = cursor.rowcount
+        conn.commit()
+    return deleted_count
+
+
+def purge_model_artifacts() -> list[str]:
+    """Hapus semua file model .joblib versioned di direktori models/. Kembalikan daftar file yang dihapus."""
+    import glob
+    from pathlib import Path
+    from config import CATBOOST_MODEL_PATH
+
+    models_dir = CATBOOST_MODEL_PATH.parent
+    deleted_files = []
+    for pattern in ["catboost_*.joblib", "naive_bayes_*.joblib"]:
+        for filepath in glob.glob(str(models_dir / pattern)):
+            path = Path(filepath)
+            # Jangan hapus file canonical (tanpa timestamp)
+            if path.name in ("catboost_model.joblib", "naive_bayes_model.joblib"):
+                continue
+            try:
+                path.unlink()
+                deleted_files.append(path.name)
+            except OSError:
+                pass
+    return deleted_files

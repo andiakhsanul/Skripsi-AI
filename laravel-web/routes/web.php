@@ -51,6 +51,7 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/applications/{application}/refresh-prediction', [AdminApplicationReviewController::class, 'refreshPrediction'])->name('admin.applications.refresh-prediction');
         Route::post('/applications/{application}/verify', [AdminApplicationReviewController::class, 'verify'])->name('admin.applications.verify');
         Route::post('/applications/{application}/reject', [AdminApplicationReviewController::class, 'reject'])->name('admin.applications.reject');
+        Route::post('/applications/{application}/confirm-ai', [AdminApplicationReviewController::class, 'confirmAi'])->name('admin.applications.confirm-ai');
         Route::get('/applications/{application}/training-data', [AdminTrainingDataCorrectionController::class, 'show'])->name('admin.training-data.show');
         Route::put('/applications/{application}/training-data', [AdminTrainingDataCorrectionController::class, 'update'])->name('admin.training-data.update');
         Route::get('/models/retrain', [AdminModelRetrainController::class, 'index'])->name('admin.models.retrain');
