@@ -3,7 +3,6 @@
 namespace App\Services\OfflineImport;
 
 use App\Models\ApplicationStatusLog;
-use App\Models\ParameterSchemaVersion;
 use App\Models\StudentApplication;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -63,7 +62,7 @@ class CsvStudentApplicationImporter
 
                 $sourceRowNumber = $this->parseNullableInt($data['source_row_number'] ?? null) ?? 0;
 
-                $schemaVersion = $this->resolveSchemaVersion($data['schema_version'] ?? null);
+                $schemaVersion = $this->parseNullableInt($data['schema_version'] ?? null) ?: 1;
                 $decision = $this->resolveDecisionStatus(
                     $data['status'] ?? null,
                     $data['admin_decision'] ?? null,
@@ -209,17 +208,6 @@ class CsvStudentApplicationImporter
             ->where('source_sheet_name', $sourceSheetName);
 
         return $query->delete();
-    }
-
-    private function resolveSchemaVersion(mixed $value): int
-    {
-        $parsedValue = $this->parseNullableInt($value);
-
-        if ($parsedValue !== null && $parsedValue >= 1) {
-            return $parsedValue;
-        }
-
-        return (int) (ParameterSchemaVersion::query()->max('version') ?? 1);
     }
 
     private function resolveDecisionStatus(mixed $status, mixed $adminDecision): string

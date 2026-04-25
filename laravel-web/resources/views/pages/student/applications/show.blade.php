@@ -118,10 +118,17 @@
                     Anda hanya perlu memantau status pengajuan di halaman ini. Jika admin sudah memberi keputusan, hasil akhir akan tampil otomatis.
                 </p>
 
-                <div class="mt-5 inline-flex flex-col gap-1 rounded-2xl bg-surface-container-low px-5 py-4">
-                    <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Pemohon</p>
-                    <p class="text-base font-black text-on-surface">{{ $applicantName }}</p>
-                    <p class="text-sm font-medium text-slate-500">{{ $applicantEmail }}</p>
+                <div class="mt-5 grid gap-3 sm:grid-cols-2">
+                    <div class="rounded-2xl bg-surface-container-low px-5 py-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Pemohon</p>
+                        <p class="text-base font-black text-on-surface">{{ $applicantName }}</p>
+                        <p class="text-sm font-medium text-slate-500">{{ $applicantEmail }}</p>
+                    </div>
+                    <div class="rounded-2xl bg-surface-container-low px-5 py-4">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Akademik</p>
+                        <p class="text-base font-black text-on-surface">{{ $application->study_program ?: '-' }}</p>
+                        <p class="text-sm font-medium text-slate-500">{{ $application->faculty ?: '-' }}</p>
+                    </div>
                 </div>
             </div>
 

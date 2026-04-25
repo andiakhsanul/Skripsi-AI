@@ -15,7 +15,6 @@ class AdminModelRetrainService
     public function __construct(
         private readonly TrainingDataSyncService $trainingDataSyncService,
         private readonly MlGatewayService $mlGatewayService,
-        private readonly ParameterSchemaService $parameterSchemaService,
     ) {}
 
     /**
@@ -50,7 +49,6 @@ class AdminModelRetrainService
         $latestAttempt = $this->latestAttempt();
 
         return [
-            'active_schema' => $this->parameterSchemaService->getActiveSchema(),
             'finalized_applications' => $finalizedApplications,
             'training_rows' => $trainingRows,
             'training_gap' => max($finalizedApplications - $trainingRows, 0),
@@ -173,16 +171,13 @@ class AdminModelRetrainService
             throw new RuntimeException('Belum ada data training aktif. Sinkronkan data final terlebih dahulu.');
         }
 
-        $schemaVersion = $this->parameterSchemaService->getActiveSchema()?->version ?? 1;
         $mlResponse = $this->mlGatewayService->retrain([
             'triggered_by_user_id' => $admin->id,
             'triggered_by_email' => $admin->email,
-            'schema_version' => $schemaVersion,
             'purge_training' => $purgeTraining,
         ]);
 
         return [
-            'schema_version' => $schemaVersion,
             'training_rows' => $trainingRows,
             'purge_training' => $purgeTraining,
             'ml_response' => $mlResponse,

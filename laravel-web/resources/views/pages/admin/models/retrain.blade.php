@@ -5,7 +5,6 @@
 
 @php
     $notice = session('admin_notice');
-    $activeSchema = $payload['active_schema'];
     $modelStatus = $payload['model_status'];
     $activeModel = $payload['active_model'];
     $activeModelEvaluation = $payload['active_model_evaluation'];
@@ -107,8 +106,8 @@
                                     <div class="flex items-center gap-3">
                                         <span class="material-symbols-outlined rounded-2xl bg-white p-2 text-primary shadow-sm">database</span>
                                         <div>
-                                            <p class="text-sm font-bold text-on-surface">{{ $activeSchema?->source_file_name ?? 'Dataset aktif dari sistem' }}</p>
-                                            <p class="mt-1 text-[11px] text-slate-500">Aturan v{{ $activeSchema?->version ?? 1 }} · {{ number_format($payload['training_rows']) }} data siap dilatih</p>
+                                            <p class="text-sm font-bold text-on-surface">Dataset aktif dari sistem</p>
+                                            <p class="mt-1 text-[11px] text-slate-500">{{ number_format($payload['training_rows']) }} data siap dilatih</p>
                                         </div>
                                     </div>
                                     <span class="material-symbols-outlined text-slate-400">folder_open</span>
@@ -302,7 +301,7 @@
                                                     <span class="rounded-full bg-primary-container px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-on-primary-container">Aktif</span>
                                                 @endif
                                             </div>
-                                            <p class="mt-1 text-[11px] text-slate-400">{{ $modelVersion->rows_used ?? 0 }} data dipakai · aturan v{{ $modelVersion->schema_version }}</p>
+                                            <p class="mt-1 text-[11px] text-slate-400">{{ $modelVersion->rows_used ?? 0 }} data dipakai</p>
                                         </td>
                                         <td class="px-8 py-5">
                                             <span class="rounded-full px-3 py-1 text-[11px] font-black uppercase {{ $modelVersion->status === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-error-container text-on-error-container' }}">
@@ -388,14 +387,6 @@
                         <div class="mt-4 rounded-2xl bg-surface-container p-5">
                             <p class="text-sm font-black text-on-surface">{{ $latestReadyModel?->version_name ?? 'Belum ada model siap' }}</p>
                             <p class="mt-2 text-sm font-medium text-slate-500">Versi ini bisa diaktifkan jika admin ingin kembali memakai hasil pelatihan yang sebelumnya.</p>
-                        </div>
-                    </div>
-
-                    <div class="rounded-3xl bg-white p-6 shadow-lg">
-                        <p class="text-[11px] font-black uppercase tracking-[0.18em] text-slate-400">Ringkasan Aturan</p>
-                        <div class="mt-4 rounded-2xl bg-surface-container p-5">
-                            <p class="text-sm font-black text-on-surface">Aturan v{{ $activeSchema?->version ?? 1 }}</p>
-                            <p class="mt-2 text-sm font-medium text-slate-500">Sistem menggunakan versi aturan ini untuk membentuk data latih aktif sebelum pelatihan dijalankan.</p>
                         </div>
                     </div>
 

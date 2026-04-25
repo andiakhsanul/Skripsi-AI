@@ -132,6 +132,46 @@
 
         <section class="rounded-3xl bg-white p-8 shadow-lg">
             <div class="mb-6 flex items-center gap-3">
+                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-black text-white">0</span>
+                <div>
+                    <h2 class="text-xl font-black text-on-surface">Data Akademik</h2>
+                    <p class="text-sm text-slate-500">Program studi dan fakultas Anda. Data ini hanya disimpan sebagai informasi pengajuan dan tidak digunakan oleh model AI.</p>
+                </div>
+            </div>
+
+            <div class="grid gap-6 md:grid-cols-2">
+                <div class="space-y-2">
+                    <label for="study_program" class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Program Studi</label>
+                    <input
+                        id="study_program"
+                        name="study_program"
+                        type="text"
+                        value="{{ $fieldValue('study_program') }}"
+                        required
+                        maxlength="255"
+                        class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        placeholder="Contoh: S1 Teknik Informatika"
+                    />
+                </div>
+
+                <div class="space-y-2">
+                    <label for="faculty" class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Fakultas</label>
+                    <input
+                        id="faculty"
+                        name="faculty"
+                        type="text"
+                        value="{{ $fieldValue('faculty') }}"
+                        required
+                        maxlength="255"
+                        class="w-full rounded-2xl border border-slate-200 bg-white px-4 py-4 text-sm font-semibold text-on-surface focus:border-primary focus:ring-2 focus:ring-primary/15"
+                        placeholder="Contoh: Fakultas Sains dan Teknologi"
+                    />
+                </div>
+            </div>
+        </section>
+
+        <section class="rounded-3xl bg-white p-8 shadow-lg">
+            <div class="mb-6 flex items-center gap-3">
                 <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-black text-white">1</span>
                 <div>
                     <h2 class="text-xl font-black text-on-surface">Kepemilikan Dokumen dan Bantuan Sosial</h2>

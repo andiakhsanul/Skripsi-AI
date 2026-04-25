@@ -17,6 +17,8 @@ class StoreStudentApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'study_program' => ['required', 'string', 'max:255'],
+            'faculty' => ['required', 'string', 'max:255'],
             'kip' => ['required', 'integer', 'in:0,1'],
             'pkh' => ['required', 'integer', 'in:0,1'],
             'kks' => ['required', 'integer', 'in:0,1'],
@@ -40,6 +42,8 @@ class StoreStudentApplicationRequest extends FormRequest
     public function attributes(): array
     {
         return [
+            'study_program' => 'program studi',
+            'faculty' => 'fakultas',
             'kip' => 'KIP',
             'pkh' => 'PKH',
             'kks' => 'KKS',

@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Models\ParameterSchemaVersion;
 use App\Models\StudentApplication;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -76,11 +75,6 @@ class AdminDashboardService
             ->where('admin_corrected', false)
             ->count();
 
-        $activeSchema = ParameterSchemaVersion::query()
-            ->where('is_active', true)
-            ->orderByDesc('version')
-            ->first();
-
         return [
             'applications' => [
                 'total' => $total,
@@ -101,7 +95,6 @@ class AdminDashboardService
                 'admin_corrected' => $adminCorrectedCount,
                 'pending_confirmation' => $pendingConfirmationCount,
             ],
-            'active_schema' => $activeSchema,
         ];
     }
 
@@ -113,7 +106,6 @@ class AdminDashboardService
     {
         $applicationStats = $summary['applications'];
         $trainingStats = $summary['training_data'];
-        $activeSchema = $summary['active_schema'];
 
         return [
             'filters' => [
@@ -268,11 +260,6 @@ class AdminDashboardService
                 ],
             ],
             'operation_cards' => [
-                [
-                    'label' => 'Skema Aktif',
-                    'value' => $activeSchema ? 'v'.$activeSchema->version : 'Belum aktif',
-                    'detail' => $activeSchema?->source_file_name ?? 'Menunggu pengaturan skema aktif',
-                ],
                 [
                     'label' => 'Data Siap Dilatih',
                     'value' => number_format($trainingStats['total_active']),

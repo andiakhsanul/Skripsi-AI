@@ -13,7 +13,6 @@ use Illuminate\Support\Facades\Storage;
 class StudentApplicationSubmissionService
 {
     public function __construct(
-        private readonly ParameterSchemaService $schemaService,
         private readonly ApplicationInferenceService $applicationInferenceService,
     ) {}
 
@@ -33,7 +32,7 @@ class StudentApplicationSubmissionService
             ]);
         }
 
-        $schemaVersion = $this->schemaService->resolveSchemaVersion($validated['schema_version'] ?? null);
+        $schemaVersion = 1;
         /** @var UploadedFile $submittedPdf */
         $submittedPdf = $validated['submitted_pdf'];
         $pdfPath = $submittedPdf->store('student-application-pdfs', 'public');
@@ -87,6 +86,8 @@ class StudentApplicationSubmissionService
             'submission_source' => 'online_student',
             'applicant_name' => $student->name,
             'applicant_email' => $student->email,
+            'study_program' => $validated['study_program'],
+            'faculty' => $validated['faculty'],
             'kip' => (int) $validated['kip'],
             'pkh' => (int) $validated['pkh'],
             'kks' => (int) $validated['kks'],

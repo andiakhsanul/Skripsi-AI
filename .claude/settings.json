@@ -4,6 +4,9 @@
       "Bash(xargs ls *)",
       "Bash(rtk find *)",
       "Bash(rtk wc *)"
+    ],
+    "additionalDirectories": [
+      "/Users/andiakhsanul/BISMILLAH/Skripsi-AI/laravel-web/app/Services"
     ]
   }
 }

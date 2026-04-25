@@ -3,13 +3,11 @@
 namespace App\Services;
 
 use App\Models\ApplicationModelSnapshot;
-use App\Models\ParameterSchemaVersion;
 use App\Models\StudentApplication;
 
 class ApplicationInferenceService
 {
     public function __construct(
-        private readonly ParameterSchemaService $schemaService,
         private readonly ApplicationFeatureEncodingService $encodingService,
         private readonly MlGatewayService $mlGateway,
         private readonly RuleScoringService $ruleScoringService,
@@ -22,13 +20,10 @@ class ApplicationInferenceService
         // dikirim ke Flask dalam bentuk RAW agar Flask jadi authoritative encoder.
         $encoding = $this->encodingService->syncFromApplication($application, $actorUserId);
         $features = $encoding->toFeatureArray();
-        $schema = ParameterSchemaVersion::query()->where('version', $application->schema_version)->first();
-
-        $this->schemaService->validateApplicationPayload($features, [], $schema);
 
         $rawPayload = $this->buildRawPayload($application);
         $inference = $this->mlGateway->predictOrFallback($rawPayload);
-        $ruleScore = $this->ruleScoringService->score($features, [], $schema);
+        $ruleScore = $this->ruleScoringService->score($features);
         $reviewPriority = $this->resolveReviewPriority($inference, $ruleScore);
 
         return $this->modelSnapshotService->syncFromEncoding(
