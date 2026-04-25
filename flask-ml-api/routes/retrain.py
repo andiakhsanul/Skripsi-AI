@@ -51,30 +51,6 @@ def retrain_model():
             }), 409
 
         import threading
-        from database import persist_model_version_record
-        from training import build_version_name
-        from datetime import datetime, timezone
-
-        trained_at = datetime.now(timezone.utc)
-        version_name = build_version_name(schema_version, trained_at, status="training")
-        
-        try:
-            persist_model_version_record({
-                "version_name": version_name,
-                "schema_version": schema_version or 1,
-                "status": "training",
-                "is_current": False,
-                "triggered_by_user_id": triggered_by_user_id,
-                "triggered_by_email": triggered_by_email,
-                "training_table": "spk_training_data",
-                "primary_model": "catboost",
-                "secondary_model": "categorical_nb",
-                "note": "Proses pelatihan sedang berjalan di latar belakang..."
-                       + (" (purge & re-encode)" if purge_training else ""),
-                "trained_at": trained_at,
-            })
-        except Exception:
-            pass
 
         # Jika purge diminta, hapus artifact model lama secara sinkron
         purge_summary = {}

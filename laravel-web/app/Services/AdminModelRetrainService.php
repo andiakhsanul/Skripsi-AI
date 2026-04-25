@@ -242,6 +242,7 @@ class AdminModelRetrainService
     {
         return ModelVersion::query()
             ->with('triggeredBy:id,name,email')
+            ->where('status', '!=', 'training')
             ->orderByRaw('COALESCE(trained_at, created_at) DESC, id DESC')
             ->limit($limit)
             ->get();
@@ -271,6 +272,7 @@ class AdminModelRetrainService
     {
         return ModelVersion::query()
             ->with('triggeredBy:id,name,email')
+            ->where('status', '!=', 'training')
             ->orderByRaw('COALESCE(trained_at, created_at) DESC, id DESC')
             ->first();
     }
