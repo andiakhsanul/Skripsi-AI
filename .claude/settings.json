@@ -3,7 +3,18 @@
     "allow": [
       "Bash(xargs ls *)",
       "Bash(rtk find *)",
-      "Bash(rtk wc *)"
+      "Bash(rtk wc *)",
+      "Bash(grep -E \"\\\\.\\(php|json\\)$\")",
+      "Bash(grep -E \"\\\\.php$\")",
+      "Bash(rtk proxy *)",
+      "Bash(rtk composer *)",
+      "Bash(php -l app/Services/GoogleDriveUploadService.php)",
+      "Bash(php -l app/Services/StudentApplicationSubmissionService.php)",
+      "Bash(php -l app/Models/StudentApplication.php)",
+      "Bash(php -l app/Http/Controllers/Api/Student/ApplicationController.php)",
+      "Bash(php -l config/google.php)",
+      "Bash(php artisan *)",
+      "Bash(php -l app/Console/Commands/GoogleDriveAuthorizeCommand.php)"
     ],
     "additionalDirectories": [
       "/Users/andiakhsanul/BISMILLAH/Skripsi-AI/laravel-web/app/Services"

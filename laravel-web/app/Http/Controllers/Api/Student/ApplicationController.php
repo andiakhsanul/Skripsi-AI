@@ -73,7 +73,9 @@ class ApplicationController extends Controller
                 'admin_decision_note' => $application->admin_decision_note,
                 'admin_decided_at' => $application->admin_decided_at,
                 'submitted_pdf_uploaded_at' => $application->submitted_pdf_uploaded_at,
-                'submitted_pdf_url' => Storage::disk('public')->url($application->submitted_pdf_path),
+                'submitted_pdf_url' => $application->submitted_pdf_path
+                    ? Storage::disk('public')->url($application->submitted_pdf_path)
+                    : $application->source_document_link,
                 'encoding' => $application->currentEncoding,
                 'model_snapshot' => $application->modelSnapshot,
                 'created_at' => $application->created_at,

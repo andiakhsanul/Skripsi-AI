@@ -112,7 +112,7 @@ class StudentApplication extends Model
 
     public function hasSubmittedPdf(): bool
     {
-        return ! empty($this->submitted_pdf_path);
+        return ! empty($this->submitted_pdf_path) || ! empty($this->source_document_link);
     }
 
     public function isOfflineImport(): bool

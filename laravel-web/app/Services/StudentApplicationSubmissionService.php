@@ -8,12 +8,12 @@ use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class StudentApplicationSubmissionService
 {
     public function __construct(
         private readonly ApplicationInferenceService $applicationInferenceService,
+        private readonly GoogleDriveUploadService $googleDrive,
     ) {}
 
     /**
@@ -35,13 +35,22 @@ class StudentApplicationSubmissionService
         $schemaVersion = 1;
         /** @var UploadedFile $submittedPdf */
         $submittedPdf = $validated['submitted_pdf'];
-        $pdfPath = $submittedPdf->store('student-application-pdfs', 'public');
+
+        $targetName = sprintf(
+            '%d_%s_%s',
+            $student->id,
+            now()->format('YmdHis'),
+            $submittedPdf->getClientOriginalName(),
+        );
+
+        $driveResult = $this->googleDrive->upload($submittedPdf, $targetName);
 
         try {
-            return DB::transaction(function () use ($student, $validated, $schemaVersion, $submittedPdf, $pdfPath): StudentApplication {
+            return DB::transaction(function () use ($student, $validated, $schemaVersion, $submittedPdf, $driveResult): StudentApplication {
                 $application = StudentApplication::query()->create([
                     ...$this->buildPayload($student, $validated, $schemaVersion),
-                    'submitted_pdf_path' => $pdfPath,
+                    'source_document_link' => $driveResult['web_view_link'],
+                    'submitted_pdf_path' => null,
                     'submitted_pdf_original_name' => $submittedPdf->getClientOriginalName(),
                     'submitted_pdf_uploaded_at' => now(),
                 ]);
@@ -57,13 +66,18 @@ class StudentApplicationSubmissionService
                     'metadata' => [
                         'schema_version' => $application->schema_version,
                         'submitted_pdf_original_name' => $application->submitted_pdf_original_name,
+                        'drive_file_id' => $driveResult['file_id'],
                     ],
                 ]);
 
                 return $application->fresh(['currentEncoding', 'modelSnapshot', 'logs']);
             });
         } catch (\Throwable $throwable) {
-            Storage::disk('public')->delete($pdfPath);
+            try {
+                $this->googleDrive->delete($driveResult['file_id']);
+            } catch (\Throwable) {
+                // best-effort rollback; biarkan exception asli yang dilempar
+            }
 
             throw $throwable;
         }
