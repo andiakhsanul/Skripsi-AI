@@ -6,9 +6,15 @@
     $navItems = [
         [
             'key' => 'dashboard',
-            'label' => 'Dasbor Admin',
-            'icon' => 'dashboard_customize',
+            'label' => 'Antrean Keputusan',
+            'icon' => 'inbox',
             'href' => route('admin.dashboard'),
+        ],
+        [
+            'key' => 'applications',
+            'label' => 'Semua Aplikan',
+            'icon' => 'groups',
+            'href' => route('admin.applications.index'),
         ],
         [
             'key' => 'house-review',

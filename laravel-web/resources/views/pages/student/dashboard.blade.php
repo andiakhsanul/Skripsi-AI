@@ -121,14 +121,15 @@
                     Lengkapi data pengajuan KIP-K, unggah dokumen PDF, lalu tunggu hasil rekomendasi sistem dan keputusan final admin di portal ini.
                 </p>
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <a href="{{ route('student.applications.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-secondary px-8 py-3.5 font-bold text-on-secondary-fixed shadow-lg shadow-secondary/20 transition-all hover:-translate-y-0.5 active:scale-95">
-                        <span class="material-symbols-outlined">add</span>
-                        Ajukan KIP-K
-                    </a>
                     @if ($latestApplication)
-                        <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="inline-flex items-center gap-2 rounded-lg border border-white/25 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/20">
+                        <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="inline-flex items-center gap-2 rounded-lg bg-secondary px-8 py-3.5 font-bold text-on-secondary-fixed shadow-lg shadow-secondary/20 transition-all hover:-translate-y-0.5 active:scale-95">
                             <span class="material-symbols-outlined">visibility</span>
-                            Lihat Hasil Terbaru
+                            Cek Status Pengajuan
+                        </a>
+                    @else
+                        <a href="{{ route('student.applications.create') }}" class="inline-flex items-center gap-2 rounded-lg bg-secondary px-8 py-3.5 font-bold text-on-secondary-fixed shadow-lg shadow-secondary/20 transition-all hover:-translate-y-0.5 active:scale-95">
+                            <span class="material-symbols-outlined">add</span>
+                            Ajukan KIP-K
                         </a>
                     @endif
                 </div>
@@ -256,7 +257,6 @@
                                     @php
                                         $statusClass = $statusClasses[$application->status] ?? 'bg-slate-100 text-slate-600 border-t-2 border-slate-300';
                                         $displayId = 'KIPK-'.($application->created_at?->format('Y') ?? now()->format('Y')).'-'.str_pad((string) $application->id, 3, '0', STR_PAD_LEFT);
-                                        $canEdit = $application->canBeRevisedByStudent();
                                     @endphp
                                     <tr class="transition-colors hover:bg-slate-50/60">
                                         <td class="px-6 py-4">
@@ -300,16 +300,6 @@
                                                 >
                                                     <span class="material-symbols-outlined">visibility</span>
                                                 </a>
-
-                                                @if($canEdit)
-                                                    <a
-                                                        href="{{ route('student.applications.edit', $application->id) }}"
-                                                        class="rounded p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-primary"
-                                                        title="Revisi pengajuan"
-                                                    >
-                                                        <span class="material-symbols-outlined">edit_square</span>
-                                                    </a>
-                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -386,20 +376,19 @@
                 </p>
                 <div class="mt-6 space-y-3">
                     <div class="rounded-lg bg-white/10 px-4 py-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Panduan Cepat</p>
-                        <p class="mt-2 text-sm font-medium text-white">Simpan revisi hanya selama admin belum memberi keputusan final.</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Penting</p>
+                        <p class="mt-2 text-sm font-medium text-white">Pengajuan KIP-K hanya dapat dilakukan SATU KALI. Pastikan data Anda sudah benar sebelum submit.</p>
                     </div>
                     <div class="rounded-lg bg-white/10 px-4 py-3">
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Dokumen</p>
-                        <p class="mt-2 text-sm font-medium text-white">Pastikan PDF pendukung Anda selalu memuat bukti terbaru dan terbaca jelas.</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-white/60">Cek Berkala</p>
+                        <p class="mt-2 text-sm font-medium text-white">Setelah submit, cek halaman status pengajuan secara berkala untuk melihat keputusan admin.</p>
                     </div>
                 </div>
-                <div class="mt-6 grid grid-cols-2 gap-3">
-                    <a href="{{ route('student.applications.create') }}" class="rounded-lg bg-white/10 py-2 text-center text-xs font-bold transition-all hover:bg-white/20">Form Pengajuan</a>
+                <div class="mt-6 grid grid-cols-1 gap-3">
                     @if ($latestApplication)
-                        <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="rounded-lg bg-white/10 py-2 text-center text-xs font-bold transition-all hover:bg-white/20">Hasil Terbaru</a>
+                        <a href="{{ route('student.applications.show', $latestApplication->id) }}" class="rounded-lg bg-white/10 py-2 text-center text-xs font-bold transition-all hover:bg-white/20">Cek Status Pengajuan</a>
                     @else
-                        <button type="button" class="rounded-lg bg-white/10 py-2 text-xs font-bold transition-all hover:bg-white/20">Menunggu Data</button>
+                        <a href="{{ route('student.applications.create') }}" class="rounded-lg bg-white/10 py-2 text-center text-xs font-bold transition-all hover:bg-white/20">Form Pengajuan</a>
                     @endif
                 </div>
             </section>

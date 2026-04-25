@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Web\Admin\ApplicationListController as AdminApplicationListController;
 use App\Http\Controllers\Web\Admin\ApplicationReviewController as AdminApplicationReviewController;
 use App\Http\Controllers\Web\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Web\Admin\HouseStatusReviewController as AdminHouseStatusReviewController;
@@ -36,13 +37,12 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/dashboard', [StudentDashboardController::class, 'index'])->name('student.dashboard');
         Route::get('/applications/create', [StudentApplicationWebController::class, 'create'])->name('student.applications.create');
         Route::post('/applications', [StudentApplicationWebController::class, 'store'])->name('student.applications.store');
-        Route::get('/applications/{application}/edit', [StudentApplicationWebController::class, 'edit'])->name('student.applications.edit');
-        Route::put('/applications/{application}', [StudentApplicationWebController::class, 'update'])->name('student.applications.update');
         Route::get('/applications/{application}', [StudentApplicationWebController::class, 'show'])->name('student.applications.show');
     });
 
     Route::middleware('role.admin')->prefix('admin')->group(function (): void {
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+        Route::get('/applications', [AdminApplicationListController::class, 'index'])->name('admin.applications.index');
         Route::get('/applications/house-review', [AdminHouseStatusReviewController::class, 'index'])->name('admin.applications.house-review');
         Route::post('/applications/house-review/batch-update', [AdminHouseStatusReviewController::class, 'batchUpdate'])->name('admin.applications.house-review.batch-update');
         Route::put('/applications/{application}/house-review', [AdminHouseStatusReviewController::class, 'update'])->name('admin.applications.house-review.update');

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\StudentApplication;
 use App\Models\User;
-use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\Storage;
 
 class StudentApplicationPortalService
@@ -49,18 +48,13 @@ class StudentApplicationPortalService
             ->findOrFail($applicationId);
     }
 
-    /**
-     * @throws AuthorizationException
-     */
-    public function editable(User $student, int $applicationId): StudentApplication
+    public function latestForStudent(User $student): ?StudentApplication
     {
-        $application = $this->detail($student, $applicationId);
-
-        if (! $application->canBeRevisedByStudent()) {
-            throw new AuthorizationException('Pengajuan ini sudah tidak dapat direvisi.');
-        }
-
-        return $application;
+        return StudentApplication::query()
+            ->with(['logs.actor:id,name', 'modelSnapshot.modelVersion'])
+            ->where('student_user_id', $student->id)
+            ->orderByDesc('id')
+            ->first();
     }
 
     public function documentUrl(StudentApplication $application): ?string
@@ -70,10 +64,5 @@ class StudentApplicationPortalService
         }
 
         return $application->source_document_link;
-    }
-
-    public function canEdit(StudentApplication $application): bool
-    {
-        return $application->canBeRevisedByStudent();
     }
 }

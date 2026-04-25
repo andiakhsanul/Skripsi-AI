@@ -22,6 +22,17 @@ class StudentApplicationSubmissionService
      */
     public function submit(User $student, array $validated): StudentApplication
     {
+        $existing = StudentApplication::query()
+            ->where('student_user_id', $student->id)
+            ->orderByDesc('id')
+            ->first();
+
+        if ($existing !== null) {
+            throw ValidationException::withMessages([
+                'application' => ['Anda sudah mengajukan KIP-K. Pengajuan hanya dapat dilakukan satu kali — silakan cek status pengajuan Anda.'],
+            ]);
+        }
+
         $schemaVersion = $this->schemaService->resolveSchemaVersion($validated['schema_version'] ?? null);
         /** @var UploadedFile $submittedPdf */
         $submittedPdf = $validated['submitted_pdf'];
@@ -54,80 +65,6 @@ class StudentApplicationSubmissionService
             });
         } catch (\Throwable $throwable) {
             Storage::disk('public')->delete($pdfPath);
-
-            throw $throwable;
-        }
-    }
-
-    /**
-     * @param array<string, mixed> $validated
-     */
-    public function update(User $student, StudentApplication $application, array $validated): StudentApplication
-    {
-        if (! $application->canBeRevisedByStudent()) {
-            throw ValidationException::withMessages([
-                'application' => ['Pengajuan ini sudah tidak dapat direvisi karena admin telah memprosesnya.'],
-            ]);
-        }
-
-        $schemaVersion = array_key_exists('schema_version', $validated) && $validated['schema_version'] !== null
-            ? $this->schemaService->resolveSchemaVersion((int) $validated['schema_version'])
-            : (int) $application->schema_version;
-        /** @var UploadedFile|null $replacementPdf */
-        $replacementPdf = $validated['submitted_pdf'] ?? null;
-        $replacementPdfPath = $replacementPdf?->store('student-application-pdfs', 'public');
-        $existingPdfPath = $application->submitted_pdf_path;
-
-        try {
-            $updatedApplication = DB::transaction(function () use (
-                $student,
-                $application,
-                $validated,
-                $schemaVersion,
-                $replacementPdf,
-                $replacementPdfPath,
-                $existingPdfPath
-            ): StudentApplication {
-                $application->fill($this->buildPayload($student, $validated, $schemaVersion));
-
-                if ($replacementPdf !== null && $replacementPdfPath !== null) {
-                    $application->submitted_pdf_path = $replacementPdfPath;
-                    $application->submitted_pdf_original_name = $replacementPdf->getClientOriginalName();
-                    $application->submitted_pdf_uploaded_at = now();
-                }
-
-                $previousStatus = $application->getOriginal('status');
-
-                $application->save();
-
-                $this->applicationInferenceService->syncPredictionSnapshot($application, $student->id);
-
-                ApplicationStatusLog::query()->create([
-                    'application_id' => $application->id,
-                    'actor_user_id' => $student->id,
-                    'from_status' => $previousStatus,
-                    'to_status' => 'Submitted',
-                    'action' => 'revised',
-                    'metadata' => [
-                        'schema_version' => $application->schema_version,
-                        'replaced_pdf' => $replacementPdf !== null,
-                        'previous_pdf_path' => $existingPdfPath,
-                        'submitted_pdf_original_name' => $application->submitted_pdf_original_name,
-                    ],
-                ]);
-
-                return $application->fresh(['currentEncoding', 'modelSnapshot', 'logs']);
-            });
-
-            if ($replacementPdf !== null && $existingPdfPath && $existingPdfPath !== $replacementPdfPath) {
-                Storage::disk('public')->delete($existingPdfPath);
-            }
-
-            return $updatedApplication;
-        } catch (\Throwable $throwable) {
-            if ($replacementPdfPath) {
-                Storage::disk('public')->delete($replacementPdfPath);
-            }
 
             throw $throwable;
         }

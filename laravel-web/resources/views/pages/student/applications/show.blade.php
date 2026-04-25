@@ -132,11 +132,11 @@
                 <span class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
                     Terakhir diperbarui: {{ $lastUpdatedAt?->translatedFormat('d M Y H:i') ?? '-' }}
                 </span>
-                @if ($canEdit ?? false)
-                    <a href="{{ route('student.applications.edit', $application->id) }}" class="inline-flex items-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-black text-slate-600 transition hover:bg-slate-50">
-                        <span class="material-symbols-outlined text-base">edit_square</span>
-                        Revisi Pengajuan
-                    </a>
+                @if ($application->status === 'Submitted' && $application->admin_decision === null)
+                    <div class="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-bold text-amber-800">
+                        <span class="material-symbols-outlined align-middle text-sm">info</span>
+                        Pengajuan Anda sedang menunggu keputusan admin. Cek halaman ini secara berkala.
+                    </div>
                 @endif
             </div>
         </div>

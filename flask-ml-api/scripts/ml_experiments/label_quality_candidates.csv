@@ -1,0 +1,106 @@
+source_application_id,current_label_class,current_label,suggested_label_class,suggested_label,vulnerability_score,oof_proba_indikasi,confidence,reasons
+70,0,Layak,1,Indikasi,0.141,0.916,0.8,vuln_score=0.14 rendah tapi label=Layak (mungkin Indikasi) | OOF model yakin Indikasi (p=0.92) tapi label=Layak
+165,0,Layak,1,Indikasi,0.109,0.865,0.8,vuln_score=0.11 rendah tapi label=Layak (mungkin Indikasi) | OOF model yakin Indikasi (p=0.86) tapi label=Layak
+37,0,Layak,1,Indikasi,0.225,0.889,0.45,OOF model yakin Indikasi (p=0.89) tapi label=Layak
+113,0,Layak,1,Indikasi,0.303,0.905,0.45,OOF model yakin Indikasi (p=0.91) tapi label=Layak
+197,1,Indikasi,0,Layak,0.272,0.105,0.45,OOF model yakin Layak (p=0.10) tapi label=Indikasi
+202,1,Indikasi,0,Layak,0.351,0.082,0.45,OOF model yakin Layak (p=0.08) tapi label=Indikasi
+203,1,Indikasi,0,Layak,0.429,0.052,0.45,OOF model yakin Layak (p=0.05) tapi label=Indikasi
+216,1,Indikasi,0,Layak,0.241,0.063,0.45,OOF model yakin Layak (p=0.06) tapi label=Indikasi
+274,1,Indikasi,0,Layak,0.388,0.029,0.45,OOF model yakin Layak (p=0.03) tapi label=Indikasi
+314,0,Layak,1,Indikasi,0.235,0.926,0.45,OOF model yakin Indikasi (p=0.93) tapi label=Layak
+412,1,Indikasi,0,Layak,0.397,0.012,0.45,OOF model yakin Layak (p=0.01) tapi label=Indikasi
+656,1,Indikasi,0,Layak,0.403,0.076,0.45,OOF model yakin Layak (p=0.08) tapi label=Indikasi
+746,1,Indikasi,0,Layak,0.529,0.022,0.45,OOF model yakin Layak (p=0.02) tapi label=Indikasi
+780,1,Indikasi,0,Layak,0.314,0.136,0.45,OOF model yakin Layak (p=0.14) tapi label=Indikasi
+803,1,Indikasi,0,Layak,0.629,0.015,0.45,OOF model yakin Layak (p=0.02) tapi label=Indikasi
+820,1,Indikasi,0,Layak,0.429,0.034,0.45,OOF model yakin Layak (p=0.03) tapi label=Indikasi
+809,1,Indikasi,0,Layak,0.388,0.025,0.45,OOF model yakin Layak (p=0.03) tapi label=Indikasi
+771,0,Layak,1,Indikasi,0.225,0.887,0.45,OOF model yakin Indikasi (p=0.89) tapi label=Layak
+720,1,Indikasi,0,Layak,0.429,0.123,0.45,OOF model yakin Layak (p=0.12) tapi label=Indikasi
+883,1,Indikasi,0,Layak,0.287,0.097,0.45,OOF model yakin Layak (p=0.10) tapi label=Indikasi
+857,0,Layak,1,Indikasi,0.272,0.853,0.45,OOF model yakin Indikasi (p=0.85) tapi label=Layak
+75,0,Layak,1,Indikasi,0.198,0.742,0.35,vuln_score=0.20 rendah tapi label=Layak (mungkin Indikasi)
+112,0,Layak,1,Indikasi,0.141,0.828,0.35,vuln_score=0.14 rendah tapi label=Layak (mungkin Indikasi)
+140,0,Layak,1,Indikasi,0.163,0.533,0.35,vuln_score=0.16 rendah tapi label=Layak (mungkin Indikasi)
+175,0,Layak,1,Indikasi,0.188,0.657,0.35,vuln_score=0.19 rendah tapi label=Layak (mungkin Indikasi)
+205,0,Layak,1,Indikasi,0.13,0.543,0.35,vuln_score=0.13 rendah tapi label=Layak (mungkin Indikasi)
+283,0,Layak,1,Indikasi,0.198,0.832,0.35,vuln_score=0.20 rendah tapi label=Layak (mungkin Indikasi)
+451,0,Layak,1,Indikasi,0.177,0.812,0.35,vuln_score=0.18 rendah tapi label=Layak (mungkin Indikasi)
+453,0,Layak,1,Indikasi,0.194,0.375,0.35,vuln_score=0.19 rendah tapi label=Layak (mungkin Indikasi)
+499,0,Layak,1,Indikasi,0.194,0.696,0.35,vuln_score=0.19 rendah tapi label=Layak (mungkin Indikasi)
+24,0,Layak,0,Layak,0.319,0.769,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+30,0,Layak,0,Layak,0.303,0.645,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+32,1,Indikasi,1,Indikasi,0.225,0.864,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+34,0,Layak,0,Layak,0.376,0.666,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+40,0,Layak,0,Layak,0.345,0.544,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+45,0,Layak,0,Layak,0.314,0.621,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+48,0,Layak,0,Layak,0.272,0.519,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+49,0,Layak,0,Layak,0.314,0.686,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+73,0,Layak,0,Layak,0.203,0.701,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+82,0,Layak,0,Layak,0.366,0.58,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+87,1,Indikasi,1,Indikasi,0.35,0.401,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+89,1,Indikasi,1,Indikasi,0.35,0.387,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+96,1,Indikasi,1,Indikasi,0.287,0.409,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+97,1,Indikasi,1,Indikasi,0.329,0.656,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+100,1,Indikasi,1,Indikasi,0.287,0.441,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+111,0,Layak,0,Layak,0.256,0.789,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+115,0,Layak,0,Layak,0.319,0.744,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+116,0,Layak,0,Layak,0.329,0.668,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+152,0,Layak,0,Layak,0.314,0.518,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+160,0,Layak,0,Layak,0.314,0.663,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+161,0,Layak,0,Layak,0.287,0.677,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+169,0,Layak,0,Layak,0.256,0.758,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+176,0,Layak,0,Layak,0.314,0.671,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+177,0,Layak,0,Layak,0.303,0.642,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+179,0,Layak,0,Layak,0.287,0.71,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+180,0,Layak,0,Layak,0.319,0.514,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+193,1,Indikasi,1,Indikasi,0.287,0.441,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+196,1,Indikasi,1,Indikasi,0.303,0.655,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+200,0,Layak,0,Layak,0.298,0.678,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+201,1,Indikasi,1,Indikasi,0.287,0.441,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+222,1,Indikasi,1,Indikasi,0.329,0.589,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+224,1,Indikasi,1,Indikasi,0.319,0.444,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+229,1,Indikasi,1,Indikasi,0.35,0.617,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+249,1,Indikasi,1,Indikasi,0.272,0.638,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+256,1,Indikasi,1,Indikasi,0.303,0.462,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+264,0,Layak,0,Layak,0.303,0.642,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+266,1,Indikasi,1,Indikasi,0.319,0.522,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+288,1,Indikasi,1,Indikasi,0.334,0.54,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+299,1,Indikasi,1,Indikasi,0.241,0.445,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+305,1,Indikasi,1,Indikasi,0.287,0.467,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+316,1,Indikasi,1,Indikasi,0.287,0.441,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+318,1,Indikasi,1,Indikasi,0.287,0.409,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+330,1,Indikasi,1,Indikasi,0.319,0.525,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+341,1,Indikasi,1,Indikasi,0.272,0.669,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+348,1,Indikasi,1,Indikasi,0.303,0.458,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+363,1,Indikasi,1,Indikasi,0.334,0.643,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+370,1,Indikasi,1,Indikasi,0.287,0.619,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+371,1,Indikasi,1,Indikasi,0.303,0.617,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+392,1,Indikasi,1,Indikasi,0.241,0.577,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+417,1,Indikasi,1,Indikasi,0.314,0.429,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+420,1,Indikasi,1,Indikasi,0.314,0.458,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+426,1,Indikasi,1,Indikasi,0.329,0.589,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+458,1,Indikasi,1,Indikasi,0.303,0.512,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+472,1,Indikasi,1,Indikasi,0.272,0.762,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+485,1,Indikasi,1,Indikasi,0.303,0.489,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+491,0,Layak,0,Layak,0.209,0.666,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+495,0,Layak,0,Layak,0.272,0.554,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+525,0,Layak,0,Layak,0.272,0.546,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+530,0,Layak,0,Layak,0.319,0.422,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+533,0,Layak,0,Layak,0.272,0.794,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+547,0,Layak,0,Layak,0.314,0.75,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+540,0,Layak,0,Layak,0.272,0.794,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+567,0,Layak,0,Layak,0.272,0.608,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+608,0,Layak,0,Layak,0.272,0.554,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+616,0,Layak,0,Layak,0.319,0.639,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+659,1,Indikasi,1,Indikasi,0.303,0.534,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+661,0,Layak,0,Layak,0.303,0.593,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+662,0,Layak,0,Layak,0.209,0.798,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+722,1,Indikasi,1,Indikasi,0.287,0.515,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+770,0,Layak,0,Layak,0.272,0.608,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+844,1,Indikasi,1,Indikasi,0.287,0.441,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+707,1,Indikasi,1,Indikasi,0.256,0.459,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+596,0,Layak,0,Layak,0.272,0.608,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+888,1,Indikasi,1,Indikasi,0.298,0.513,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)
+900,1,Indikasi,1,Indikasi,0.241,0.479,0.3,conflicting_feature_vector (label minoritas dalam grup fitur identik)

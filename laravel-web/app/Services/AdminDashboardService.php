@@ -20,8 +20,14 @@ class AdminDashboardService
         $verified = StudentApplication::query()->where('status', 'Verified')->count();
         $rejected = StudentApplication::query()->where('status', 'Rejected')->count();
 
+        $pendingDecision = StudentApplication::query()
+            ->where('status', 'Submitted')
+            ->whereNull('admin_decision')
+            ->count();
+
         $highPriorityPending = StudentApplication::query()
             ->where('status', 'Submitted')
+            ->whereNull('admin_decision')
             ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('review_priority', 'high'))
             ->count();
 
@@ -31,10 +37,17 @@ class AdminDashboardService
 
         $indikasiPending = StudentApplication::query()
             ->where('status', 'Submitted')
+            ->whereNull('admin_decision')
             ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('final_recommendation', 'Indikasi'))
             ->count();
 
         $disagreementCases = StudentApplication::query()
+            ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('disagreement_flag', true))
+            ->count();
+
+        $disagreementPending = StudentApplication::query()
+            ->where('status', 'Submitted')
+            ->whereNull('admin_decision')
             ->whereHas('modelSnapshot', fn (Builder $query) => $query->where('disagreement_flag', true))
             ->count();
 
@@ -74,10 +87,12 @@ class AdminDashboardService
                 'submitted' => $submitted,
                 'verified' => $verified,
                 'rejected' => $rejected,
+                'pending_decision' => $pendingDecision,
                 'high_priority_pending' => $highPriorityPending,
                 'indikasi_recommendations' => $indikasiRecommendations,
                 'indikasi_pending' => $indikasiPending,
                 'disagreement_cases' => $disagreementCases,
+                'disagreement_pending' => $disagreementPending,
                 'pending_house_review' => $pendingHouseReview,
                 'model_ready' => $modelReady,
             ],
@@ -123,6 +138,16 @@ class AdminDashboardService
                     'true' => 'Ada disagreement',
                     'false' => 'Selaras',
                 ],
+                'decision_options' => [
+                    '' => 'Semua status keputusan',
+                    'undecided' => 'Belum diputuskan',
+                    'decided' => 'Sudah diputuskan',
+                ],
+                'source_options' => [
+                    '' => 'Semua sumber',
+                    'online_student' => 'Online (mahasiswa)',
+                    'offline_admin_import' => 'Offline (admin import)',
+                ],
             ],
             'status_display_labels' => [
                 'Submitted' => 'Menunggu',
@@ -148,6 +173,44 @@ class AdminDashboardService
             ],
             'stat_cards' => [
                 [
+                    'label' => 'Menunggu Keputusan',
+                    'value' => $applicationStats['pending_decision'],
+                    'hint' => 'Pengajuan baru yang belum diputuskan',
+                    'hint_class' => 'text-yellow-600',
+                    'border' => 'border-yellow-500',
+                    'icon_wrap' => 'bg-yellow-50 text-yellow-600',
+                    'icon' => 'schedule',
+                ],
+                [
+                    'label' => 'Prioritas Tinggi',
+                    'value' => $applicationStats['high_priority_pending'],
+                    'hint' => 'Perlu tindakan cepat',
+                    'hint_class' => 'text-primary',
+                    'border' => 'border-primary-container',
+                    'icon_wrap' => 'bg-primary-container text-primary',
+                    'icon' => 'priority_high',
+                ],
+                [
+                    'label' => 'Indikasi Menunggu',
+                    'value' => $applicationStats['indikasi_pending'],
+                    'hint' => 'Direkomendasikan Indikasi oleh model',
+                    'hint_class' => 'text-error',
+                    'border' => 'border-error',
+                    'icon_wrap' => 'bg-error-container text-error',
+                    'icon' => 'flag',
+                ],
+                [
+                    'label' => 'Disagreement Pending',
+                    'value' => $applicationStats['disagreement_pending'],
+                    'hint' => 'CatBoost & Naive Bayes berbeda',
+                    'hint_class' => 'text-yellow-700',
+                    'border' => 'border-yellow-500',
+                    'icon_wrap' => 'bg-secondary-container text-on-secondary-container',
+                    'icon' => 'difference',
+                ],
+            ],
+            'all_applications_stat_cards' => [
+                [
                     'label' => 'Total Pengajuan',
                     'value' => $applicationStats['total'],
                     'hint' => 'Semua pengajuan yang tercatat',
@@ -157,9 +220,9 @@ class AdminDashboardService
                     'icon' => 'groups',
                 ],
                 [
-                    'label' => 'Menunggu',
-                    'value' => $applicationStats['submitted'],
-                    'hint' => 'Menunggu review admin',
+                    'label' => 'Menunggu Keputusan',
+                    'value' => $applicationStats['pending_decision'],
+                    'hint' => 'Belum diputuskan admin',
                     'hint_class' => 'text-yellow-600',
                     'border' => 'border-yellow-500',
                     'icon_wrap' => 'bg-yellow-50 text-yellow-600',
@@ -182,24 +245,6 @@ class AdminDashboardService
                     'border' => 'border-error',
                     'icon_wrap' => 'bg-error-container text-error',
                     'icon' => 'cancel',
-                ],
-                [
-                    'label' => 'Prioritas Tinggi',
-                    'value' => $applicationStats['high_priority_pending'],
-                    'hint' => 'Perlu tindakan cepat',
-                    'hint_class' => 'text-primary',
-                    'border' => 'border-primary-container',
-                    'icon_wrap' => 'bg-primary-container text-primary',
-                    'icon' => 'priority_high',
-                ],
-                [
-                    'label' => 'Disagreement',
-                    'value' => $applicationStats['disagreement_cases'],
-                    'hint' => 'CatBoost dan Naive Bayes berbeda',
-                    'hint_class' => 'text-yellow-700',
-                    'border' => 'border-yellow-500',
-                    'icon_wrap' => 'bg-secondary-container text-on-secondary-container',
-                    'icon' => 'difference',
                 ],
             ],
             'workflow_cards' => [
@@ -258,26 +303,15 @@ class AdminDashboardService
     }
 
     /**
-     * @return array<int, int>
-     */
-    public function applicationsPerYear(): array
-    {
-        return StudentApplication::query()
-            ->selectRaw('EXTRACT(YEAR FROM created_at)::integer AS year, COUNT(*) AS total')
-            ->groupBy(DB::raw('EXTRACT(YEAR FROM created_at)'))
-            ->orderByDesc('year')
-            ->pluck('total', 'year')
-            ->map(static fn (mixed $value): int => (int) $value)
-            ->all();
-    }
-
-    /**
      * @param array<string, mixed> $filters
      */
-    public function paginateApplications(array $filters, int $perPage = 10): LengthAwarePaginator
+    public function paginateApplications(array $filters, int $perPage = 10, bool $pendingOnly = false): LengthAwarePaginator
     {
         return StudentApplication::query()
             ->with(['student:id,name,email', 'modelSnapshot', 'latestTrainingRow'])
+            ->when($pendingOnly, function (Builder $query): void {
+                $query->where('status', 'Submitted')->whereNull('admin_decision');
+            })
             ->when(
                 $filters['q'] ?? null,
                 function (Builder $query, string $term): void {
@@ -294,7 +328,22 @@ class AdminDashboardService
                     });
                 }
             )
-            ->when($filters['status'] ?? null, fn (Builder $query, string $status) => $query->where('status', $status))
+            ->when(
+                ! $pendingOnly && ($filters['status'] ?? null),
+                fn (Builder $query, string $status) => $query->where('status', $status)
+            )
+            ->when(
+                ! $pendingOnly && ($filters['decision'] ?? null) === 'undecided',
+                fn (Builder $query) => $query->whereNull('admin_decision')
+            )
+            ->when(
+                ! $pendingOnly && ($filters['decision'] ?? null) === 'decided',
+                fn (Builder $query) => $query->whereNotNull('admin_decision')
+            )
+            ->when(
+                ! $pendingOnly && ($filters['source'] ?? null),
+                fn (Builder $query, string $source) => $query->where('submission_source', $source)
+            )
             ->when(
                 $filters['priority'] ?? null,
                 fn (Builder $query, string $priority) => $query->whereHas(

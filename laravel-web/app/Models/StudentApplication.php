@@ -115,16 +115,6 @@ class StudentApplication extends Model
         return ! empty($this->submitted_pdf_path);
     }
 
-    public function canBeRevisedByStudent(): bool
-    {
-        return $this->submission_source === 'online_student'
-            && $this->student_user_id !== null
-            && $this->status === 'Submitted'
-            && $this->admin_decision === null
-            && $this->admin_decided_by === null
-            && $this->admin_decided_at === null;
-    }
-
     public function isOfflineImport(): bool
     {
         return $this->submission_source === 'offline_admin_import';

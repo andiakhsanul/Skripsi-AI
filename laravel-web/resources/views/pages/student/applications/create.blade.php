@@ -1,28 +1,22 @@
 @extends('layouts.portal')
 
-@section('title', (($formMode ?? 'create') === 'edit' ? 'Revisi Pengajuan' : 'Ajukan KIP-K').' | KIP-K UNAIR')
-@section('description', 'Form pengajuan mahasiswa untuk submit atau merevisi data dan dokumen KIP-K Universitas Airlangga')
+@section('title', 'Ajukan KIP-K | KIP-K UNAIR')
+@section('description', 'Form pengajuan mahasiswa untuk submit data dan dokumen KIP-K Universitas Airlangga')
 
 @php
-    $formMode = $formMode ?? 'create';
-    $isEditMode = $formMode === 'edit';
-    $existingApplication = $application ?? null;
     $studentName = $student->name ?? 'Mahasiswa';
     $binaryOptions = $options['binary'];
     $statusOrangtuaOptions = $options['status_orangtua'];
     $statusRumahOptions = $options['status_rumah'];
     $dayaListrikOptions = $options['daya_listrik'];
-    $fieldValue = fn (string $field, mixed $default = null) => old($field, $existingApplication?->{$field} ?? $default);
+    $fieldValue = fn (string $field, mixed $default = null) => old($field, $default);
     $selectedBinary = fn (string $field) => (string) $fieldValue($field, '');
     $selectedStatusRumah = fn (string $option) => $fieldValue('status_rumah_text') === $option;
-    $formAction = $isEditMode ? route('student.applications.update', $existingApplication?->id) : route('student.applications.store');
-    $submitLabel = $isEditMode ? 'Simpan Revisi' : 'Kirim Pengajuan';
-    $heroTitle = $isEditMode ? 'Revisi Pengajuan KIP-K' : 'Pengajuan KIP-K';
-    $heroDescription = $isEditMode
-        ? 'Perbarui data mentah Anda selama admin belum memberi keputusan final. Setelah disimpan, rekomendasi sistem akan dihitung ulang.'
-        : 'Lengkapi seluruh data dengan sebenar-benarnya. Setelah dikirim, sistem akan membentuk rekomendasi awal dan admin akan memberi keputusan final.';
-    $progressLabel = $isEditMode ? 'Mode revisi aktif' : 'Form siap dikirim';
-    $existingPdfName = $existingApplication?->submitted_pdf_original_name;
+    $formAction = route('student.applications.store');
+    $submitLabel = 'Kirim Pengajuan';
+    $heroTitle = 'Pengajuan KIP-K';
+    $heroDescription = 'Lengkapi seluruh data dengan sebenar-benarnya. Pengajuan hanya dapat dilakukan SATU KALI — pastikan data benar sebelum submit. Setelah dikirim, Anda hanya bisa cek status pengajuan.';
+    $progressLabel = 'Form siap dikirim';
 
     $binaryFields = [
         'kip' => ['label' => 'KIP', 'description' => 'Kartu Indonesia Pintar', 'icon' => 'credit_card'],
@@ -94,17 +88,18 @@
                     <p class="mt-1 text-sm text-blue-100/90">{{ $student->email }}</p>
                 </div>
 
-                @if ($isEditMode && $existingApplication)
-                    <div class="mt-4 rounded-2xl border border-amber-200 bg-white/80 px-4 py-4">
-                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-amber-700">Status Pengajuan</p>
-                        <p class="mt-2 text-sm font-black text-on-surface">
-                            Revisi masih diizinkan karena admin belum memberi keputusan final.
-                        </p>
-                        <p class="mt-2 text-xs leading-6 text-slate-500">
-                            Setelah Anda menyimpan revisi, sistem akan memperbarui rekomendasi model untuk pengajuan {{ 'KIPK-'.($existingApplication->created_at?->format('Y') ?? now()->format('Y')).'-'.str_pad((string) $existingApplication->id, 3, '0', STR_PAD_LEFT) }}.
-                        </p>
+                <div class="mt-4 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4">
+                    <div class="flex items-start gap-3">
+                        <span class="material-symbols-outlined text-amber-700">warning</span>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-amber-800">Penting</p>
+                            <p class="mt-2 text-sm font-black text-amber-900">Pengajuan hanya bisa dilakukan SATU KALI</p>
+                            <p class="mt-2 text-xs leading-6 text-amber-800">
+                                Periksa kembali seluruh data sebelum submit. Setelah dikirim, Anda tidak dapat mengubah atau mengirim ulang — hanya bisa cek status keputusan admin.
+                            </p>
+                        </div>
                     </div>
-                @endif
+                </div>
 
                 <div class="mt-6">
                     <p class="text-[11px] font-black uppercase tracking-[0.18em] text-on-secondary-fixed">Yang Perlu Disiapkan</p>
@@ -134,9 +129,6 @@
 
     <form method="POST" action="{{ $formAction }}" enctype="multipart/form-data" class="space-y-10 pb-12">
         @csrf
-        @if ($isEditMode)
-            @method('PUT')
-        @endif
 
         <section class="rounded-3xl bg-white p-8 shadow-lg">
             <div class="mb-6 flex items-center gap-3">
@@ -333,22 +325,19 @@
                     <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-primary-container text-primary transition-transform group-hover:scale-105">
                         <span class="material-symbols-outlined text-5xl">upload_file</span>
                     </div>
-                    <p class="mt-5 text-lg font-black text-on-surface">{{ $isEditMode ? 'Unggah PDF revisi jika ingin mengganti dokumen lama' : 'Tarik dan lepas file PDF di sini' }}</p>
-                    <p class="mt-2 text-sm text-slate-500">{{ $isEditMode ? 'Jika tidak memilih file baru, sistem akan memakai PDF yang sudah ada.' : 'Atau klik area ini untuk memilih file dari perangkat Anda.' }}</p>
+                    <p class="mt-5 text-lg font-black text-on-surface">Tarik dan lepas file PDF di sini</p>
+                    <p class="mt-2 text-sm text-slate-500">Atau klik area ini untuk memilih file dari perangkat Anda.</p>
                     <div class="mt-5 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 shadow-sm">
                         <span class="material-symbols-outlined text-sm">picture_as_pdf</span>
                         PDF maksimal 10 MB
                     </div>
                     <p class="mt-4 text-xs font-medium text-slate-500">Gabungkan slip gaji, kartu bantuan, dan bukti lainnya ke satu PDF.</p>
-                    @if ($existingPdfName)
-                        <p data-selected-file="true" class="mt-4 text-sm font-black text-primary">{{ $existingPdfName }}</p>
-                    @endif
                 </div>
             </label>
 
             <div class="mt-4 rounded-2xl border border-dashed border-slate-300 bg-surface-container-low px-4 py-4">
                 <p class="text-xs leading-6 text-slate-500">
-                    {{ $isEditMode ? 'Anda boleh memperbarui data mentah tanpa mengganti PDF, selama admin belum melakukan keputusan final.' : 'Nama file yang dipilih akan langsung terkirim bersama data mentah Anda. Sistem tidak akan memproses pengajuan tanpa dokumen PDF pendukung.' }}
+                    Nama file yang dipilih akan langsung terkirim bersama data mentah Anda. Sistem tidak akan memproses pengajuan tanpa dokumen PDF pendukung.
                 </p>
             </div>
         </section>
@@ -358,8 +347,8 @@
                 <span class="material-symbols-outlined text-sm">send</span>
                 {{ $submitLabel }}
             </button>
-            <a href="{{ $isEditMode && $existingApplication ? route('student.applications.show', $existingApplication->id) : route('student.dashboard') }}" class="inline-flex items-center justify-center rounded-2xl border-2 border-slate-200 px-6 py-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
-                {{ $isEditMode ? 'Kembali ke Detail' : 'Batal' }}
+            <a href="{{ route('student.dashboard') }}" class="inline-flex items-center justify-center rounded-2xl border-2 border-slate-200 px-6 py-4 text-sm font-bold text-slate-600 transition hover:bg-slate-50">
+                Batal
             </a>
         </div>
     </form>
