@@ -63,6 +63,14 @@ services:
     restart: always
     env_file:
       - ./flask-ml-api/.env
+    environment:
+      ML_MAX_THREADS: ${ML_MAX_THREADS:-2}
+      CATBOOST_THREAD_COUNT: ${CATBOOST_THREAD_COUNT:-2}
+      OMP_NUM_THREADS: ${ML_MAX_THREADS:-2}
+      OPENBLAS_NUM_THREADS: ${ML_MAX_THREADS:-2}
+      MKL_NUM_THREADS: ${ML_MAX_THREADS:-2}
+      VECLIB_MAXIMUM_THREADS: ${ML_MAX_THREADS:-2}
+      NUMEXPR_NUM_THREADS: ${ML_MAX_THREADS:-2}
     # Port TIDAK di-expose ke publik — hanya internal (diakses laravel-web via docker network)
     networks:
       - spk_network

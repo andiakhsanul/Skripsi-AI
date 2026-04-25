@@ -7,6 +7,12 @@ def resolve_env_path(env_name: str, default: str) -> Path:
     configured_path = Path(os.getenv(env_name, default))
     return configured_path if configured_path.is_absolute() else APP_ROOT / configured_path
 
+def resolve_positive_int(env_name: str, default: int) -> int:
+    try:
+        return max(1, int(os.getenv(env_name, str(default))))
+    except (TypeError, ValueError):
+        return default
+
 # ─── Definisi Fitur KIP-K ─────────────────────────────────────────────
 BINARY_FEATURES = ["kip", "pkh", "kks", "dtks", "sktm"]
 ORDINAL_FEATURES = [
@@ -40,6 +46,8 @@ FLASK_INTERNAL_TOKEN = os.getenv("FLASK_INTERNAL_TOKEN", "spk_internal_dev_token
 
 DEFAULT_POSITIVE_THRESHOLD = float(os.getenv("DEFAULT_POSITIVE_THRESHOLD", "0.5"))
 POSITIVE_F_BETA = float(os.getenv("POSITIVE_F_BETA", "1.0"))
+ML_MAX_THREADS = resolve_positive_int("ML_MAX_THREADS", 2)
+CATBOOST_THREAD_COUNT = resolve_positive_int("CATBOOST_THREAD_COUNT", ML_MAX_THREADS)
 
 # Global State / Registry
 MODEL_REGISTRY = {"catboost": None, "naive_bayes": None, "metadata": None}

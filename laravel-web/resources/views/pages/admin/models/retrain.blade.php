@@ -18,6 +18,18 @@
     $statusDotClasses = $page['status_dot_classes'];
     $noteToneClasses = $page['note_tone_classes'];
     $cards = $page['cards'];
+    $modelVersionStatusLabels = [
+        'ready' => 'Siap',
+        'training' => 'Training',
+        'failed' => 'Gagal',
+        'cancelled' => 'Dibatalkan',
+    ];
+    $modelVersionStatusClasses = [
+        'ready' => 'bg-emerald-50 text-emerald-700',
+        'training' => 'bg-blue-50 text-primary',
+        'failed' => 'bg-error-container text-on-error-container',
+        'cancelled' => 'bg-slate-100 text-slate-600',
+    ];
 @endphp
 
 @section('content')
@@ -150,6 +162,14 @@
                                     Hapus Data Lama & Latih Ulang Dari Awal
                                 </button>
                             </form>
+
+                            <a
+                                href="{{ route('admin.models.retrain.monitor') }}"
+                                class="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3.5 text-sm font-black text-slate-700 transition hover:bg-slate-50"
+                            >
+                                <span class="material-symbols-outlined text-lg">monitoring</span>
+                                Pantau Proses Retrain
+                            </a>
                         </div>
                     </div>
 
@@ -304,8 +324,8 @@
                                             <p class="mt-1 text-[11px] text-slate-400">{{ $modelVersion->rows_used ?? 0 }} data dipakai</p>
                                         </td>
                                         <td class="px-8 py-5">
-                                            <span class="rounded-full px-3 py-1 text-[11px] font-black uppercase {{ $modelVersion->status === 'ready' ? 'bg-emerald-50 text-emerald-700' : 'bg-error-container text-on-error-container' }}">
-                                                {{ $modelVersion->status === 'ready' ? 'Siap' : 'Gagal' }}
+                                            <span class="rounded-full px-3 py-1 text-[11px] font-black uppercase {{ $modelVersionStatusClasses[$modelVersion->status] ?? 'bg-slate-100 text-slate-600' }}">
+                                                {{ $modelVersionStatusLabels[$modelVersion->status] ?? strtoupper($modelVersion->status) }}
                                             </span>
                                         </td>
                                         <td class="px-8 py-5">

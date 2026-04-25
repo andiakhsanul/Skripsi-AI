@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ModelVersion;
 use App\Services\AdminModelRetrainService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -24,6 +25,64 @@ class ModelRetrainController extends Controller
             'payload' => $payload,
             'page' => $this->adminModelRetrainService->viewPayload($payload),
         ]);
+    }
+
+    public function monitor(Request $request): View
+    {
+        $payload = $this->adminModelRetrainService->dashboardPayload();
+        $initialTrainingStatus = [
+            'status' => 'error',
+            'message' => 'Status retrain belum bisa dibaca.',
+            'training' => [
+                'status' => 'unknown',
+                'current_step' => null,
+                'progress_percent' => 0,
+                'elapsed_seconds' => null,
+                'error' => null,
+                'extra_info' => [],
+                'result_summary' => null,
+                'is_cancellable' => false,
+            ],
+        ];
+
+        try {
+            $initialTrainingStatus = $this->adminModelRetrainService->trainingStatus();
+        } catch (\Throwable $throwable) {
+            $initialTrainingStatus['detail'] = $throwable->getMessage();
+        }
+
+        return view('pages.admin.models.monitor', [
+            'admin' => $request->user(),
+            'payload' => $payload,
+            'page' => $this->adminModelRetrainService->viewPayload($payload),
+            'initialTrainingStatus' => $initialTrainingStatus,
+        ]);
+    }
+
+    public function status(): JsonResponse
+    {
+        try {
+            return response()->json($this->adminModelRetrainService->trainingStatus());
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Status retrain belum bisa dibaca.',
+                'detail' => $throwable->getMessage(),
+            ], 503);
+        }
+    }
+
+    public function cancel(): JsonResponse
+    {
+        try {
+            return response()->json($this->adminModelRetrainService->cancelTraining());
+        } catch (\Throwable $throwable) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Permintaan pembatalan retrain gagal dikirim.',
+                'detail' => $throwable->getMessage(),
+            ], 503);
+        }
     }
 
     public function syncTraining(Request $request): RedirectResponse
@@ -71,7 +130,7 @@ class ModelRetrainController extends Controller
             : 'Permintaan mulai diproses di latar belakang. Silakan muat ulang halaman ini dalam beberapa menit untuk melihat hasilnya.';
 
         return redirect()
-            ->route('admin.models.retrain')
+            ->route('admin.models.retrain.monitor')
             ->with('admin_notice', [
                 'type' => 'success',
                 'title' => $purgeTraining ? 'Purge & Retrain Diproses' : 'Retrain Model Diproses',

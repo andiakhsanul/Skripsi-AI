@@ -47,6 +47,8 @@ STEP_WEIGHTS = {
     "done": 2,
 }
 
+ACTIVE_STATUSES = {"running", "cancelling"}
+
 
 class TrainingManager:
     """Thread-safe singleton yang mengelola satu proses training sekaligus."""
@@ -82,7 +84,7 @@ class TrainingManager:
 
     @property
     def is_running(self) -> bool:
-        return self._status == "running"
+        return self._status in ACTIVE_STATUSES
 
     @property
     def is_cancelled(self) -> bool:
@@ -117,7 +119,7 @@ class TrainingManager:
     def start(self) -> bool:
         """Coba mulai training baru. Return False jika sudah ada yang berjalan."""
         with self._lock:
-            if self._status == "running":
+            if self._status in ACTIVE_STATUSES:
                 return False
             self._cancel_event.clear()
             self._status = "running"
@@ -148,10 +150,11 @@ class TrainingManager:
 
     def cancel(self) -> bool:
         """Kirim sinyal cancel. Return True jika training sedang berjalan."""
-        if self._status != "running":
-            return False
-        self._cancel_event.set()
-        self._status = "cancelling"
+        with self._lock:
+            if self._status not in ACTIVE_STATUSES:
+                return False
+            self._cancel_event.set()
+            self._status = "cancelling"
         logger.info("[TRAINING] Cancel signal sent")
         return True
 
@@ -162,7 +165,12 @@ class TrainingManager:
             self._finished_at = datetime.now(timezone.utc)
 
     def set_thread(self, thread: threading.Thread) -> None:
-        self._thread = thread
+        with self._lock:
+            self._thread = thread
+
+    def clear_thread(self) -> None:
+        with self._lock:
+            self._thread = None
 
     def get_status(self) -> dict:
         """Kembalikan snapshot status saat ini."""

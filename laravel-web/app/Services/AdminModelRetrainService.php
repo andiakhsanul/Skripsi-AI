@@ -187,6 +187,22 @@ class AdminModelRetrainService
     /**
      * @return array<string, mixed>
      */
+    public function trainingStatus(): array
+    {
+        return $this->mlGatewayService->trainingStatus();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function cancelTraining(): array
+    {
+        return $this->mlGatewayService->cancelTraining();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function activateModelVersion(ModelVersion $modelVersion, User $admin): array
     {
         if ($modelVersion->status !== 'ready') {
@@ -299,11 +315,17 @@ class AdminModelRetrainService
         }
 
         if ($latestAttempt) {
+            $latestAttemptMessages = [
+                'failed' => $latestAttempt->error_message ?: 'Percobaan pelatihan terakhir belum berhasil.',
+                'training' => "Pelatihan {$latestAttempt->version_name} sedang berjalan.",
+                'cancelled' => "Pelatihan {$latestAttempt->version_name} dibatalkan.",
+                'ready' => "Pelatihan {$latestAttempt->version_name} selesai dijalankan.",
+            ];
+
             $notes[] = [
-                'tone' => $latestAttempt->status === 'failed' ? 'warning' : 'success',
-                'message' => $latestAttempt->status === 'failed'
-                    ? ($latestAttempt->error_message ?: 'Percobaan pelatihan terakhir belum berhasil.')
-                    : "Pelatihan {$latestAttempt->version_name} selesai dijalankan.",
+                'tone' => in_array($latestAttempt->status, ['failed', 'training'], true) ? 'warning' : 'success',
+                'message' => $latestAttemptMessages[$latestAttempt->status]
+                    ?? "Status pelatihan {$latestAttempt->version_name}: {$latestAttempt->status}.",
                 'actor' => $latestAttempt->triggeredBy?->name ?? $latestAttempt->triggered_by_email ?? 'Sistem',
                 'time' => optional($latestAttempt->trained_at ?? $latestAttempt->created_at)->format('d M Y H:i') ?? '-',
             ];

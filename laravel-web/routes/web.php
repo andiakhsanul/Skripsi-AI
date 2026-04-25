@@ -55,8 +55,11 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/applications/{application}/training-data', [AdminTrainingDataCorrectionController::class, 'show'])->name('admin.training-data.show');
         Route::put('/applications/{application}/training-data', [AdminTrainingDataCorrectionController::class, 'update'])->name('admin.training-data.update');
         Route::get('/models/retrain', [AdminModelRetrainController::class, 'index'])->name('admin.models.retrain');
+        Route::get('/models/retrain/monitor', [AdminModelRetrainController::class, 'monitor'])->name('admin.models.retrain.monitor');
+        Route::get('/models/retrain/status', [AdminModelRetrainController::class, 'status'])->name('admin.models.retrain.status');
         Route::post('/models/retrain/sync-training', [AdminModelRetrainController::class, 'syncTraining'])->name('admin.models.retrain.sync-training');
         Route::post('/models/retrain/run', [AdminModelRetrainController::class, 'retrain'])->name('admin.models.retrain.run');
+        Route::post('/models/retrain/cancel', [AdminModelRetrainController::class, 'cancel'])->name('admin.models.retrain.cancel');
         Route::post('/models/retrain/{modelVersion}/activate', [AdminModelRetrainController::class, 'activate'])->name('admin.models.retrain.activate');
     });
 });

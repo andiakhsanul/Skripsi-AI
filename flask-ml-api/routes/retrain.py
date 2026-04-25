@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from config import FLASK_INTERNAL_TOKEN
-from database import fetch_training_dataframe, purge_all_training_data, purge_model_artifacts
+from database import fetch_training_dataframe, purge_model_artifacts
 from training import train_and_save_models, register_failed_retrain
 from training_manager import training_manager, TrainingCancelled
 
@@ -16,6 +16,7 @@ def retrain_model():
     schema_version = None
     triggered_by_user_id = None
     triggered_by_email = None
+    started_training = False
 
     try:
         if not check_internal_token():
@@ -84,13 +85,18 @@ def retrain_model():
                 "purged_model_file_names": deleted_files,
             }
 
+        if not training_manager.start():
+            return jsonify({
+                "status": "error",
+                "message": "Training sedang berjalan. Hentikan dulu sebelum memulai yang baru.",
+                "current_training": training_manager.get_status(),
+            }), 409
+        started_training = True
+
         def run_retrain_async(sv, uid, email):
+            import gc
             import logging
             logger = logging.getLogger("retrain_thread")
-
-            if not training_manager.start():
-                logger.error("[RETRAIN] Cannot start: another training is running")
-                return
 
             try:
                 training_manager.advance_step("fetching_data")
@@ -104,6 +110,7 @@ def retrain_model():
                     triggered_by_user_id=uid,
                     triggered_by_email=email,
                 )
+                training_manager.check_cancelled("finalizing")
                 training_manager.finish(result)
                 logger.info(f"[RETRAIN] Training completed: {result.get('model_version_name', 'unknown')}")
 
@@ -116,15 +123,18 @@ def retrain_model():
                 training_manager.fail(str(exc))
                 logger.error(f"[RETRAIN] Training failed: {exc}", exc_info=True)
                 register_failed_retrain(sv, uid, email, str(exc))
+            finally:
+                training_manager.clear_thread()
+                gc.collect()
 
         thread = threading.Thread(
             target=run_retrain_async,
             args=(schema_version, triggered_by_user_id, triggered_by_email),
             name="retrain-worker",
         )
-        thread.daemon = False
-        thread.start()
+        thread.daemon = True
         training_manager.set_thread(thread)
+        thread.start()
 
         response_payload = {
             "status": "success",
@@ -140,6 +150,9 @@ def retrain_model():
         return jsonify(response_payload), 202
 
     except Exception as exc:
+        if started_training and training_manager.is_running:
+            training_manager.fail(str(exc))
+            training_manager.clear_thread()
         register_failed_retrain(schema_version, triggered_by_user_id, triggered_by_email, str(exc))
         return (
             jsonify({

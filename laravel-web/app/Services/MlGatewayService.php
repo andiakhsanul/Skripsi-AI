@@ -133,7 +133,7 @@ class MlGatewayService
         $retrainUrl = env('FLASK_RETRAIN_URL', 'http://flask-api:5000/api/retrain');
         $internalToken = env('FLASK_INTERNAL_TOKEN', 'spk_internal_dev_token');
 
-        $response = Http::timeout(540)
+        $response = Http::timeout(15)
             ->retry(1, 300)
             ->withHeaders([
                 'X-Internal-Token' => $internalToken,
@@ -143,6 +143,54 @@ class MlGatewayService
         if (! $response->successful()) {
             $body = $response->json() ?? [];
             $message = $body['message'] ?? 'Retrain gagal diproses service ML.';
+            $detail = $body['detail'] ?? null;
+
+            throw new RuntimeException(trim($message.' '.($detail ? "Detail: {$detail}" : 'HTTP '.$response->status())));
+        }
+
+        return $response->json() ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function trainingStatus(): array
+    {
+        $statusUrl = env('FLASK_TRAINING_STATUS_URL', 'http://flask-api:5000/api/training/status');
+        $internalToken = env('FLASK_INTERNAL_TOKEN', 'spk_internal_dev_token');
+
+        $response = Http::timeout(5)
+            ->retry(1, 200)
+            ->withHeaders([
+                'X-Internal-Token' => $internalToken,
+            ])
+            ->get($statusUrl);
+
+        if (! $response->successful()) {
+            throw new RuntimeException('Status retrain gagal dibaca dari service ML. HTTP '.$response->status());
+        }
+
+        return $response->json() ?? [];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function cancelTraining(): array
+    {
+        $cancelUrl = env('FLASK_TRAINING_CANCEL_URL', 'http://flask-api:5000/api/training/cancel');
+        $internalToken = env('FLASK_INTERNAL_TOKEN', 'spk_internal_dev_token');
+
+        $response = Http::timeout(10)
+            ->retry(1, 200)
+            ->withHeaders([
+                'X-Internal-Token' => $internalToken,
+            ])
+            ->post($cancelUrl);
+
+        if (! $response->successful()) {
+            $body = $response->json() ?? [];
+            $message = $body['message'] ?? 'Pembatalan retrain gagal diproses service ML.';
             $detail = $body['detail'] ?? null;
 
             throw new RuntimeException(trim($message.' '.($detail ? "Detail: {$detail}" : 'HTTP '.$response->status())));

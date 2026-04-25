@@ -1,3 +1,15 @@
+import os
+
+_thread_limit = os.getenv("ML_MAX_THREADS", "2")
+for _env_name in (
+    "OMP_NUM_THREADS",
+    "OPENBLAS_NUM_THREADS",
+    "MKL_NUM_THREADS",
+    "VECLIB_MAXIMUM_THREADS",
+    "NUMEXPR_NUM_THREADS",
+):
+    os.environ.setdefault(_env_name, _thread_limit)
+
 import joblib
 import logging
 import pandas as pd
@@ -22,6 +34,7 @@ from config import (
     NAIVE_BAYES_MODEL_PATH,
     TRAINING_TABLE,
     MODEL_REGISTRY,
+    CATBOOST_THREAD_COUNT,
 )
 from database import persist_model_version_record, mark_model_version_as_current
 from encoding import encode_application_features
@@ -58,6 +71,7 @@ CATBOOST_PARAMS = {
     "auto_class_weights": "Balanced",
     "od_type": "Iter",
     "od_wait": 50,
+    "thread_count": CATBOOST_THREAD_COUNT,
 }
 
 
