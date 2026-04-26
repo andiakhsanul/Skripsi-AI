@@ -35,6 +35,8 @@ from config import (
     TRAINING_TABLE,
     MODEL_REGISTRY,
     CATBOOST_THREAD_COUNT,
+    CONFLICT_STRATEGY,
+    CONFLICT_MINORITY_THRESHOLD,
 )
 from database import persist_model_version_record, mark_model_version_as_current
 from encoding import encode_application_features
@@ -253,6 +255,8 @@ def train_and_save_models(
     schema_version: Optional[int] = None,
     triggered_by_user_id: Optional[int] = None,
     triggered_by_email: Optional[str] = None,
+    auto_tune: bool = False,
+    tuning_trials: int = 80,
 ) -> dict:
     dataset_rows_total = int(len(dataframe))
     if dataframe.empty:
@@ -294,14 +298,54 @@ def train_and_save_models(
     if cleaned[TARGET_COLUMN].nunique() < 2:
         raise ValueError("Data training harus memiliki minimal 2 kelas label.")
 
-    # Resolusi konflik (majority-vote deduplication)
-    deduplicated = cleaned.groupby(FEATURE_COLUMNS)[TARGET_COLUMN].agg(
-        lambda items: items.value_counts().index[0]
+    # Resolusi konflik label (3 strategi tergantung CONFLICT_STRATEGY)
+    grouped = cleaned.groupby(FEATURE_COLUMNS)[TARGET_COLUMN]
+    group_stats = grouped.agg(
+        majority_label=lambda v: int(v.value_counts().index[0]),
+        size="size",
+        minority_ratio=lambda v: float(v.value_counts(normalize=True).iloc[-1])
+        if v.nunique() > 1 else 0.0,
+        n_labels="nunique",
     ).reset_index()
+
+    if CONFLICT_STRATEGY == "drop_all":
+        keep_mask = group_stats["n_labels"] == 1
+    elif CONFLICT_STRATEGY == "drop_high_minority":
+        # Pertahankan group non-conflict + group dengan minority < threshold
+        keep_mask = (group_stats["n_labels"] == 1) | (
+            group_stats["minority_ratio"] < CONFLICT_MINORITY_THRESHOLD
+        )
+    else:  # majority_vote (default)
+        keep_mask = pd.Series([True] * len(group_stats), index=group_stats.index)
+
+    kept = pd.DataFrame(group_stats.loc[keep_mask]).copy()
+
+    def _project_to_dedup(source: pd.DataFrame) -> pd.DataFrame:
+        out = source[FEATURE_COLUMNS + ["majority_label"]].copy()
+        out[TARGET_COLUMN] = out["majority_label"].astype(int)
+        return out.drop(columns=["majority_label"]).reset_index(drop=True)
+
+    deduplicated = _project_to_dedup(kept)
+
+    if deduplicated[TARGET_COLUMN].nunique() < 2:
+        # Fallback: kembali ke majority_vote agar tidak kehabisan kelas.
+        logger.warning(
+            f"[CONFLICT] Strategi {CONFLICT_STRATEGY} menyebabkan kelas tunggal — fallback ke majority_vote."
+        )
+        deduplicated = _project_to_dedup(group_stats)
+
+    rows_dropped_by_conflict = int(len(group_stats) - len(kept))
+    logger.info(
+        f"[CONFLICT] strategi={CONFLICT_STRATEGY} "
+        f"groups_total={len(group_stats)} groups_kept={len(kept)} "
+        f"groups_dropped={rows_dropped_by_conflict}"
+    )
 
     x_full = deduplicated[FEATURE_COLUMNS].astype(int)
     y_full = deduplicated[TARGET_COLUMN].astype(int)
     quality_summary = training_quality_summary(x_full, y_full)
+    quality_summary["conflict_strategy"] = CONFLICT_STRATEGY
+    quality_summary["groups_dropped_by_conflict_strategy"] = rows_dropped_by_conflict
 
     training_manager.advance_step("split_dataset", {
         "rows_after_cleaning": int(len(cleaned)),
@@ -318,9 +362,40 @@ def train_and_save_models(
     positive_class_weight = calculate_positive_class_weight(y_full)
     cat_features_list = BINARY_FEATURES + ENGINEERED_BINARY
 
+    # ─── Step 2.5: Optional Hyperparameter Tuning (Optuna) ────────────
+    catboost_params = dict(CATBOOST_PARAMS)
+    tuning_summary = None
+    if auto_tune:
+        from tuning import tune_catboost_params
+
+        training_manager.advance_step("hyperparameter_tuning_optuna", {
+            "n_trials": tuning_trials,
+        })
+        tuning_result = tune_catboost_params(
+            x_full, y_full,
+            cat_features=cat_features_list,
+            n_trials=tuning_trials,
+            cv_splits=5,
+            cancel_check=training_manager.check_cancelled,
+        )
+        catboost_params = tuning_result["best_params"]
+        tuning_summary = {
+            "best_value": tuning_result["best_value"],
+            "best_balanced_accuracy": tuning_result["best_balanced_accuracy"],
+            "best_recall_indikasi": tuning_result["best_recall_indikasi"],
+            "n_trials_completed": tuning_result["n_trials_completed"],
+            "best_params": {k: v for k, v in catboost_params.items() if k != "thread_count"},
+            "search_history_tail": tuning_result["search_history"],
+        }
+        logger.info(
+            f"[OPTUNA] best BA={tuning_result['best_balanced_accuracy']:.4f} "
+            f"recall_indikasi={tuning_result['best_recall_indikasi']:.4f} "
+            f"trials={tuning_result['n_trials_completed']}"
+        )
+
     # ─── Step 3: CatBoost — eval model ────────────────────────────────
     training_manager.advance_step("training_catboost_eval")
-    catboost_eval_model = CatBoostClassifier(**CATBOOST_PARAMS)
+    catboost_eval_model = CatBoostClassifier(**catboost_params)
 
     if x_valid is not None and y_valid is not None:
         catboost_eval_model.fit(
@@ -340,7 +415,7 @@ def train_and_save_models(
     training_manager.advance_step("cv_threshold_catboost")
     cb_threshold_metrics = select_threshold_with_cv(
         CatBoostClassifier,
-        CATBOOST_PARAMS,
+        catboost_params,
         x_full, y_full,
         cat_features=cat_features_list,
         n_splits=5,
@@ -348,12 +423,10 @@ def train_and_save_models(
         beta=POSITIVE_F_BETA,
         cancel_check=training_manager.check_cancelled,
     )
-    if cb_threshold_metrics["threshold"] < 0.40:
-        cb_threshold_metrics["threshold"] = 0.40
 
     # CatBoost CV accuracy
     cb_cv_accuracy = compute_cv_accuracy(
-        CatBoostClassifier, CATBOOST_PARAMS,
+        CatBoostClassifier, catboost_params,
         x_full, y_full, cat_features_list,
         is_naive_bayes=False, n_splits=5,
     )
@@ -372,7 +445,7 @@ def train_and_save_models(
 
     # ─── Step 5: CatBoost final model (full data) ─────────────────────
     training_manager.advance_step("training_catboost_final")
-    catboost_model = CatBoostClassifier(**CATBOOST_PARAMS)
+    catboost_model = CatBoostClassifier(**catboost_params)
     catboost_model.fit(x_full, y_full, cat_features=cat_features_list)
     cb_final_train_accuracy = float(accuracy_score(y_full, catboost_model.predict(x_full)))
 
@@ -382,14 +455,31 @@ def train_and_save_models(
     # ─── Step 6: Naive Bayes eval ─────────────────────────────────────
     training_manager.advance_step("training_naive_bayes_eval")
     class_prior = compute_class_prior(y_full)
-    nb_base_categories = [2] * len(BINARY_FEATURES) + [5] * len(
-        [f for f in ["penghasilan_gabungan", "penghasilan_ayah", "penghasilan_ibu",
-                      "jumlah_tanggungan", "anak_ke"] if f in FEATURE_COLUMNS]
-    )
-    # status_orangtua(3), status_rumah(4), daya_listrik(5)
-    nb_base_categories += [3, 4, 5]
-    # rendah_tanpa_bantuan(2), skor_bantuan_sosial(6)
-    nb_min_categories = nb_base_categories + [2] + [6]
+
+    # Jumlah kategori per fitur — urut sesuai FEATURE_COLUMNS.
+    # Base binary (kip..sktm): 2 kategori
+    # Base ordinal: penghasilan_gabungan/ayah/ibu(5), jumlah_tanggungan(5), anak_ke(5),
+    #               status_orangtua(3), status_rumah(4), daya_listrik(5)
+    # Engineered binary: rendah_tanpa_bantuan(2), mismatch_aid_income(2)
+    # Engineered ordinal: skor_bantuan_sosial(6), rasio_tanggungan_penghasilan(5),
+    #                     indeks_kerentanan(6)
+    feature_to_categories = {
+        "kip": 2, "pkh": 2, "kks": 2, "dtks": 2, "sktm": 2,
+        "penghasilan_gabungan": 5,
+        "penghasilan_ayah": 5,
+        "penghasilan_ibu": 5,
+        "jumlah_tanggungan": 5,
+        "anak_ke": 5,
+        "status_orangtua": 3,
+        "status_rumah": 4,
+        "daya_listrik": 5,
+        "rendah_tanpa_bantuan": 2,
+        "mismatch_aid_income": 2,
+        "skor_bantuan_sosial": 6,
+        "rasio_tanggungan_penghasilan": 5,
+        "indeks_kerentanan": 6,
+    }
+    nb_min_categories = [feature_to_categories[col] for col in FEATURE_COLUMNS]
 
     nb_params = {
         "fit_prior": True,
@@ -426,8 +516,6 @@ def train_and_save_models(
         beta=POSITIVE_F_BETA,
         cancel_check=training_manager.check_cancelled,
     )
-    if nb_threshold_metrics["threshold"] < 0.40:
-        nb_threshold_metrics["threshold"] = 0.40
 
     # NB CV accuracy
     nb_cv_accuracy = compute_cv_accuracy(
@@ -499,13 +587,18 @@ def train_and_save_models(
         for key, value in cleaned[TARGET_COLUMN].value_counts().to_dict().items()
     }
 
+    tuning_label = "Optuna-tuned" if auto_tune else "manual"
     note = (
         f"Encoding oleh Flask ML (authoritative). "
-        f"CatBoost: depth={CATBOOST_PARAMS['depth']} iter={CATBOOST_PARAMS['iterations']} "
-        f"lr={CATBOOST_PARAMS['learning_rate']} l2={CATBOOST_PARAMS['l2_leaf_reg']} "
-        f"rsm={CATBOOST_PARAMS['rsm']} auto_class_weights={CATBOOST_PARAMS['auto_class_weights']}. "
-        f"Categorical NB: alpha=0.5 + Isotonic calibration. "
-        f"Threshold dipilih via 5-Fold Stratified CV (floor 0.35)."
+        f"CatBoost ({tuning_label}): depth={catboost_params.get('depth')} "
+        f"iter={catboost_params.get('iterations')} "
+        f"lr={round(float(catboost_params.get('learning_rate', 0)), 4)} "
+        f"l2={catboost_params.get('l2_leaf_reg')} "
+        f"rsm={catboost_params.get('rsm')} "
+        f"auto_class_weights={catboost_params.get('auto_class_weights')}. "
+        f"Categorical NB: alpha=1.0 + Isotonic calibration. "
+        f"Threshold dipilih via 5-Fold Stratified CV "
+        f"(objective=balanced_accuracy, constraint=recall_indikasi>=0.85)."
     )
     if len(deduplicated) < len(cleaned):
         note += (
@@ -588,5 +681,6 @@ def train_and_save_models(
         "naive_bayes_accuracy": rounded_or_none(effective_nb_accuracy),
         "primary_model": "catboost",
         "secondary_model": "categorical_nb",
+        "tuning_summary": tuning_summary,
         "note": note,
     }

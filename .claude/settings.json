@@ -17,7 +17,8 @@
       "Bash(php -l app/Console/Commands/GoogleDriveAuthorizeCommand.php)"
     ],
     "additionalDirectories": [
-      "/Users/andiakhsanul/BISMILLAH/Skripsi-AI/laravel-web/app/Services"
+      "/Users/andiakhsanul/BISMILLAH/Skripsi-AI/laravel-web/app/Services",
+      "/Users/andiakhsanul/.claude/plans"
     ]
   }
 }

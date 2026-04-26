@@ -28,8 +28,13 @@ ORDINAL_FEATURES = [
 DB_FEATURE_COLUMNS = BINARY_FEATURES + ORDINAL_FEATURES
 
 # Engineered Features
-ENGINEERED_BINARY = ["rendah_tanpa_bantuan"]
-ENGINEERED_ORDINAL = ["skor_bantuan_sosial"]  # 0 to 5 categories
+# rendah_tanpa_bantuan: binary flag (0/1) — penghasilan sangat rendah tanpa bantuan
+# mismatch_aid_income: binary flag (0/1) — anomali: banyak bantuan tapi penghasilan tinggi
+ENGINEERED_BINARY = ["rendah_tanpa_bantuan", "mismatch_aid_income"]
+# skor_bantuan_sosial: ordinal 0..5 (jumlah bantuan)
+# rasio_tanggungan_penghasilan: ordinal 0..4 (beban ekonomi per tanggungan)
+# indeks_kerentanan: ordinal 0..5 (komposit kemiskinan tertimbang)
+ENGINEERED_ORDINAL = ["skor_bantuan_sosial", "rasio_tanggungan_penghasilan", "indeks_kerentanan"]
 
 FEATURE_COLUMNS = DB_FEATURE_COLUMNS + ENGINEERED_BINARY + ENGINEERED_ORDINAL
 TARGET_COLUMN = "label_class"
@@ -46,6 +51,15 @@ FLASK_INTERNAL_TOKEN = os.getenv("FLASK_INTERNAL_TOKEN", "spk_internal_dev_token
 
 DEFAULT_POSITIVE_THRESHOLD = float(os.getenv("DEFAULT_POSITIVE_THRESHOLD", "0.5"))
 POSITIVE_F_BETA = float(os.getenv("POSITIVE_F_BETA", "1.0"))
+MIN_INDIKASI_RECALL = float(os.getenv("MIN_INDIKASI_RECALL", "0.85"))
+THRESHOLD_OBJECTIVE = os.getenv("THRESHOLD_OBJECTIVE", "balanced_accuracy_with_recall_constraint")
+
+# Strategi resolusi konflik label (feature vector identik dengan label berbeda):
+#   "majority_vote" — ambil label terbanyak (default, kompatibel)
+#   "drop_high_minority" — drop group jika minority >= 30% (lebih ketat, kurangi label noise)
+#   "drop_all" — drop semua group yang ada konflik (paling agresif)
+CONFLICT_STRATEGY = os.getenv("CONFLICT_STRATEGY", "majority_vote")
+CONFLICT_MINORITY_THRESHOLD = float(os.getenv("CONFLICT_MINORITY_THRESHOLD", "0.30"))
 ML_MAX_THREADS = resolve_positive_int("ML_MAX_THREADS", 2)
 CATBOOST_THREAD_COUNT = resolve_positive_int("CATBOOST_THREAD_COUNT", ML_MAX_THREADS)
 

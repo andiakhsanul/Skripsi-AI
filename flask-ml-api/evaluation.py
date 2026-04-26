@@ -10,7 +10,12 @@ from sklearn.metrics import (
     roc_auc_score,
 )
 from sklearn.model_selection import StratifiedKFold
-from config import DEFAULT_POSITIVE_THRESHOLD, POSITIVE_F_BETA
+from config import (
+    DEFAULT_POSITIVE_THRESHOLD,
+    POSITIVE_F_BETA,
+    MIN_INDIKASI_RECALL,
+    THRESHOLD_OBJECTIVE,
+)
 
 from features import transform_features_for_naive_bayes
 
@@ -106,13 +111,36 @@ def select_threshold_with_cv(
     return select_optimal_indikasi_threshold(y_cv, all_probabilities, beta=beta)
 
 
-def select_optimal_indikasi_threshold(y_true: pd.Series, probabilities, beta: float = POSITIVE_F_BETA) -> dict:
+def select_optimal_indikasi_threshold(
+    y_true: pd.Series,
+    probabilities,
+    beta: float = POSITIVE_F_BETA,
+    min_recall: float = None,
+    objective: str = None,
+) -> dict:
+    """Pilih threshold optimal.
+
+    Mode `balanced_accuracy_with_recall_constraint` (default):
+    - Filter kandidat: recall_indikasi >= min_recall
+    - Rank: (balanced_accuracy, f1_macro, accuracy) desc
+    - Fallback: kandidat dengan recall_indikasi tertinggi jika tidak ada yang lolos.
+
+    Mode `f_beta` (legacy): rank by fbeta seperti versi lama.
+    """
+    if min_recall is None:
+        min_recall = MIN_INDIKASI_RECALL
+    if objective is None:
+        objective = THRESHOLD_OBJECTIVE
+
     default_metrics = {
         "threshold": DEFAULT_POSITIVE_THRESHOLD,
         "fbeta": 0.0,
         "balanced_accuracy": 0.0,
+        "accuracy": 0.0,
+        "f1_macro": 0.0,
         "positive_recall": 0.0,
         "positive_precision": 0.0,
+        "objective": objective,
     }
 
     if y_true is None or len(y_true) == 0:
@@ -123,51 +151,100 @@ def select_optimal_indikasi_threshold(y_true: pd.Series, probabilities, beta: fl
     candidate_thresholds.update(round(index / 100, 2) for index in range(5, 96, 5))
     candidate_thresholds.update(round(float(probability), 4) for probability in probabilities)
 
-    best = None
-
+    candidates = []
     for threshold in sorted(candidate_thresholds):
-        # We start to clamp thresholds so it does not become too aggressively low or high 
-        # But we do that in the caller for minimum threshold
         predictions = [1 if float(probability) >= threshold else 0 for probability in probabilities]
 
         positive_true = sum(1 for actual in y_true_values if actual == 1)
-        true_positive = sum(1 for actual, predicted in zip(y_true_values, predictions) if actual == 1 and predicted == 1)
+        true_positive = sum(
+            1 for actual, predicted in zip(y_true_values, predictions) if actual == 1 and predicted == 1
+        )
         predicted_positive = sum(predictions)
 
         positive_recall = (true_positive / positive_true) if positive_true else 0.0
         positive_precision = (true_positive / predicted_positive) if predicted_positive else 0.0
         fbeta = float(fbeta_score(y_true_values, predictions, beta=beta, zero_division=0))
         balanced_accuracy = float(balanced_accuracy_score(y_true_values, predictions))
+        accuracy = float(accuracy_score(y_true_values, predictions))
+        f1_macro = float(f1_score(y_true_values, predictions, average="macro", zero_division=0))
 
-        candidate = {
+        candidates.append({
             "threshold": round(float(threshold), 4),
             "fbeta": round(fbeta, 4),
             "balanced_accuracy": round(balanced_accuracy, 4),
+            "accuracy": round(accuracy, 4),
+            "f1_macro": round(f1_macro, 4),
             "positive_recall": round(positive_recall, 4),
             "positive_precision": round(positive_precision, 4),
-        }
+            "objective": objective,
+        })
 
-        if best is None:
-            best = candidate
-            continue
+    if not candidates:
+        return default_metrics
 
-        current_rank = (
-            candidate["fbeta"],
-            candidate["positive_recall"],
-            candidate["balanced_accuracy"],
-            -candidate["threshold"],
+    if objective == "f_beta":
+        candidates.sort(
+            key=lambda c: (c["fbeta"], c["positive_recall"], c["balanced_accuracy"], -c["threshold"]),
+            reverse=True,
         )
-        best_rank = (
-            best["fbeta"],
-            best["positive_recall"],
-            best["balanced_accuracy"],
-            -best["threshold"],
+        return candidates[0]
+
+    # Default: balanced_accuracy_with_recall_constraint
+    qualified = [c for c in candidates if c["positive_recall"] >= min_recall]
+    if qualified:
+        qualified.sort(
+            key=lambda c: (
+                c["balanced_accuracy"],
+                c["f1_macro"],
+                c["accuracy"],
+                c["positive_recall"],
+                -c["threshold"],
+            ),
+            reverse=True,
         )
+        return qualified[0]
 
-        if current_rank > best_rank:
-            best = candidate
+    # Fallback: tidak ada threshold yang memenuhi constraint recall.
+    # Pilih kandidat dengan recall tertinggi (tie-break: balanced_accuracy).
+    candidates.sort(
+        key=lambda c: (c["positive_recall"], c["balanced_accuracy"], c["f1_macro"], -c["threshold"]),
+        reverse=True,
+    )
+    fallback = candidates[0]
+    fallback["objective"] = f"{objective}_fallback_max_recall"
+    return fallback
 
-    return best or default_metrics
+
+def compute_threshold_sweep(
+    y_true: pd.Series,
+    probabilities,
+    thresholds: list[float] = None,
+) -> list[dict]:
+    """Kompute metrik untuk daftar threshold (untuk dokumentasi sensitivitas).
+
+    Returns list of {threshold, accuracy, balanced_accuracy, f1_macro,
+    recall_indikasi, precision_indikasi, f1_indikasi}.
+    """
+    if thresholds is None:
+        thresholds = [0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70]
+
+    if y_true is None or len(y_true) == 0:
+        return []
+
+    y_true_values = [int(v) for v in list(y_true)]
+    sweep = []
+    for thr in thresholds:
+        predictions = [1 if float(p) >= thr else 0 for p in probabilities]
+        sweep.append({
+            "threshold": round(float(thr), 4),
+            "accuracy": round(float(accuracy_score(y_true_values, predictions)), 4),
+            "balanced_accuracy": round(float(balanced_accuracy_score(y_true_values, predictions)), 4),
+            "f1_macro": round(float(f1_score(y_true_values, predictions, average="macro", zero_division=0)), 4),
+            "recall_indikasi": round(float(recall_score(y_true_values, predictions, pos_label=1, zero_division=0)), 4),
+            "precision_indikasi": round(float(precision_score(y_true_values, predictions, pos_label=1, zero_division=0)), 4),
+            "f1_indikasi": round(float(f1_score(y_true_values, predictions, pos_label=1, zero_division=0)), 4),
+        })
+    return sweep
 
 
 def build_evaluation_metrics(y_true: pd.Series, probabilities, threshold: float, evaluation_dataset: str) -> dict:
@@ -213,6 +290,8 @@ def build_evaluation_metrics(y_true: pd.Series, probabilities, threshold: float,
             "fn": int(fn),
             "tp": int(tp),
         },
+        # Threshold sensitivity sweep (untuk dokumentasi skripsi)
+        "threshold_sweep": compute_threshold_sweep(y_true_values, probabilities),
     }
 
 def training_quality_summary(features: pd.DataFrame, target: pd.Series) -> dict:

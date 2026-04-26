@@ -42,6 +42,14 @@ def retrain_model():
 
         purge_training = bool(payload.get("purge_training", False))
 
+        # Auto-tune via Optuna (opsional). Default off agar retrain biasa tetap cepat.
+        auto_tune = bool(payload.get("auto_tune", False))
+        try:
+            tuning_trials = int(payload.get("tuning_trials", 80))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("tuning_trials harus berupa angka integer") from exc
+        tuning_trials = max(10, min(tuning_trials, 300))
+
         # Cek apakah training sedang berjalan
         if training_manager.is_running:
             return jsonify({
@@ -69,14 +77,17 @@ def retrain_model():
             }), 409
         started_training = True
 
-        def run_retrain_async(sv, uid, email):
+        def run_retrain_async(sv, uid, email, do_auto_tune, n_trials):
             import gc
             import logging
             logger = logging.getLogger("retrain_thread")
 
             try:
                 training_manager.advance_step("fetching_data")
-                logger.info(f"[RETRAIN] Starting training with schema_version={sv}")
+                logger.info(
+                    f"[RETRAIN] Starting training with schema_version={sv} "
+                    f"auto_tune={do_auto_tune} trials={n_trials}"
+                )
                 dataframe = fetch_training_dataframe(schema_version=sv)
                 logger.info(f"[RETRAIN] Fetched {len(dataframe)} training rows")
 
@@ -85,6 +96,8 @@ def retrain_model():
                     schema_version=sv,
                     triggered_by_user_id=uid,
                     triggered_by_email=email,
+                    auto_tune=do_auto_tune,
+                    tuning_trials=n_trials,
                 )
                 training_manager.check_cancelled("finalizing")
                 training_manager.finish(result)
@@ -105,7 +118,13 @@ def retrain_model():
 
         thread = threading.Thread(
             target=run_retrain_async,
-            args=(schema_version, triggered_by_user_id, triggered_by_email),
+            args=(
+                schema_version,
+                triggered_by_user_id,
+                triggered_by_email,
+                auto_tune,
+                tuning_trials,
+            ),
             name="retrain-worker",
         )
         thread.daemon = True
@@ -117,6 +136,8 @@ def retrain_model():
             "message": "Pelatihan ulang model sedang dikerjakan di latar belakang.",
             "schema_version": schema_version,
             "purge_training": purge_training,
+            "auto_tune": auto_tune,
+            "tuning_trials": tuning_trials if auto_tune else None,
             "training_status_url": "/api/training/status",
             "training_cancel_url": "/api/training/cancel",
         }
