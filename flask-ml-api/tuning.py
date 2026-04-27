@@ -81,6 +81,33 @@ def _evaluate_params(
     return mean_ba, mean_recall, score
 
 
+def _filter_warm_start_params(raw: dict) -> Optional[dict]:
+    """Bersihkan dict best_params lama agar hanya berisi key yang ada di search space.
+
+    Optuna `enqueue_trial` mengharapkan semua key adalah hyperparameter yang dicari.
+    Static params (verbose, eval_metric, dst.) harus dibuang.
+    """
+    if not raw:
+        return None
+    allowed = {
+        "iterations", "depth", "learning_rate", "l2_leaf_reg",
+        "bagging_temperature", "random_strength", "min_data_in_leaf",
+        "border_count", "rsm", "auto_class_weights",
+    }
+    cleaned: dict = {}
+    for key, value in raw.items():
+        if key not in allowed:
+            continue
+        if key == "auto_class_weights" and value is None:
+            cleaned[key] = "None"
+        else:
+            cleaned[key] = value
+    # Pastikan semua key ada — kalau ada yang missing, drop warm-start (incomplete).
+    if not allowed.issubset(cleaned.keys()):
+        return None
+    return cleaned
+
+
 def tune_catboost_params(
     X: pd.DataFrame,
     y: pd.Series,
@@ -90,6 +117,7 @@ def tune_catboost_params(
     min_recall: float = None,
     thread_count: int = None,
     cancel_check: Optional[Callable[[str], None]] = None,
+    warm_start_params: Optional[dict] = None,
 ) -> dict:
     """Jalankan Optuna untuk cari hyperparameter CatBoost terbaik.
 
@@ -116,6 +144,19 @@ def tune_catboost_params(
     sampler = optuna.samplers.TPESampler(seed=42)
     pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=0)
     study = optuna.create_study(direction="maximize", sampler=sampler, pruner=pruner)
+
+    # Warm-start: enqueue best params dari training sebelumnya sebagai trial #0.
+    # Optuna akan langsung evaluasi titik yang sudah terbukti baik, lalu eksplorasi.
+    warm_start_used = False
+    if warm_start_params:
+        cleaned = _filter_warm_start_params(warm_start_params)
+        if cleaned:
+            try:
+                study.enqueue_trial(cleaned)
+                warm_start_used = True
+                logger.info(f"[OPTUNA] Warm-start enqueued: {cleaned}")
+            except Exception as exc:
+                logger.warning(f"[OPTUNA] Warm-start failed: {exc}")
 
     history: list[dict] = []
 
@@ -157,5 +198,6 @@ def tune_catboost_params(
         "best_balanced_accuracy": float(best_trial.user_attrs.get("balanced_accuracy", 0.0)),
         "best_recall_indikasi": float(best_trial.user_attrs.get("recall_indikasi", 0.0)),
         "n_trials_completed": len(study.trials),
+        "warm_start_used": warm_start_used,
         "search_history": history[-20:],  # 20 trial terakhir untuk laporan
     }

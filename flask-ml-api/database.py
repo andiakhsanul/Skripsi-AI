@@ -289,6 +289,77 @@ def mark_model_version_as_current(model_version_id: int, activated_at: Optional[
     return dict(row)
 
 
+def fetch_recent_model_versions(limit: int = 10) -> list[dict]:
+    """Ambil N versi model 'ready' terbaru, dari yang terbaru.
+
+    Dipakai untuk:
+    - Auto-trigger Optuna tuning (lihat pertumbuhan data + tren metrik)
+    - Endpoint /api/training/insights
+    """
+    query = sql.SQL(
+        """
+        SELECT
+            id, version_name, status, is_current,
+            dataset_rows_total, rows_used, train_rows, validation_rows,
+            catboost_train_accuracy, catboost_validation_accuracy,
+            naive_bayes_train_accuracy, naive_bayes_validation_accuracy,
+            catboost_metrics, naive_bayes_metrics,
+            note, trained_at, activated_at
+        FROM {table_name}
+        WHERE status = 'ready'
+        ORDER BY trained_at DESC
+        LIMIT %s
+        """
+    ).format(table_name=sql.Identifier(MODEL_VERSIONS_TABLE))
+
+    with psycopg2.connect(**db_config()) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query, (int(limit),))
+            rows = cursor.fetchall()
+    return [dict(row) for row in rows]
+
+
+def fetch_latest_tuning_artifact() -> Optional[dict]:
+    """Ambil best_params Optuna dari versi terakhir yang punya tuning_summary.
+
+    Returns dict berisi `best_params` (siap dipakai sebagai warm-start trial) +
+    metadata, atau None kalau tidak ada riwayat tuning.
+    """
+    query = sql.SQL(
+        """
+        SELECT
+            id, version_name, dataset_rows_total, catboost_metrics, trained_at
+        FROM {table_name}
+        WHERE status = 'ready'
+          AND catboost_metrics IS NOT NULL
+          AND catboost_metrics ? 'tuning_summary'
+        ORDER BY trained_at DESC
+        LIMIT 1
+        """
+    ).format(table_name=sql.Identifier(MODEL_VERSIONS_TABLE))
+
+    with psycopg2.connect(**db_config()) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cursor:
+            cursor.execute(query)
+            row = cursor.fetchone()
+
+    if not row:
+        return None
+    metrics = row["catboost_metrics"] or {}
+    tuning_summary = metrics.get("tuning_summary") or {}
+    best_params = tuning_summary.get("best_params") or None
+    if not best_params:
+        return None
+    return {
+        "version_id": row["id"],
+        "version_name": row["version_name"],
+        "dataset_rows_total": row["dataset_rows_total"],
+        "trained_at": row["trained_at"],
+        "best_params": best_params,
+        "best_balanced_accuracy": tuning_summary.get("best_balanced_accuracy"),
+    }
+
+
 def purge_all_training_data() -> int:
     """Hapus SEMUA baris di spk_training_data. Return jumlah baris yang dihapus."""
     with psycopg2.connect(**db_config()) as conn:

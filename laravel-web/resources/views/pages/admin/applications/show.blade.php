@@ -99,6 +99,41 @@
                 @endforeach
             </section>
 
+            @if (!empty($snapshotFreshness))
+                @php($freshnessAction = $snapshotFreshness['action'] ?? 'fresh')
+                @if ($freshnessAction === 'refreshed')
+                    <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
+                        <span class="material-symbols-outlined text-emerald-600">auto_awesome</span>
+                        <div class="text-sm leading-relaxed text-emerald-800">
+                            <strong class="mb-1 block">Rekomendasi diperbarui ke model terbaru</strong>
+                            Snapshot otomatis di-infer ulang dengan model aktif
+                            <code class="rounded bg-white/70 px-1 text-[11px]">{{ $snapshotFreshness['current_version'] ?? '-' }}</code>
+                            karena {{ ($snapshotFreshness['reason'] ?? '') === 'snapshot_missing' ? 'snapshot belum dibuat sebelumnya' : 'snapshot sebelumnya menggunakan versi model yang sudah tidak aktif' }}.
+                        </div>
+                    </div>
+                @elseif ($freshnessAction === 'refresh_failed')
+                    <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                        <span class="material-symbols-outlined text-amber-600">sync_problem</span>
+                        <div class="text-sm leading-relaxed text-amber-800">
+                            <strong class="mb-1 block">Gagal refresh otomatis ke model terbaru</strong>
+                            Rekomendasi yang ditampilkan masih dari versi
+                            <code class="rounded bg-white/70 px-1 text-[11px]">{{ $snapshotFreshness['snapshot_version'] ?? 'sebelumnya' }}</code>.
+                            Versi aktif sekarang adalah
+                            <code class="rounded bg-white/70 px-1 text-[11px]">{{ $snapshotFreshness['current_version'] ?? '-' }}</code>.
+                            Coba klik tombol "Refresh Rekomendasi" di kanan atas, atau pastikan Flask ML API sehat.
+                        </div>
+                    </div>
+                @elseif ($freshnessAction === 'no_current_model')
+                    <div class="flex items-start gap-3 rounded-2xl border border-slate-300 bg-slate-50 px-5 py-4">
+                        <span class="material-symbols-outlined text-slate-500">model_training</span>
+                        <div class="text-sm leading-relaxed text-slate-700">
+                            <strong class="mb-1 block">Belum ada versi model yang aktif</strong>
+                            Jalankan retrain model terlebih dahulu untuk mendapatkan rekomendasi terbaru.
+                        </div>
+                    </div>
+                @endif
+            @endif
+
             <section class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 <div class="overflow-hidden rounded-3xl border-t-4 border-yellow-500 bg-white shadow-lg lg:col-span-2">
                     <div class="flex items-center justify-between border-b border-slate-50 px-6 py-5">
@@ -106,9 +141,17 @@
                             <span class="material-symbols-outlined text-primary">psychology</span>
                             <h2 class="font-bold text-slate-800">Analisis Rekomendasi Sistem</h2>
                         </div>
-                        <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
-                            {{ $score['model_version_name'] }}
-                        </span>
+                        <div class="flex items-center gap-2">
+                            @if (!empty($snapshotFreshness) && ($snapshotFreshness['action'] ?? '') === 'fresh')
+                                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-700">
+                                    <span class="material-symbols-outlined text-[14px] leading-none">verified</span>
+                                    model aktif
+                                </span>
+                            @endif
+                            <span class="rounded-full bg-slate-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-slate-500">
+                                {{ $score['model_version_name'] }}
+                            </span>
+                        </div>
                     </div>
 
                     <div class="grid gap-10 p-8 md:grid-cols-2">

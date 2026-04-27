@@ -38,7 +38,12 @@ from config import (
     CONFLICT_STRATEGY,
     CONFLICT_MINORITY_THRESHOLD,
 )
-from database import persist_model_version_record, mark_model_version_as_current
+from database import (
+    persist_model_version_record,
+    mark_model_version_as_current,
+    fetch_recent_model_versions,
+    fetch_latest_tuning_artifact,
+)
 from encoding import encode_application_features
 from features import add_engineered_features, transform_features_for_naive_bayes
 from evaluation import (
@@ -50,6 +55,7 @@ from evaluation import (
 )
 from model_registry import relative_artifact_path, create_model_artifact
 from training_manager import training_manager, TrainingCancelled
+from adaptive_params import build_adaptive_decision
 
 logger = logging.getLogger("training")
 
@@ -119,10 +125,11 @@ def calibration_cv_splits(y: pd.Series, max_splits: int = 5) -> int:
     return min(max_splits, int(class_counts.min()))
 
 
-def split_training_dataset(features: pd.DataFrame, target: pd.Series):
+def split_training_dataset(features: pd.DataFrame, target: pd.Series, split_fraction: Optional[float] = None):
     class_counts = target.value_counts()
     class_total = int(target.nunique())
-    holdout_rows = max(int(round(len(target) * MODEL_VALIDATION_SPLIT)), class_total)
+    fraction = split_fraction if split_fraction is not None else MODEL_VALIDATION_SPLIT
+    holdout_rows = max(int(round(len(target) * fraction)), class_total)
     can_holdout = (
         class_counts.min() >= 2
         and holdout_rows < len(target)
@@ -255,9 +262,23 @@ def train_and_save_models(
     schema_version: Optional[int] = None,
     triggered_by_user_id: Optional[int] = None,
     triggered_by_email: Optional[str] = None,
-    auto_tune: bool = False,
-    tuning_trials: int = 80,
+    auto_tune: Optional[bool] = None,
+    tuning_trials: Optional[int] = None,
+    conflict_strategy: Optional[str] = None,
+    validation_split: Optional[float] = None,
 ) -> dict:
+    """Latih CatBoost + Naive Bayes dan simpan sebagai versi model baru.
+
+    Parameter `auto_tune`:
+      None  → keputusan adaptif (default produksi). Tuning aktif kalau:
+              belum pernah di-tune, data tumbuh ≥25%, BA turun ≥3% dari best,
+              atau sudah ≥14 hari sejak tuning terakhir.
+      True  → paksa tuning aktif.
+      False → paksa tuning non-aktif.
+
+    Parameter `tuning_trials`, `conflict_strategy`, `validation_split` mengikuti
+    pola yang sama: None → adaptif berdasarkan ukuran dataset, ada nilai → paksa.
+    """
     dataset_rows_total = int(len(dataframe))
     if dataframe.empty:
         raise ValueError("Data training kosong. Tambahkan data valid terlebih dahulu.")
@@ -298,7 +319,7 @@ def train_and_save_models(
     if cleaned[TARGET_COLUMN].nunique() < 2:
         raise ValueError("Data training harus memiliki minimal 2 kelas label.")
 
-    # Resolusi konflik label (3 strategi tergantung CONFLICT_STRATEGY)
+    # ─── Hitung statistik group untuk keputusan adaptif ──────────────
     grouped = cleaned.groupby(FEATURE_COLUMNS)[TARGET_COLUMN]
     group_stats = grouped.agg(
         majority_label=lambda v: int(v.value_counts().index[0]),
@@ -308,14 +329,54 @@ def train_and_save_models(
         n_labels="nunique",
     ).reset_index()
 
-    if CONFLICT_STRATEGY == "drop_all":
+    rows_in_conflict = int(group_stats.loc[group_stats["n_labels"] > 1, "size"].sum())
+    conflict_ratio = (rows_in_conflict / len(cleaned)) if len(cleaned) > 0 else 0.0
+
+    # ─── Adaptive Decision (mengkombinasikan ENV + signature override) ──
+    # Hierarki: argumen fungsi > ENV > auto-decide.
+    history_records: list[dict] = []
+    try:
+        history_records = fetch_recent_model_versions(limit=10)
+    except Exception as exc:
+        logger.warning(f"[ADAPTIVE] Gagal fetch history: {exc}")
+
+    env_conflict_override = (
+        CONFLICT_STRATEGY if CONFLICT_STRATEGY != "majority_vote" else None
+    )
+
+    decision = build_adaptive_decision(
+        n_rows=int(len(cleaned)),
+        conflict_ratio=conflict_ratio,
+        history=history_records,
+        current_ba=None,  # belum dilatih; trigger berbasis growth/time/last-known.
+        user_auto_tune=auto_tune,
+        user_tuning_trials=tuning_trials,
+        user_conflict_strategy=conflict_strategy or env_conflict_override,
+        user_validation_split=validation_split,
+    )
+
+    resolved_conflict_strategy = decision["conflict_strategy"]
+    resolved_validation_split = decision["validation_split"]
+    resolved_auto_tune = decision["auto_tune"]
+    resolved_tuning_trials = decision["tuning_trials"]
+    base_catboost_params = decision["base_catboost_params"]
+
+    logger.info(
+        f"[ADAPTIVE] tier={decision['tier']} rows={len(cleaned)} "
+        f"conflict_ratio={conflict_ratio:.3f} conflict_strategy={resolved_conflict_strategy} "
+        f"validation_split={resolved_validation_split} "
+        f"auto_tune={resolved_auto_tune} reason={decision['tune_reason']} "
+        f"trials={resolved_tuning_trials}"
+    )
+
+    # Apply conflict resolution sesuai strategi yang dipilih.
+    if resolved_conflict_strategy == "drop_all":
         keep_mask = group_stats["n_labels"] == 1
-    elif CONFLICT_STRATEGY == "drop_high_minority":
-        # Pertahankan group non-conflict + group dengan minority < threshold
+    elif resolved_conflict_strategy == "drop_high_minority":
         keep_mask = (group_stats["n_labels"] == 1) | (
             group_stats["minority_ratio"] < CONFLICT_MINORITY_THRESHOLD
         )
-    else:  # majority_vote (default)
+    else:  # majority_vote
         keep_mask = pd.Series([True] * len(group_stats), index=group_stats.index)
 
     kept = pd.DataFrame(group_stats.loc[keep_mask]).copy()
@@ -328,15 +389,15 @@ def train_and_save_models(
     deduplicated = _project_to_dedup(kept)
 
     if deduplicated[TARGET_COLUMN].nunique() < 2:
-        # Fallback: kembali ke majority_vote agar tidak kehabisan kelas.
         logger.warning(
-            f"[CONFLICT] Strategi {CONFLICT_STRATEGY} menyebabkan kelas tunggal — fallback ke majority_vote."
+            f"[CONFLICT] Strategi {resolved_conflict_strategy} menyebabkan kelas tunggal — fallback ke majority_vote."
         )
         deduplicated = _project_to_dedup(group_stats)
+        resolved_conflict_strategy = f"{resolved_conflict_strategy}_fallback_majority_vote"
 
     rows_dropped_by_conflict = int(len(group_stats) - len(kept))
     logger.info(
-        f"[CONFLICT] strategi={CONFLICT_STRATEGY} "
+        f"[CONFLICT] strategi={resolved_conflict_strategy} "
         f"groups_total={len(group_stats)} groups_kept={len(kept)} "
         f"groups_dropped={rows_dropped_by_conflict}"
     )
@@ -344,8 +405,9 @@ def train_and_save_models(
     x_full = deduplicated[FEATURE_COLUMNS].astype(int)
     y_full = deduplicated[TARGET_COLUMN].astype(int)
     quality_summary = training_quality_summary(x_full, y_full)
-    quality_summary["conflict_strategy"] = CONFLICT_STRATEGY
+    quality_summary["conflict_strategy"] = resolved_conflict_strategy
     quality_summary["groups_dropped_by_conflict_strategy"] = rows_dropped_by_conflict
+    quality_summary["conflict_ratio_before_dedup"] = round(conflict_ratio, 4)
 
     training_manager.advance_step("split_dataset", {
         "rows_after_cleaning": int(len(cleaned)),
@@ -353,7 +415,9 @@ def train_and_save_models(
         "quality_summary": quality_summary,
     })
 
-    x_eval_train, x_valid, y_eval_train, y_valid, validation_strategy = split_training_dataset(x_full, y_full)
+    x_eval_train, x_valid, y_eval_train, y_valid, validation_strategy = split_training_dataset(
+        x_full, y_full, split_fraction=resolved_validation_split,
+    )
 
     nb_x_eval_train = transform_features_for_naive_bayes(x_eval_train)
     nb_x_valid = transform_features_for_naive_bayes(x_valid) if x_valid is not None else None
@@ -363,20 +427,36 @@ def train_and_save_models(
     cat_features_list = BINARY_FEATURES + ENGINEERED_BINARY
 
     # ─── Step 2.5: Optional Hyperparameter Tuning (Optuna) ────────────
-    catboost_params = dict(CATBOOST_PARAMS)
+    catboost_params = dict(base_catboost_params)
     tuning_summary = None
-    if auto_tune:
+    if resolved_auto_tune:
         from tuning import tune_catboost_params
 
+        # Warm-start: ambil best_params Optuna dari training terakhir.
+        warm_start_params = None
+        try:
+            latest_artifact = fetch_latest_tuning_artifact()
+            if latest_artifact:
+                warm_start_params = latest_artifact.get("best_params")
+                logger.info(
+                    f"[OPTUNA] Warm-start dari versi {latest_artifact.get('version_name')} "
+                    f"(BA={latest_artifact.get('best_balanced_accuracy')})"
+                )
+        except Exception as exc:
+            logger.warning(f"[OPTUNA] Gagal fetch warm-start: {exc}")
+
         training_manager.advance_step("hyperparameter_tuning_optuna", {
-            "n_trials": tuning_trials,
+            "n_trials": resolved_tuning_trials,
+            "warm_start": warm_start_params is not None,
+            "trigger_reason": decision["tune_reason"],
         })
         tuning_result = tune_catboost_params(
             x_full, y_full,
             cat_features=cat_features_list,
-            n_trials=tuning_trials,
+            n_trials=resolved_tuning_trials,
             cv_splits=5,
             cancel_check=training_manager.check_cancelled,
+            warm_start_params=warm_start_params,
         )
         catboost_params = tuning_result["best_params"]
         tuning_summary = {
@@ -384,13 +464,16 @@ def train_and_save_models(
             "best_balanced_accuracy": tuning_result["best_balanced_accuracy"],
             "best_recall_indikasi": tuning_result["best_recall_indikasi"],
             "n_trials_completed": tuning_result["n_trials_completed"],
+            "warm_start_used": tuning_result.get("warm_start_used", False),
+            "trigger_reason": decision["tune_reason"],
             "best_params": {k: v for k, v in catboost_params.items() if k != "thread_count"},
             "search_history_tail": tuning_result["search_history"],
         }
         logger.info(
             f"[OPTUNA] best BA={tuning_result['best_balanced_accuracy']:.4f} "
             f"recall_indikasi={tuning_result['best_recall_indikasi']:.4f} "
-            f"trials={tuning_result['n_trials_completed']}"
+            f"trials={tuning_result['n_trials_completed']} "
+            f"warm_start={tuning_result.get('warm_start_used', False)}"
         )
 
     # ─── Step 3: CatBoost — eval model ────────────────────────────────
@@ -442,6 +525,21 @@ def train_and_save_models(
         cb_evaluation_metrics = build_extended_evaluation(
             y_eval_train, cb_train_probabilities, cb_threshold_metrics["threshold"], "training",
         )
+
+    # Persist tuning_summary di JSONB agar bisa di-fetch untuk warm-start
+    # training berikutnya. Juga simpan adaptive decision untuk audit/debug.
+    if tuning_summary is not None:
+        cb_evaluation_metrics["tuning_summary"] = tuning_summary
+    cb_evaluation_metrics["adaptive_decision"] = {
+        "tier": decision["tier"],
+        "auto_tune_resolved": resolved_auto_tune,
+        "tune_reason": decision["tune_reason"],
+        "tuning_trials_resolved": resolved_tuning_trials,
+        "conflict_strategy_resolved": resolved_conflict_strategy,
+        "validation_split_resolved": resolved_validation_split,
+        "n_rows_at_training": int(len(cleaned)),
+        "conflict_ratio": round(conflict_ratio, 4),
+    }
 
     # ─── Step 5: CatBoost final model (full data) ─────────────────────
     training_manager.advance_step("training_catboost_final")
@@ -587,7 +685,7 @@ def train_and_save_models(
         for key, value in cleaned[TARGET_COLUMN].value_counts().to_dict().items()
     }
 
-    tuning_label = "Optuna-tuned" if auto_tune else "manual"
+    tuning_label = "Optuna-tuned" if resolved_auto_tune else f"adaptive-tier-{decision['tier']}"
     note = (
         f"Encoding oleh Flask ML (authoritative). "
         f"CatBoost ({tuning_label}): depth={catboost_params.get('depth')} "
@@ -598,7 +696,11 @@ def train_and_save_models(
         f"auto_class_weights={catboost_params.get('auto_class_weights')}. "
         f"Categorical NB: alpha=1.0 + Isotonic calibration. "
         f"Threshold dipilih via 5-Fold Stratified CV "
-        f"(objective=balanced_accuracy, constraint=recall_indikasi>=0.85)."
+        f"(objective=balanced_accuracy, constraint=recall_indikasi>=0.85). "
+        f"Adaptive: rows={len(cleaned)} tier={decision['tier']} "
+        f"conflict_strategy={resolved_conflict_strategy} "
+        f"validation_split={resolved_validation_split} "
+        f"tune_reason={decision['tune_reason']}."
     )
     if len(deduplicated) < len(cleaned):
         note += (

@@ -3,9 +3,11 @@
 namespace App\Services;
 
 use App\Models\ApplicationStatusLog;
+use App\Models\ModelVersion;
 use App\Models\StudentApplication;
 use DomainException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -220,6 +222,90 @@ class AdminApplicationReviewService
         $this->applicationInferenceService->syncPredictionSnapshot($application, $actorUserId);
 
         return $this->detail($applicationId);
+    }
+
+    /**
+     * Pastikan snapshot prediksi pengajuan ini terbaru terhadap model yang aktif.
+     * Otomatis re-infer kalau:
+     *   - Snapshot belum ada
+     *   - Snapshot dibangun dari versi model yang sudah tidak aktif (model di-retrain
+     *     setelah snapshot dibuat)
+     *
+     * Tidak melempar exception agar `show()` tetap bisa render meski Flask down;
+     * hasilnya dilaporkan via array yang bisa dipajang di view.
+     *
+     * @return array{action:string, reason?:string, current_version?:?string, snapshot_version?:?string, error?:string}
+     */
+    public function ensureSnapshotMatchesCurrentModel(int $applicationId, ?int $actorUserId = null): array
+    {
+        $application = StudentApplication::query()
+            ->with(['modelSnapshot.modelVersion'])
+            ->findOrFail($applicationId);
+
+        $currentVersion = ModelVersion::query()
+            ->where('is_current', true)
+            ->where('status', 'ready')
+            ->orderByDesc('activated_at')
+            ->first();
+
+        if ($currentVersion === null) {
+            return [
+                'action' => 'no_current_model',
+                'reason' => 'belum_ada_versi_model_aktif',
+                'current_version' => null,
+                'snapshot_version' => $application->modelSnapshot?->modelVersion?->version_name,
+            ];
+        }
+
+        $snapshot = $application->modelSnapshot;
+
+        if ($snapshot === null) {
+            return $this->refreshSnapshotSafely($application, $actorUserId, 'snapshot_missing', $currentVersion);
+        }
+
+        if ((int) $snapshot->model_version_id !== (int) $currentVersion->id) {
+            return $this->refreshSnapshotSafely($application, $actorUserId, 'stale_model_version', $currentVersion);
+        }
+
+        return [
+            'action' => 'fresh',
+            'current_version' => $currentVersion->version_name,
+            'snapshot_version' => $snapshot->modelVersion?->version_name,
+        ];
+    }
+
+    /**
+     * @return array{action:string, reason:string, current_version:?string, snapshot_version:?string, error?:string}
+     */
+    private function refreshSnapshotSafely(
+        StudentApplication $application,
+        ?int $actorUserId,
+        string $reason,
+        ModelVersion $currentVersion,
+    ): array {
+        try {
+            $this->applicationInferenceService->syncPredictionSnapshot($application, $actorUserId);
+            return [
+                'action' => 'refreshed',
+                'reason' => $reason,
+                'current_version' => $currentVersion->version_name,
+                'snapshot_version' => $currentVersion->version_name,
+            ];
+        } catch (\Throwable $throwable) {
+            Log::warning('[AdminReview] Auto-refresh snapshot gagal', [
+                'application_id' => $application->id,
+                'reason' => $reason,
+                'error' => $throwable->getMessage(),
+            ]);
+
+            return [
+                'action' => 'refresh_failed',
+                'reason' => $reason,
+                'current_version' => $currentVersion->version_name,
+                'snapshot_version' => $application->modelSnapshot?->modelVersion?->version_name,
+                'error' => $throwable->getMessage(),
+            ];
+        }
     }
 
     /**

@@ -17,6 +17,14 @@ class ApplicationReviewController extends Controller
 
     public function show(Request $request, int $application): View
     {
+        // Pastikan rekomendasi AI selalu pakai model yang aktif sekarang.
+        // Kalau model baru saja di-retrain dan snapshot terlama dibangun dari
+        // versi sebelumnya, otomatis re-infer di sini sebelum render.
+        $freshness = $this->reviewService->ensureSnapshotMatchesCurrentModel(
+            $application,
+            $request->user()?->id,
+        );
+
         $applicationRecord = $this->reviewService->detail($application);
         $documentUrl = $this->reviewService->documentUrl($applicationRecord);
 
@@ -25,6 +33,7 @@ class ApplicationReviewController extends Controller
             'application' => $applicationRecord,
             'documentUrl' => $documentUrl,
             'page' => $this->reviewService->viewPayload($applicationRecord, $documentUrl),
+            'snapshotFreshness' => $freshness,
         ]);
     }
 
