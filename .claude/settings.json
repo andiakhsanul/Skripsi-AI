@@ -14,11 +14,16 @@
       "Bash(php -l app/Http/Controllers/Api/Student/ApplicationController.php)",
       "Bash(php -l config/google.php)",
       "Bash(php artisan *)",
-      "Bash(php -l app/Console/Commands/GoogleDriveAuthorizeCommand.php)"
+      "Bash(php -l app/Console/Commands/GoogleDriveAuthorizeCommand.php)",
+      "Bash(python3 -c ' *)",
+      "Bash(docker exec *)",
+      "Bash(python3)",
+      "Bash(docker compose *)"
     ],
     "additionalDirectories": [
       "/Users/andiakhsanul/BISMILLAH/Skripsi-AI/laravel-web/app/Services",
-      "/Users/andiakhsanul/.claude/plans"
+      "/Users/andiakhsanul/.claude/plans",
+      "/tmp"
     ]
   }
 }

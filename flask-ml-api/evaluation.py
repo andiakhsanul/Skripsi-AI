@@ -190,13 +190,16 @@ def select_optimal_indikasi_threshold(
         return candidates[0]
 
     # Default: balanced_accuracy_with_recall_constraint
+    # Priority: accuracy > balanced_accuracy > f1_macro > recall > threshold
+    # Accuracy diutamakan agar threshold yang dipilih memaksimalkan akurasi
+    # keseluruhan, sementara recall_indikasi tetap dijaga via constraint.
     qualified = [c for c in candidates if c["positive_recall"] >= min_recall]
     if qualified:
         qualified.sort(
             key=lambda c: (
+                c["accuracy"],
                 c["balanced_accuracy"],
                 c["f1_macro"],
-                c["accuracy"],
                 c["positive_recall"],
                 -c["threshold"],
             ),

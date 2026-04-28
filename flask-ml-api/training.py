@@ -432,18 +432,36 @@ def train_and_save_models(
     if resolved_auto_tune:
         from tuning import tune_catboost_params
 
-        # Warm-start: ambil best_params Optuna dari training terakhir.
-        warm_start_params = None
+        # Warm-start: gabung known-good seed (validated config) + latest tuning.
+        # Known-good dari id=56 (val_acc=0.8065, BA=0.8543) dipertahankan sebagai
+        # anchor agar TPESampler tidak drift jauh dari titik yang sudah teruji.
+        warm_start_seeds: list[dict] = [
+            {
+                "iterations": 500,
+                "depth": 3,
+                "learning_rate": 0.0174,
+                "l2_leaf_reg": 3.2332,
+                "rsm": 0.7842,
+                "bagging_temperature": 0.8,
+                "random_strength": 1.0,
+                "min_data_in_leaf": 8,
+                "border_count": 64,
+                "auto_class_weights": "Balanced",
+            },
+        ]
         try:
             latest_artifact = fetch_latest_tuning_artifact()
             if latest_artifact:
-                warm_start_params = latest_artifact.get("best_params")
-                logger.info(
-                    f"[OPTUNA] Warm-start dari versi {latest_artifact.get('version_name')} "
-                    f"(BA={latest_artifact.get('best_balanced_accuracy')})"
-                )
+                latest_params = latest_artifact.get("best_params")
+                if latest_params:
+                    warm_start_seeds.append(latest_params)
+                    logger.info(
+                        f"[OPTUNA] Latest warm-start dari versi {latest_artifact.get('version_name')} "
+                        f"(BA={latest_artifact.get('best_balanced_accuracy')})"
+                    )
         except Exception as exc:
             logger.warning(f"[OPTUNA] Gagal fetch warm-start: {exc}")
+        warm_start_params = warm_start_seeds
 
         training_manager.advance_step("hyperparameter_tuning_optuna", {
             "n_trials": resolved_tuning_trials,
@@ -540,6 +558,8 @@ def train_and_save_models(
         "n_rows_at_training": int(len(cleaned)),
         "conflict_ratio": round(conflict_ratio, 4),
     }
+    # Persist per-fold CV accuracy ke metrics JSONB.
+    cb_evaluation_metrics["cv_accuracy"] = cb_cv_accuracy
 
     # ─── Step 5: CatBoost final model (full data) ─────────────────────
     training_manager.advance_step("training_catboost_final")
@@ -658,6 +678,9 @@ def train_and_save_models(
         "catboost_cv": cb_cv_accuracy,
         "naive_bayes_cv": nb_cv_accuracy,
     }
+
+    # Persist per-fold CV accuracy untuk Naive Bayes ke metrics JSONB.
+    nb_evaluation_metrics["cv_accuracy"] = nb_cv_accuracy
 
     # ─── Step 10: Persist models ──────────────────────────────────────
     training_manager.advance_step("persisting_models")
